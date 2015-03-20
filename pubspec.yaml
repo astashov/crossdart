@@ -1,0 +1,11 @@
+name: crossdart
+version: 0.0.1
+author: Anton Astashov
+description: Cross references in the pub world
+homepage: http://crossdart.info
+environment:
+  sdk: '>=1.8.0'
+dependencies:
+  analyzer: any
+  collection: any
+  logging: any

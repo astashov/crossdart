@@ -1,0 +1,47 @@
+# Build and Release Folders
+bin/
+bin-debug/
+bin-release/
+out/
+dist/
+
+# Dart files and folders
+packages
+*.dart.js
+*.js.deps
+*.js.map
+
+# Other files and folders
+.settings/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+.idea/
+html-template/
+.bundle
+/vendor
+
+# Dart Editor files
+.buildlog
+.project
+
+# Generated assets files
+/public
+.sass-cache
+
+# Phabricator files
+.phutil_module_cache
+
+.rvmrc
+
+s3_deployer_config.rb
+
+html/
+
+# Ruby version for RVM or rbenv
+.ruby-version
+
+# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
+# should NOT be excluded as they contain compiler settings and other important
+# information for Eclipse / Flash Builder.
