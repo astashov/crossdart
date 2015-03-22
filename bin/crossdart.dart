@@ -5,33 +5,18 @@ import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/logging.dart' as logging;
 import 'package:crossdart/crossdart.dart';
+import 'package:crossdart/src/service.dart';
 
-void main(args) {
+void main(args) async {
   config = new Config.fromArgs(args);
   logging.initialize();
   var packageName = args[3];
-  var package = new CustomPackage.fromName(packageName);
-  //install(packageName);
 
-  var parsedData = parse(package);
-  generateHtml(package, parsedData);
-
-  //customPackages.forEach((package) {
-    //package.children.where((f) => f is File).forEach((file) {
-      //
-    //});
-  //});
-
-//  var packageName = args[3];
-//  install(packageName);
-
-//  var package = new Package.fromName(packageName);
-//  package.children.where((f) => f is File).forEach((file) {
-//    parse(file);
+//  var packages = await getAvailablePackages();
+//  packages.forEach((packageName) {
+    install(packageName);
+    var package = new CustomPackage.fromName(packageName);
+    var parsedData = parse(package);
+    generateHtml(package, parsedData);
 //  });
-
-
-//  config = new Config.fromArgs(args);
-//  var p = new Package.fromName("frappe");
-//  print(p.filePaths);
 }

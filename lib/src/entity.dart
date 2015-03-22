@@ -17,26 +17,19 @@ abstract class Entity {
   int end;
 
   int get lineNumber {
-    String contents = cache.fileContents(location.file);
-    return new RegExp("(\r\n|\n|\r)", multiLine: true).allMatches(contents.substring(0, offset)).length;
+    if (offset != null) {
+      String contents = cache.fileContents(location.file);
+      return new RegExp("(\r\n|\n|\r)", multiLine: true).allMatches(contents.substring(0, offset)).length;
+    }
   }
 
-  Location _buildLocation(String file, Element element) {
-    var package;
-    if (element.source.isInSystemLibrary) {
-      package = sdk;
-    } else {
-      package = packages.firstWhere((package) => package.doesContainFile(file));
-    }
-
+  Location _buildLocation(String file) {
+    var package = packages.firstWhere((package) => package.doesContainFile(file));
     return new Location(file, package);
   }
 
-  Entity(AstNode node, Element element, String file) {
-    this.name = element.displayName;
-    this.offset = node.offset;
-    this.end = node.end;
-    this.location = _buildLocation(file, element);
+  Entity(String file, {this.name, this.offset, this.end}) {
+    this.location = _buildLocation(file);
   }
 
   int get hashCode => hash([location, name, offset, end]);
@@ -54,8 +47,11 @@ abstract class Entity {
 }
 
 class Declaration extends Entity {
-  Declaration(AstNode node, Element element) : super(node, element, element.source.fullName);
+  Declaration(String file, {String name, int offset, int end}) : super(file, name: name, offset: offset, end: end);
 }
 class Reference extends Entity {
-  Reference(AstNode node, Element element, String file) : super(node, element, file);
+  Reference(String file, {String name, int offset, int end}) : super(file, name: name, offset: offset, end: end);
+}
+class Import extends Declaration {
+  Import(String file, {String name}) : super(file, name: name);
 }

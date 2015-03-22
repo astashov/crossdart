@@ -18,24 +18,24 @@ void install(String packageName) {
 
 ParsedData parse(Package package) {
   var handledFiles = new Set();
+//  handledFiles.addAll(new Directory(config.htmlPath).listSync(recursive: true).where((f) => f is File && f.path.endsWith("html")).map((f) => f.path));
+//  print(handledFiles);
 
-
-  return package.files.map((f) => f.path).fold(new ParsedData(), (memo, file) {
-    var parsedData = parseFile(file, package);
-
-    print(parsedData.files.keys.toList());
-    while (parsedData.files.keys.toSet().difference(handledFiles).isNotEmpty) {
-      var unhandledFiles = parsedData.files.keys.toSet().difference(handledFiles);
-      unhandledFiles.forEach((file) {
-        handledFiles.add(file);
-        var package = packages.firstWhere((p) => p.doesContainFile(file));
-        print("Contains package $package");
-        parsedData = parsedData.merge(parseFile(file, package));
-      });
-    }
-
-    return memo.merge(parsedData);
-  });
+  return parseFile(package.files.toList()[1].path);
+//  return package.files.map((f) => f.path).fold(new ParsedData(), (memo, file) {
+//    var parsedData = parseFile(file);
+//
+//    print(parsedData.files.keys.toList());
+//    while (parsedData.files.keys.toSet().difference(handledFiles).isNotEmpty) {
+//      var unhandledFiles = parsedData.files.keys.toSet().difference(handledFiles);
+//      unhandledFiles.forEach((file) {
+//        handledFiles.add(file);
+//        parsedData = parsedData.merge(parseFile(file));
+//      });
+//    }
+//
+//    return memo.merge(parsedData);
+//  });
 
 }
 

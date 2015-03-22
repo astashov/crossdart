@@ -99,7 +99,6 @@ Iterable<Package> get packages {
 Sdk _sdk;
 Sdk get sdk {
   if (_sdk == null) {
-    print(config.sdk.sdkVersion);
     _sdk = new Sdk("sdk", new Version.fromString(config.sdk.sdkVersion));
   }
   return _sdk;

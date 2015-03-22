@@ -1,23 +1,27 @@
 library crossdart.html_generator;
 
 import 'dart:io';
+import 'dart:convert';
 import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/parsed_data.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/entity.dart';
 import 'package:crossdart/src/cache.dart';
 import 'package:path/path.dart' as path;
+import 'package:logging/logging.dart';
+
+var _logger = new Logger("generator");
 
 class HtmlGenerator {
   Package _package;
   ParsedData _parsedData;
+  HtmlEscape sanitizer = const HtmlEscape();
 
   HtmlGenerator(this._package, this._parsedData);
 
   void generate() {
     var handledFiles = new Set();
     this._parsedData.files.forEach((String file, Set<Entity> entities) {
-      print(file);
       var references = entities.where((e) => e is Reference);
       if (references.isNotEmpty) {
         if (!(new File(references.first.location.writePath).existsSync())) {
@@ -29,20 +33,24 @@ class HtmlGenerator {
   }
 
   String buildContent(String file, Set<Reference> references) {
+    _logger.info("Building content of ${file}");
     var content = "<pre>";
     var fileContent = cache.fileContents(file);
     var referencesList = references.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
     var lastOffset = 0;
-    print(file);
     referencesList.forEach((reference) {
       var declaration = _parsedData.references[reference];
-      content += fileContent.substring(lastOffset, reference.offset);
-      content += "<a href='${declaration.location.htmlPath}#line-${declaration.lineNumber}'>";
-      content += fileContent.substring(reference.offset, reference.end);
+      content += sanitizer.convert(fileContent.substring(lastOffset, reference.offset));
+      content += "<a href='${declaration.location.htmlPath}";
+      if (declaration.lineNumber != null) {
+        content += "#line-${declaration.lineNumber}";
+      }
+      content += "'>";
+      content += sanitizer.convert(fileContent.substring(reference.offset, reference.end));
       content += "</a>";
       lastOffset = reference.end;
     });
-    content += fileContent.substring(lastOffset);
+    content += sanitizer.convert(fileContent.substring(lastOffset));
     content += "</pre>";
 
     var i = -1;
@@ -55,9 +63,9 @@ class HtmlGenerator {
   }
 
   void writeFile(Location location, String content) {
+    _logger.info("Writing to ${location.writePath}");
     var directory = new Directory(path.dirname(location.writePath));
     directory.createSync(recursive: true);
-    print("Writing to ${location.writePath}");
     new File(location.writePath).writeAsStringSync(content);
   }
 }

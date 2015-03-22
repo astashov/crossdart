@@ -6,6 +6,9 @@ homepage: http://crossdart.info
 environment:
   sdk: '>=1.8.0'
 dependencies:
-  analyzer: any
+  analyzer:
+    path: ../analyzer
   collection: any
+  intl: any
   logging: any
+  http: any
