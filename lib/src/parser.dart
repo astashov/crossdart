@@ -1,6 +1,7 @@
 library crossdart.parser;
 
 import 'dart:io';
+import 'dart:collection';
 import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
@@ -107,36 +108,48 @@ class _ASTVisitor extends GeneralizingAstVisitor {
 
   visitSimpleStringLiteral(SimpleStringLiteral node) {
     super.visitSimpleStringLiteral(node);
-    if (node.parent is PartDirective) {
-      var reference = new e.Reference(this.file, name: node.toString(), offset: node.offset, end: node.end);
-      var declaration = new e.Import((node.parent as PartDirective).element.source.fullName);
-      _addReferenceAndDeclaration(reference, declaration);
-    } else if (node.parent is ImportDirective) {
-      var reference = new e.Reference(this.file, name: node.toString(), offset: node.offset, end: node.end);
-      var declaration = new e.Import((node.parent as ImportDirective).element.importedLibrary.definingCompilationUnit.source.fullName);
-      _addReferenceAndDeclaration(reference, declaration);
+    try {
+      if (node.parent is PartDirective) {
+        var reference = new e.Reference(this.file, name: node.toString(), offset: node.offset, end: node.end);
+        var declaration = new e.Import((node.parent as PartDirective).element.source.fullName);
+        _addReferenceAndDeclaration(reference, declaration);
+      } else if (node.parent is ImportDirective) {
+        var reference = new e.Reference(this.file, name: node.toString(), offset: node.offset, end: node.end);
+        var declaration = new e.Import((node.parent as ImportDirective).element.importedLibrary.definingCompilationUnit.source.fullName);
+        _addReferenceAndDeclaration(reference, declaration);
+      }
+    } catch(error, stackTrace) {
+      _logger.severe("Error parsing simple string literal $node", error, stackTrace);
     }
   }
 
   visitSimpleIdentifier(SimpleIdentifier node) {
     super.visitSimpleIdentifier(node);
     if (node.parent != null && node.parent.parent is PartOfDirective) {
-      PartOfDirective partOfNode = node.parent.parent;
-      var reference = new e.Reference(this.file, name: node.toString(), offset: node.offset, end: node.end);
-      var declaration = new e.Import(partOfNode.element.source.fullName);
-      _addReferenceAndDeclaration(reference, declaration);
-    }
-    Element element = node.bestElement;
-//    print("Node ${node}, type: ${node.runtimeType}, parent: ${node.parent.runtimeType}, library: ${element != null ? element.library : null}");
-    if (element != null && element.library != null && element.node is Declaration && !node.inDeclarationContext()) {
-      var reference = new e.Reference(this.file, name: node.bestElement.displayName, offset: node.offset, end: node.end);
-      var declarationElement = (element.node as Declaration).element;
-      var declaration = new e.Declaration(declarationElement.source.fullName,
-          name: declarationElement.displayName,
-          offset: element.node.offset,
-          end: element.node.end);
+      try {
+        PartOfDirective partOfNode = node.parent.parent;
+        var reference = new e.Reference(this.file, name: node.toString(), offset: node.offset, end: node.end);
+        var declaration = new e.Import(partOfNode.element.source.fullName);
+        _addReferenceAndDeclaration(reference, declaration);
+      } catch(error, stackTrace) {
+        _logger.severe("Error parsing 'part of' node $node", error, stackTrace);
+      }
+    } else {
+      try {
+        Element element = node.bestElement;
+        if (element != null && element.library != null && element.node is Declaration && !node.inDeclarationContext()) {
+          var reference = new e.Reference(this.file, name: node.bestElement.displayName, offset: node.offset, end: node.end);
+          var declarationElement = (element.node as Declaration).element;
+          var declaration = new e.Declaration(declarationElement.source.fullName,
+              name: declarationElement.displayName,
+              offset: element.node.offset,
+              end: element.node.end);
 
-      _addReferenceAndDeclaration(reference, declaration);
+          _addReferenceAndDeclaration(reference, declaration);
+        }
+      } catch(error, stackTrace) {
+        _logger.severe("Error parsing a reference/declaration $node", error, stackTrace);
+      }
     }
   }
 

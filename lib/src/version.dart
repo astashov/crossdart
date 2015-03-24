@@ -15,9 +15,12 @@ class Version {
   int _addition;
   int get addition => _addition;
 
+  String _versionString;
+
   Version(this._major, this._minor, this._patch, [this._addition]);
 
   Version.fromString(String str) {
+    _versionString = str;
     var match = str.split(".");
     _major = int.parse(match[0]);
     _minor = int.parse(match[1]);
@@ -29,11 +32,15 @@ class Version {
   }
 
   String toString() {
-    var string = "${major}.${minor}.${patch}";
-    if (addition != null) {
-      string += "+${addition}";
+    if (_versionString != null) {
+      return _versionString;
+    } else {
+      var string = "${major}.${minor}.${patch}";
+      if (addition != null) {
+        string += "+${addition}";
+      }
+      return string;
     }
-    return string;
   }
 
   String toPath() {

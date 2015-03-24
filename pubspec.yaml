@@ -12,3 +12,6 @@ dependencies:
   intl: any
   logging: any
   http: any
+
+dev_dependencies:
+  unittest: any

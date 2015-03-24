@@ -6,17 +6,31 @@ import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/logging.dart' as logging;
 import 'package:crossdart/crossdart.dart';
 import 'package:crossdart/src/service.dart';
+import 'package:crossdart/src/version.dart';
+import 'package:logging/logging.dart';
 
-void main(args) async {
+Logger _logger = new Logger("main");
+
+void main(args) {
   config = new Config.fromArgs(args);
   logging.initialize();
-  var packageName = args[3];
 
-//  var packages = await getAvailablePackages();
-//  packages.forEach((packageName) {
-    install(packageName);
-    var package = new CustomPackage.fromName(packageName);
-    var parsedData = parse(package);
-    generateHtml(package, parsedData);
-//  });
+  var failedPackageNames = new Set<PackageInfo>();
+  var packageInfos = [
+      new PackageInfo("frappe", new Version.fromString("0.4.0+4")),
+      new PackageInfo("route", new Version.fromString("0.4.6")),
+      new PackageInfo("dnd", new Version.fromString("0.2.1"))]; //await getAvailablePackages();
+  packageInfos.forEach((packageInfo) {
+    try {
+      install(packageInfo);
+      var package = new CustomPackage(packageInfo);
+      var parsedData = parse(package);
+      generatePackageHtml(package, parsedData);
+      return package;
+    } catch(exception, stackTrace) {
+      _logger.severe("Exception while handling a package ${packageInfo.name} ${packageInfo.version}", exception, stackTrace);
+      failedPackageNames.add(packageInfo);
+    }
+  });
+  generateIndexHtml(packageInfos);
 }

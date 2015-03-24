@@ -4,13 +4,14 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:logging/logging.dart';
 import 'package:crossdart/src/config.dart';
+import 'package:crossdart/src/package.dart';
 
 var _logger = new Logger("installer");
 
 class Installer {
-  String _packageName;
+  PackageInfo _packageInfo;
 
-  Installer(this._packageName);
+  Installer(this._packageInfo);
 
   void install() {
     _destroyCurrentlyExistingOutputDirectory();
@@ -38,19 +39,21 @@ class Installer {
   }
 
   void _initializeProject() {
-    _logger.info("Creating new project for package ${_packageName} in ${config.installPath}");
+    _logger.info("Creating new project for package ${_packageInfo.name} ${_packageInfo.version} in ${config.installPath}");
     var file = new File("pubspec.yaml");
     file.writeAsStringSync("""
       name: crossdart_example
       description: CrossDart example
       dependencies:
-        ${_packageName}: any
+        ${_packageInfo.name}: ${_packageInfo.version}
     """);
   }
 
   void _runPub() {
     _logger.info("Running pub get");
     var result = Process.runSync("pub", ["get"]);
+    sleep(new Duration(seconds: 1));
     _logger.info("Output - ${result.stdout}");
+    _logger.info("Error - ${result.stderr}");
   }
 }

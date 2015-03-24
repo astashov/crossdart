@@ -8,6 +8,9 @@ void initialize() {
     var timeString = new DateFormat("H:m:s.S").format(record.time);
     var name = record.loggerName.replaceAll(new RegExp(r"^crossdart\."), "");
     var message = "$timeString [${record.level.name}] ${name}: ${record.message}";
+    if (record.error != null) {
+      message += "\n${record.error}\n${record.stackTrace}";
+    }
     return message;
   };
 

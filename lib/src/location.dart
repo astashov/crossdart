@@ -18,16 +18,18 @@ class Location {
       && package == other.package;
 
   String get path {
-    return file.replaceAll("${package.lib.path}/", "");
+    return file.replaceAll("${package.lib}/", "");
   }
 
   String get htmlPath {
-    return "/" + p.join(package.name, package.version.toPath(), "${path}.html");
+    return "/" + p.join(package.name, _versionPart, "${path}.html");
   }
 
   String get writePath {
-    return p.join(config.htmlPath, package.name, package.version.toPath(), p.dirname(path), "${p.basename(path)}.html");
+    return p.join(config.htmlPath, package.name, _versionPart, p.dirname(path), "${p.basename(path)}.html");
   }
+
+  String get _versionPart => package.version != null ? package.version.toPath() : "unknown";
 
   String toString() {
     var map = {"file": file, "package": package};

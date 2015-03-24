@@ -1,13 +1,8 @@
 library crossdart.entity;
 
-import 'dart:io';
-import 'package:analyzer/analyzer.dart';
-import 'package:analyzer/src/generated/element.dart';
-
 import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/cache.dart';
 import 'package:crossdart/src/util.dart';
-import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/package.dart';
 
 abstract class Entity {
@@ -16,10 +11,15 @@ abstract class Entity {
   int offset;
   int end;
 
+  int _lineNumber;
   int get lineNumber {
     if (offset != null) {
-      String contents = cache.fileContents(location.file);
-      return new RegExp("(\r\n|\n|\r)", multiLine: true).allMatches(contents.substring(0, offset)).length;
+      if (_lineNumber == null) {
+        _lineNumber = cache.lineNumber(location.file, offset);
+      }
+      return _lineNumber;
+    } else {
+      return null;
     }
   }
 
