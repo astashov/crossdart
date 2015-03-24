@@ -26,7 +26,12 @@ class Location {
   }
 
   String get writePath {
-    return p.join(config.htmlPath, package.name, _versionPart, p.dirname(path), "${p.basename(path)}.html");
+    var result = p.join(config.htmlPath, package.name, _versionPart);
+    if (p.dirname(path) != ".") {
+      result = p.join(result, p.dirname(path));
+    }
+    result = p.join(result, "${p.basename(path)}.html");
+    return result;
   }
 
   String get _versionPart => package.version != null ? package.version.toPath() : "unknown";

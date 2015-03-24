@@ -23,16 +23,15 @@ class HtmlPackageGenerator {
   void generate() {
     var handledFiles = new Set();
     this._parsedData.files.forEach((String fileName, Set<Entity> entities) {
+      var package = Package.fromFilePath(fileName);
+      var location = new Location(fileName, package);
       var references = entities.where((e) => e is Reference).toSet();
-      if (references.isNotEmpty) {
-        if (!(new File(references.first.location.writePath).existsSync())) {
-          var location = references.first.location;
-          var directory = new Directory(path.dirname(location.writePath));
-          directory.createSync(recursive: true);
-          var file = new File(location.writePath).openSync(mode: FileMode.WRITE);
-          _writeContent(fileName, references, file);
-          file.closeSync();
-        }
+      if (!(new File(location.writePath).existsSync())) {
+        var directory = new Directory(path.dirname(location.writePath));
+        directory.createSync(recursive: true);
+        var file = new File(location.writePath).openSync(mode: FileMode.WRITE);
+        _writeContent(fileName, references, file);
+        file.closeSync();
       }
     });
   }

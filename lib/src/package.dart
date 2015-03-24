@@ -1,15 +1,20 @@
 library crossdart.package;
 
 import 'dart:io';
+import 'dart:convert';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/util.dart';
 import 'package:path/path.dart' as path;
 
 class PackageInfo {
-  final String name;
-  final Version version;
-  const PackageInfo(this.name, this.version);
+  String _name;
+  String get name => _name;
+
+  Version _version;
+  Version get version => _version;
+
+  PackageInfo(this._name, this._version);
 
   String get htmlPath {
     return path.join(config.htmlPath, name, version.toPath());
@@ -22,6 +27,12 @@ class PackageInfo {
         .map((s) => s.path.replaceAll(config.htmlPath, "").replaceAll(new RegExp(r".html$"), ""));
   }
 
+  PackageInfo.fromJson(String json) {
+    var map = JSON.decode(json);
+    _name = map["name"];
+    _version = new Version(map["version"]);
+  }
+
   int get hashCode => hash([name, version]);
 
   bool operator ==(other) => other is PackageInfo
@@ -30,6 +41,14 @@ class PackageInfo {
 
   String toString() {
     return "<PackageInfo ${{"name": name, "version": version.toString()}}>";
+  }
+
+  Map<String, String> toMap() {
+    return {"name": name, "version": version.toString()};
+  }
+
+  String toJson() {
+    return JSON.encode(toMap());
   }
 }
 
@@ -105,11 +124,11 @@ class CustomPackage extends Package {
 Iterable<CustomPackage> get customPackages {
   return new Directory(config.packagesPath).listSync(recursive: false).map((name) {
     var packageName =  path.basename(path.dirname(name.resolveSymbolicLinksSync()));
-    var match = new RegExp(r"-([\d\.+]+)$").firstMatch(packageName);
+    var match = new RegExp(r"-([a-zA-Z0-9\.+-]+)$").firstMatch(packageName);
     var version;
     if (match != null) {
-      version = new Version.fromString(match[1]);
-      packageName = packageName.replaceAll(new RegExp(r"-([\d\.+]+)$"), "");
+      version = new Version(match[1]);
+      packageName = packageName.replaceAll(new RegExp(r"-([a-zA-Z0-9\.+-]+)$"), "");
     }
     return new CustomPackage(new PackageInfo(packageName, version));
   });
@@ -122,7 +141,7 @@ Iterable<Package> get packages {
 Sdk _sdk;
 Sdk get sdk {
   if (_sdk == null) {
-    _sdk = new Sdk(new PackageInfo("sdk", new Version.fromString(config.sdk.sdkVersion)));
+    _sdk = new Sdk(new PackageInfo("sdk", new Version(config.sdk.sdkVersion)));
   }
   return _sdk;
 }

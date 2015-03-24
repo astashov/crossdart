@@ -20,10 +20,25 @@ var _logger = new logging.Logger("parser");
 
 ParsedData parseFile(String file) {
   _logger.info("Parsing file $file");
-  var resolvedUnit = parser.getCompilationUnit(file);
-  var visitor = new _ASTVisitor(file);
-  resolvedUnit.accept(visitor);
-  return visitor.parsedData;
+  var resolvedUnit;
+  var maxRetries = 3;
+  var parsedData = new ParsedData();
+  while(resolvedUnit == null && maxRetries > 0) {
+    resolvedUnit = parser.getCompilationUnit(file);
+    if (resolvedUnit == null && maxRetries > 0) {
+      _logger.warning("Couldn't resolve unit, retrying...");
+      sleep(new Duration(seconds: 1));
+      maxRetries -= 1;
+    }
+  }
+  if (resolvedUnit != null) {
+    var visitor = new _ASTVisitor(file);
+    resolvedUnit.accept(visitor);
+    return visitor.parsedData;
+  } else {
+    _logger.warning("Wasn't be able to resolve unit, giving up...");
+    return new ParsedData();
+  }
 }
 
 class Parser {

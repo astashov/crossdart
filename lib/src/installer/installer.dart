@@ -53,7 +53,11 @@ class Installer {
     _logger.info("Running pub get");
     var result = Process.runSync("pub", ["get"]);
     sleep(new Duration(seconds: 1));
-    _logger.info("Output - ${result.stdout}");
-    _logger.info("Error - ${result.stderr}");
+    if (result.stdout != "") {
+      _logger.info("Output - ${result.stdout}");
+    }
+    if (result.stderr != "") {
+      _logger.info("Error - ${result.stderr}");
+    }
   }
 }
