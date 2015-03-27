@@ -12,6 +12,7 @@ dependencies:
   intl: any
   logging: any
   http: any
+  sqljocky: any
 
 dev_dependencies:
   unittest: any

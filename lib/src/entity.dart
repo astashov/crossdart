@@ -23,13 +23,15 @@ abstract class Entity {
     }
   }
 
-  Location _buildLocation(String file) {
-    var package = packages.firstWhere((package) => package.doesContainFile(file));
+  Location _buildLocation(String file, [Package package]) {
+    if (package == null) {
+      package = packages.firstWhere((package) => package.doesContainFile(file));
+    }
     return new Location(file, package);
   }
 
-  Entity(String file, {this.name, this.offset, this.end}) {
-    this.location = _buildLocation(file);
+  Entity(String file, {this.name, this.offset, this.end, Package package}) {
+    this.location = _buildLocation(file, package);
   }
 
   int get hashCode => hash([location, name, offset, end]);
@@ -47,11 +49,11 @@ abstract class Entity {
 }
 
 class Declaration extends Entity {
-  Declaration(String file, {String name, int offset, int end}) : super(file, name: name, offset: offset, end: end);
+  Declaration(String file, {String name, int offset, int end, Package package}) : super(file, name: name, offset: offset, end: end, package: package);
 }
 class Reference extends Entity {
-  Reference(String file, {String name, int offset, int end}) : super(file, name: name, offset: offset, end: end);
+  Reference(String file, {String name, int offset, int end, Package package}) : super(file, name: name, offset: offset, end: end, package: package);
 }
 class Import extends Declaration {
-  Import(String file, {String name}) : super(file, name: name);
+  Import(String file, {String name, Package package}) : super(file, name: name, package: package);
 }

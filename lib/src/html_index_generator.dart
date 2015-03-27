@@ -3,17 +3,13 @@ library crossdart.html_index_generator;
 import 'dart:io';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/package.dart';
-import 'package:crossdart/src/location.dart';
+import 'package:crossdart/src/version.dart';
 import 'package:path/path.dart';
 import 'package:logging/logging.dart';
 
 var _logger = new Logger("generator");
 
 class HtmlIndexGenerator {
-  Iterable<PackageInfo> _packageInfos;
-
-  HtmlIndexGenerator(this._packageInfos);
-
   void generate() {
     _logger.info("Generating index page");
     var content = """
@@ -35,7 +31,7 @@ class HtmlIndexGenerator {
   }
 
   String _packagesHtml() {
-    return _packageInfos.map((packageInfo) {
+    return getGeneratedPackages().map((packageInfo) {
       var content = "<li class='package'>";
       content += "<div class='package-name'>${packageInfo.name} (${packageInfo.version})</div>";
       content += "<ul class='package-files'>";
@@ -46,5 +42,13 @@ class HtmlIndexGenerator {
       content += "</li>";
       return content;
     }).join("\n");
+  }
+
+  Iterable<PackageInfo> getGeneratedPackages() {
+    return new Directory(config.htmlPath).listSync().where((f) => f is Directory).map((Directory dir) {
+      var versions = dir.listSync().where((f) => f is Directory).map((d) => basename(d.path)).toList();
+      versions.sort();
+      return versions.map((version) => new PackageInfo(basename(dir.path), new Version(version)));
+    }).expand((i) => i);
   }
 }

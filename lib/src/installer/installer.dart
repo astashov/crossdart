@@ -51,7 +51,7 @@ class Installer {
 
   void _runPub() {
     _logger.info("Running pub get");
-    var result = Process.runSync("pub", ["get"]);
+    var result = Process.runSync("gtimeout", ["30", "pub", "get"]);
     sleep(new Duration(seconds: 1));
     if (result.stdout != "") {
       _logger.info("Output - ${result.stdout}");

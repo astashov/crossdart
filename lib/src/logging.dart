@@ -18,5 +18,5 @@ void initialize() {
     print(logFormatter(record));
   });
 
-  Logger.root.level = Level.ALL;
+  Logger.root.level = Level.INFO;
 }

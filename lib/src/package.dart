@@ -116,8 +116,12 @@ class CustomPackage extends Package {
     return path.dirname(lib);
   }
 
+  String _lib;
   String get lib {
-    return new Directory(symlink).resolveSymbolicLinksSync();
+    if (_lib == null) {
+      _lib = new Directory(symlink).resolveSymbolicLinksSync();
+    }
+    return _lib;
   }
 }
 

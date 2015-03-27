@@ -14,21 +14,42 @@ var _logger = new Logger("service");
 
 String _getUrl(int page) => "https://pub.dartlang.org/packages.json?page=${page}";
 
-Future<Iterable<PackageInfo>> getAvailablePackages() {
-  if (_arePackagesCached) {
-    return new Future(_getPackagesFromFile);
-  } else {
-    return _getPackagesFromPub();
-  }
+Future<Iterable<PackageInfo>> getUpdatedPackages() async {
+  Iterable<PackageInfo> generatedPackages = _getGeneratedPackages();
+  Iterable<PackageInfo> allPackages = _getPackagesFromFile(); //await _getPackagesFromPub();
+
+  Map<String, PackageInfo> generatedPackagesByName = generatedPackages.fold({}, (memo, packageInfo) {
+    memo[packageInfo.name] = packageInfo;
+    return memo;
+  });
+
+  var updatedPackages = allPackages.where((packageInfo) {
+    var generatedPackage = generatedPackagesByName[packageInfo.name];
+    return generatedPackage == null || packageInfo.version.toPath() != generatedPackage.version.toPath();
+  });
+
+  _logger.info("The number of updated packages - ${updatedPackages.length}");
+
+  return updatedPackages;
 }
 
 bool get _arePackagesCached {
   return new File(join(config.htmlPath, "packages.json")).existsSync();
 }
 
+Iterable<PackageInfo> _getGeneratedPackages() {
+  return new Directory(config.htmlPath).listSync().where((f) => f is Directory).map((Directory dir) {
+    var versions = dir.listSync().map((d) => basename(d.path)).toList();
+    versions.sort();
+    return new PackageInfo(basename(dir.path), new Version(versions.last));
+  });
+}
+
 Iterable<PackageInfo> _getPackagesFromFile() {
-  return JSON.decode(new File(join(config.htmlPath, "packages.json")).readAsStringSync())
+  var packages = JSON.decode(new File(join(config.htmlPath, "packages.json")).readAsStringSync())
       .map((json) => new PackageInfo.fromJson(json));
+  _logger.info("The number of the available packages - ${packages.length}");
+  return packages;
 }
 
 Future<Iterable<PackageInfo>> _getPackagesFromPub() async {

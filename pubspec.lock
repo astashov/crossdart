@@ -47,6 +47,10 @@ packages:
     description: meta
     source: hosted
     version: "0.8.8"
+  options_file:
+    description: options_file
+    source: hosted
+    version: "0.9.15"
   path:
     description: path
     source: hosted
@@ -55,6 +59,10 @@ packages:
     description: source_span
     source: hosted
     version: "1.0.3"
+  sqljocky:
+    description: sqljocky
+    source: hosted
+    version: "0.11.0"
   stack_trace:
     description: stack_trace
     source: hosted
