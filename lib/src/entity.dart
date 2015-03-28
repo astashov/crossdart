@@ -51,9 +51,12 @@ abstract class Entity {
 class Declaration extends Entity {
   Declaration(String file, {String name, int offset, int end, Package package}) : super(file, name: name, offset: offset, end: end, package: package);
 }
-class Reference extends Entity {
-  Reference(String file, {String name, int offset, int end, Package package}) : super(file, name: name, offset: offset, end: end, package: package);
-}
 class Import extends Declaration {
   Import(String file, {String name, Package package}) : super(file, name: name, package: package);
+}
+class Token extends Entity {
+  Token(String file, {String name, int offset, int end, Package package}) : super(file, name: name, offset: offset, end: end, package: package);
+}
+class Reference extends Token {
+  Reference(String file, {String name, int offset, int end, Package package}) : super(file, name: name, offset: offset, end: end, package: package);
 }

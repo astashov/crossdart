@@ -25,64 +25,72 @@ class HtmlPackageGenerator {
     this._parsedData.files.forEach((String fileName, Set<Entity> entities) {
       var package = Package.fromFilePath(fileName);
       var location = new Location(fileName, package);
-      var references = entities.where((e) => e is Reference).toSet();
+      var tokens = entities.where((e) => e is Token).toSet();
       if (!(new File(location.writePath).existsSync())) {
         var directory = new Directory(path.dirname(location.writePath));
         directory.createSync(recursive: true);
         var file = new File(location.writePath).openSync(mode: FileMode.WRITE);
-        _writeContent(fileName, references, file);
+        _writeContent(fileName, tokens, file);
         file.closeSync();
       }
     });
   }
 
-  String _addReferenceStart(Reference reference) {
-    var declaration = _parsedData.references[reference];
-    var content = "<a href='${declaration.location.htmlPath}";
-    if (declaration.lineNumber != null) {
-      content += "#line-${declaration.lineNumber}";
+  String _addTokenStart(Token token) {
+    if (token is Reference) {
+      var declaration = _parsedData.references[token];
+      var content = "<a href='${declaration.location.htmlPath}";
+      if (declaration.lineNumber != null) {
+        content += "#line-${declaration.lineNumber}";
+      }
+      content += "'>";
+      return content;
+    } else {
+      return "<span class='${token.name}'>";
     }
-    content += "'>";
-    return content;
   }
 
-  String _addReferenceEnd(Reference reference) {
-    return "</a>";
+  String _addTokenEnd(Token token) {
+    if (token is Reference) {
+      return "</a>";
+    } else {
+      return "</span>";
+    }
   }
 
-  void _writeContent(String fileName, Set<Reference> references, RandomAccessFile file) {
+  void _writeContent(String fileName, Set<Token> tokens, RandomAccessFile file) {
     _logger.info("Building content of ${fileName}");
     file.writeStringSync("<pre>");
     var fileContent = cache.fileContents(fileName);
-    List<Reference> referencesList = references.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
+    List<Reference> tokensList = tokens.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
 
     var lastOffset = 0;
     var currentLine = 0;
-    List<Reference> stack = [];
+    List<Token> stack = [];
     var newlineChar = cache.getNewlineChar(fileContent);
 
-    Reference reference = referencesList.isNotEmpty ? referencesList.removeAt(0) : null;
+    Token token = tokensList.isNotEmpty ? tokensList.removeAt(0) : null;
     int nextNewlinePos = fileContent.indexOf(newlineChar, lastOffset);
 
-    while(reference != null || stack.isNotEmpty || nextNewlinePos != null) {
-      var referenceStartPos = reference != null ? reference.offset : null;
+    while(token != null || stack.isNotEmpty || nextNewlinePos != null) {
+      var tokenStartPos = token != null ? token.offset : null;
       nextNewlinePos = fileContent.indexOf(newlineChar, lastOffset);
       nextNewlinePos = nextNewlinePos == -1 ? null : nextNewlinePos;
-      var referenceEndPos = stack.isNotEmpty ? stack.last.end : null;
+      var tokenEndPos = stack.isNotEmpty ? stack.last.end : null;
 
 
-      var positions = [referenceStartPos, nextNewlinePos, referenceEndPos].where((i) => i != null);
+      var positions = [tokenStartPos, nextNewlinePos, tokenEndPos].where((i) => i != null);
       if (positions.isNotEmpty) {
         var nextStop = positions.reduce(math.min);
         file.writeStringSync(sanitizer.convert(fileContent.substring(lastOffset, nextStop)));
-        if (referenceEndPos == nextStop) {
-          Reference referenceFromStack = stack.removeLast();
-          file.writeStringSync(_addReferenceEnd(referenceFromStack));
+        if (tokenEndPos == nextStop) {
+          Token referenceFromStack = stack.removeLast();
+          file.writeStringSync(_addTokenEnd(referenceFromStack));
         }
-        if (referenceStartPos == nextStop) {
-          stack.add(reference);
-          file.writeStringSync(_addReferenceStart(reference));
-          reference = referencesList.isNotEmpty ? referencesList.removeAt(0) : null;
+        if (tokenStartPos == nextStop) {
+          stack.add(token);
+          file.writeStringSync(_addTokenStart(token));
+          token = tokensList.isNotEmpty ? tokensList.removeAt(0) : null;
         }
         if (nextNewlinePos == nextStop) {
           file.writeStringSync(newlineChar);

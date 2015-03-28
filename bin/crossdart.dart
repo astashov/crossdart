@@ -19,7 +19,7 @@ Future main(args) async {
   logging.initialize();
 
   var packageInfos = [
-      new PackageInfo("stagexl", new Version("0.10.3"))
+      new PackageInfo("frappe", new Version("0.4.0+4"))
       //new PackageInfo("route", new Version.fromString("0.4.6")),
       //new PackageInfo("dnd", new Version.fromString("0.2.1"))
       ];
@@ -40,7 +40,7 @@ Future main(args) async {
     _logger.info("Handling package ${packageInfo.name} (${packageInfo.version}) - ${index}/${packageInfos.length}");
     try {
       resetPackagesByFiles();
-      install(packageInfo);
+      //install(packageInfo);
       var package = new CustomPackage(packageInfo);
       var parsedData = await parse(package);
       generatePackageHtml(package, parsedData);

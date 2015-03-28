@@ -6,6 +6,7 @@ class ParsedData {
   Map<Declaration, Set<Reference>> declarations = {};
   Map<Reference, Declaration> references = {};
   Map<String, Set<Entity>> files = {};
+  Set<Entity> tokens = new Set();
 
   ParsedData merge(ParsedData other) {
     var newParsedData = new ParsedData();
@@ -24,6 +25,8 @@ class ParsedData {
     });
 
     newParsedData.references..addAll(references)..addAll(other.references);
+
+    newParsedData.tokens..addAll(tokens)..addAll(other.tokens);
 
     files.forEach((String file, Set<Entity> entities) {
       if (newParsedData.files[file] == null) {

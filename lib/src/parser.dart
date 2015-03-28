@@ -9,6 +9,7 @@ import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/java_io.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/source_io.dart';
+import 'package:analyzer/src/generated/scanner.dart';
 
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/package.dart';
@@ -24,6 +25,14 @@ ParsedData parseFile(String file) {
   var resolvedUnit = parser.getCompilationUnit(file);
   if (resolvedUnit != null) {
     var visitor = new _ASTVisitor(file);
+//    var token = resolvedUnit.beginToken;
+//    while (token != resolvedUnit.endToken) {
+//      if (token.precedingComments != null) {
+//        print("${token.precedingComments.runtimeType} - ${token.precedingComments}");
+//      }
+//      print("${token.runtimeType} - ${token}");
+//      token = token.next;
+//    }
     resolvedUnit.accept(visitor);
     return visitor.parsedData;
   } else {
@@ -116,11 +125,22 @@ class _ASTVisitor extends GeneralizingAstVisitor {
 
   visitNode(AstNode node) {
     super.visitNode(node);
-    //print("Node ${node}, type: ${node.runtimeType}");
+    print("Node ${node}, type: ${node.runtimeType}, beginToken: ${node.beginToken}, endToken: ${node.endToken}");
+  }
+
+//  visitDirective(Directive node) {
+//    super.visitDirective(node);
+//    var token = node.keyword;
+//  }
+
+  visitComment(Comment node) {
+    super.visitComment(node);
+    _addToken(node.runtimeType, node.beginToken, node.endToken);
   }
 
   visitSimpleStringLiteral(SimpleStringLiteral node) {
     super.visitSimpleStringLiteral(node);
+    //var token = node.literal;
     try {
       if (node.parent is PartDirective) {
         var reference = new e.Reference(this.file, name: node.toString(), offset: node.offset, end: node.end);
@@ -183,5 +203,17 @@ class _ASTVisitor extends GeneralizingAstVisitor {
     parsedData.declarations[declaration].add(reference);
 
     parsedData.references[reference] = declaration;
+  }
+
+  void _addToken(Type type, Token beginToken, [Token endToken]) {
+    var offset = beginToken.offset;
+    var end = endToken == null ? beginToken.end : endToken.end;
+    var newToken = new e.Token(this.file, name: type.toString().toLowerCase(), offset: offset, end: end);
+
+    parsedData.tokens.add(newToken);
+    if (parsedData.files[newToken.location.file] == null) {
+      parsedData.files[newToken.location.file] = new Set();
+    }
+    parsedData.files[newToken.location.file].add(newToken);
   }
 }
