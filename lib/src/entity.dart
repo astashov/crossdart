@@ -25,7 +25,7 @@ abstract class Entity {
 
   Location _buildLocation(String file, [Package package]) {
     if (package == null) {
-      package = packages.firstWhere((package) => package.doesContainFile(file));
+      package = packagesByFiles[file];
     }
     return new Location(file, package);
   }

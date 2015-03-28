@@ -18,24 +18,28 @@ Future main(args) async {
   config = new Config.fromArgs(args);
   logging.initialize();
 
-//  var packageInfos = [
-//      new PackageInfo("frappe", new Version("0.4.0+4"))
-//      //new PackageInfo("route", new Version.fromString("0.4.6")),
-//      //new PackageInfo("dnd", new Version.fromString("0.2.1"))
-//      ];
-  List<PackageInfo> packageInfos = (await getUpdatedPackages()).toList();
-  var erroredPackageInfos = await dbPool.query("SELECT package_name, package_version FROM errors");
-  erroredPackageInfos = (await erroredPackageInfos.toList()).map((p) {
-    return new PackageInfo(p.package_name, new Version(p.package_version));
-  });
-  erroredPackageInfos.forEach((packageInfo) {
-    packageInfos.remove(packageInfo);
-  });
+  var packageInfos = [
+      new PackageInfo("stagexl", new Version("0.10.3"))
+      //new PackageInfo("route", new Version.fromString("0.4.6")),
+      //new PackageInfo("dnd", new Version.fromString("0.2.1"))
+      ];
+//  List<PackageInfo> packageInfos = (await getUpdatedPackages()).toList();
+//  var erroredPackageInfos = await dbPool.query("SELECT package_name, package_version FROM errors");
+//  erroredPackageInfos = (await erroredPackageInfos.toList()).map((p) {
+//    return new PackageInfo(p.package_name, new Version(p.package_version));
+//  });
+//  erroredPackageInfos.forEach((packageInfo) {
+//    packageInfos.remove(packageInfo);
+//  });
+//  getGeneratedPackageInfos().expand((i) => i).forEach((packageInfo) {
+//    packageInfos.remove(packageInfo);
+//  });
 
   var index = 0;
   for (PackageInfo packageInfo in packageInfos) {
     _logger.info("Handling package ${packageInfo.name} (${packageInfo.version}) - ${index}/${packageInfos.length}");
     try {
+      resetPackagesByFiles();
       install(packageInfo);
       var package = new CustomPackage(packageInfo);
       var parsedData = await parse(package);

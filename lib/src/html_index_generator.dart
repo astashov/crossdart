@@ -30,25 +30,51 @@ class HtmlIndexGenerator {
     new File(join(config.htmlPath, "index.html")).writeAsStringSync(content);
   }
 
+  void generatePackagePages() {
+    getGeneratedPackageInfos().forEach((packageInfos) {
+      _logger.info("Generating page of the ${packageInfos.first.name} package");
+      var content = """
+        <!doctype html>
+        <html lang="en-us" >
+          <head>
+            <title>Pub ${packageInfos.first.name} | CrossDart - cross-referenced Dart's pub packages</title>
+          </head>
+          <body>
+            <h1 class="header">${packageInfos.first.name}</h1>
+            <h2 class="subheader">List of versions</h2>
+            <ul class="versions">
+              ${_packagesVersionsHtml(packageInfos)}
+            </ul>
+          </body>
+        </html>
+      """;
+
+      new File(join(config.htmlPath, packageInfos.first.name, "index.html")).writeAsStringSync(content);
+    });
+  }
+
   String _packagesHtml() {
-    return getGeneratedPackages().map((packageInfo) {
+    return getGeneratedPackageInfos().map((packageInfos) {
+      var packageInfo = packageInfos.first;
       var content = "<li class='package'>";
-      content += "<div class='package-name'>${packageInfo.name} (${packageInfo.version})</div>";
-      content += "<ul class='package-files'>";
-      packageInfo.generatedPaths.forEach((filePath) {
-        content += "<li class='package-file'><a href='${filePath}.html'>${filePath}</a></li>";
-      });
+      content += "<div class='package-name'><a href='/${packageInfo.name}'>${packageInfo.name}</a></div>";
+      content += "</li>";
+      return content;
+    }).join("\n");
+  }
+
+  String _packagesVersionsHtml(Iterable<PackageInfo> packageInfos) {
+    return packageInfos.map((packageInfo) {
+      var content = "<li class='version'>";
+      content += "<div class='version-name'>${packageInfo.version}</div>";
+      content += "<ul>";
+      content += packageInfo.generatedPaths.map((filePath) {
+        return "<li class='version-file'><a href='${filePath}.html'>${filePath}</a></li>";
+      }).join("\n");
       content += "</ul>";
       content += "</li>";
       return content;
     }).join("\n");
   }
 
-  Iterable<PackageInfo> getGeneratedPackages() {
-    return new Directory(config.htmlPath).listSync().where((f) => f is Directory).map((Directory dir) {
-      var versions = dir.listSync().where((f) => f is Directory).map((d) => basename(d.path)).toList();
-      versions.sort();
-      return versions.map((version) => new PackageInfo(basename(dir.path), new Version(version)));
-    }).expand((i) => i);
-  }
 }

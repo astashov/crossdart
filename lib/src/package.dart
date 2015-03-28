@@ -142,6 +142,30 @@ Iterable<Package> get packages {
   return []..add(sdk)..addAll(customPackages);
 }
 
+Map<String, Package> _packagesByFiles;
+Map<String, Package> get packagesByFiles {
+  if (_packagesByFiles == null) {
+    _packagesByFiles = packages.fold({}, (memo, package) {
+      package.files.forEach((file) {
+        memo[file.path] = package;
+      });
+      return memo;
+    });
+  }
+  return _packagesByFiles;
+}
+void resetPackagesByFiles() {
+  _packagesByFiles = null;
+}
+
+Iterable<Iterable<PackageInfo>> getGeneratedPackageInfos() {
+  return new Directory(config.htmlPath).listSync().where((f) => f is Directory).map((Directory dir) {
+    var versions = dir.listSync().where((f) => f is Directory).map((d) => path.basename(d.path)).toList();
+    versions.sort();
+    return versions.map((version) => new PackageInfo(path.basename(dir.path), new Version(version)));
+  });
+}
+
 Sdk _sdk;
 Sdk get sdk {
   if (_sdk == null) {

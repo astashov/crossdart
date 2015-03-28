@@ -51,7 +51,7 @@ void generatePackageHtml(Package package, ParsedData parsedData) {
 }
 
 void generateIndexHtml() {
-  new HtmlIndexGenerator().generate();
+  new HtmlIndexGenerator()..generate()..generatePackagePages();
 }
 
 bool _isFileAlreadyGenerated(String filePath) {

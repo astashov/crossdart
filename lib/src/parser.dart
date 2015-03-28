@@ -20,17 +20,8 @@ var _logger = new logging.Logger("parser");
 
 ParsedData parseFile(String file) {
   _logger.info("Parsing file $file");
-  var resolvedUnit;
-  var maxRetries = 3;
   var parsedData = new ParsedData();
-  while(resolvedUnit == null && maxRetries > 0) {
-    resolvedUnit = parser.getCompilationUnit(file);
-    if (resolvedUnit == null && maxRetries > 0) {
-      _logger.warning("Couldn't resolve unit, retrying...");
-      sleep(new Duration(seconds: 1));
-      maxRetries -= 1;
-    }
-  }
+  var resolvedUnit = parser.getCompilationUnit(file);
   if (resolvedUnit != null) {
     var visitor = new _ASTVisitor(file);
     resolvedUnit.accept(visitor);
@@ -73,6 +64,7 @@ class Parser {
       files.forEach((File f) {
         Source s = new FileBasedSource.con1(new JavaFile(f.path));
         _changeSet.addedSource(s);
+        analysisContext.computeLibraryElement(s);
       });
     }
     return _changeSet;
@@ -100,6 +92,12 @@ class Parser {
     var library = analysisContext.computeLibraryElement(source);
     if (library.name == "") {
       library = librariesByParts[file];
+      if (library == null) {
+        var pathsWithLibraries = analysisContext.getLibrariesContaining(source);
+        if (pathsWithLibraries.isNotEmpty) {
+          library = analysisContext.computeLibraryElement(pathsWithLibraries.first);
+        }
+      }
     }
     return analysisContext.resolveCompilationUnit(source, library);
   }
