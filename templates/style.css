@@ -1,0 +1,150 @@
+html {
+  font-size: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+.source-code .nav {
+  border-bottom: 1px solid #e4e4e4;
+  line-height: 2em;
+  padding-left: 4em;
+  font-size: 0.8em;
+}
+
+.source-code .nav a {
+  color: #039BE5;
+  font-family: Roboto, sans-serif;
+  text-decoration: none;
+}
+
+.source-code .nav a:hover {
+  text-decoration: underline;
+}
+
+.source-code .code {
+  margin: 0;
+}
+
+.source-code .code .line {
+  display: inline-block;
+  width: 3em;
+  max-width: 3em;
+  border: none;
+  border-right: 1px solid silver;
+  margin-right: 0.5em;
+  text-align: right;
+  padding-right: 0.5em;
+  color: #d0d0d0;
+}
+
+.source-code .code .comment {
+  color: #437D61;
+}
+
+.source-code .code .keyword {
+  color: #7D0F54;
+}
+
+.source-code .code .declaration {
+  color: #447FD8;
+}
+
+.source-code .code .annotation {
+  font-style: italic;
+  color: #0C3ABD;
+}
+
+.source-code .code .string {
+  color: #3034F7;
+}
+
+.source-code .code a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid #e4e4e4;
+}
+
+.index-page {
+  font-family: Roboto, sans-serif;
+  font-size: 100%;
+  margin: 0 2em;
+}
+
+.index-page a:hover {
+  text-decoration: underline;
+}
+
+.index-page .header {
+  margin-top: 0.5em;
+  text-align: center;
+  font-size: 3em;
+  margin-bottom: 0;
+  line-height: 1em;
+}
+
+.index-page .subheader {
+  font-size: 1.5em;
+  color: silver;
+  font-weight: normal;
+  text-align: center;
+  margin-top: 0;
+  line-height: 1.5em;
+}
+
+.index-page .search {
+  width: 50%;
+  margin: 0 auto;
+}
+
+.index-page .packages {
+  float: left;
+  width: 100%;
+}
+
+.index-page .package {
+  float: left;
+  margin-right: 1em;
+}
+
+.package-page a:hover {
+  text-decoration: underline;
+}
+
+.package-page .header {
+  text-align: center;
+  font-size: 3em;
+  margin-top: 0.5em;
+  line-height: 1em;
+  margin-bottom: 0;
+}
+
+.package-page .versions {
+  text-align: center;
+  margin-top: 1em;
+}
+
+.package-page .version {
+  color: #039be5;
+}
+
+.package-page .version:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.package-page .files {
+  float: left;
+  position: relative;
+  left: 50%;
+}
+
+.package-page .files-version {
+  position: relative;
+  left: -50%;
+}
+
+.package-page .package-name {
+  color: #7D0F54;
+}

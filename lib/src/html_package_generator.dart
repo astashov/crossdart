@@ -43,7 +43,7 @@ class HtmlPackageGenerator {
       if (declaration.lineNumber != null) {
         content += "#line-${declaration.lineNumber}";
       }
-      content += "'>";
+      content += "' class='reference'>";
       return content;
     } else {
       return "<span class='${token.name}'>";
@@ -58,14 +58,40 @@ class HtmlPackageGenerator {
     }
   }
 
+  String _headerContent(String fileName) {
+    var location = new Location(fileName, this._package);
+    return """
+      <!doctype html>
+      <html lang="en-us">
+        <head>
+          <title>'${_package.name}' - ${location.path} | CrossDart - cross-referenced Dart's pub packages</title>
+          <link rel="stylesheet" href="/style.css" type="text/css">
+        </head>
+        <body class='source-code'>
+          <nav class='nav'>
+            <a href='/${this._package.name}#${this._package.version}' class='nav-back'>${this._package.name} (${this._package.version})</a>
+          </nav>
+    """;
+  }
+
+  String _footerContent() {
+    return """
+      </body>
+      </html>
+    """;
+  }
+
   void _writeContent(String fileName, Set<Token> tokens, RandomAccessFile file) {
     _logger.info("Building content of ${fileName}");
-    file.writeStringSync("<pre>");
+    file.writeStringSync(_headerContent(fileName));
+    file.writeStringSync("<pre class='code'>");
     var fileContent = cache.fileContents(fileName);
     List<Reference> tokensList = tokens.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
 
     var lastOffset = 0;
     var currentLine = 0;
+    file.writeStringSync("<a id='line-${currentLine}' class='line'>${currentLine}</a>");
+    currentLine += 1;
     List<Token> stack = [];
     var newlineChar = cache.getNewlineChar(fileContent);
 
@@ -94,7 +120,7 @@ class HtmlPackageGenerator {
         }
         if (nextNewlinePos == nextStop) {
           file.writeStringSync(newlineChar);
-          file.writeStringSync("<a id='line-${currentLine}'></a>");
+          file.writeStringSync("<a id='line-${currentLine}' class='line'>${currentLine}</a>");
           currentLine += 1;
           lastOffset = nextStop + 1;
         } else {
@@ -106,6 +132,7 @@ class HtmlPackageGenerator {
     }
 
     file.writeStringSync("</pre>");
+    file.writeStringSync(_footerContent());
   }
 
   void _writeFile(Location location, String content) {

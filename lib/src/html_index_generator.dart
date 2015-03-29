@@ -16,11 +16,17 @@ class HtmlIndexGenerator {
       <!doctype html>
       <html lang="en-us" >
         <head>
-          <title>CrossDart - cross-referenced Dart's pub packages</title>
+          ${_scripts}
+          <title>${_title}</title>
         </head>
-        <body>
-          <h1 class="header">CrossDart - cross-referenced Dart's pub packages</h1>
-          <h2 class="subheader">List of packages</h2>
+
+        <body class="index-page">
+          <h1 class="header">CrossDart</h1>
+          <h2 class="subheader">Cross-referenced Dart's pub packages</h2>
+          <div class="search input-field">
+            <input type="text" id="search" value="">
+            <label for="search">Search by package name</label>
+          </div>
           <ul class="packages">
             ${_packagesHtml()}
           </ul>
@@ -28,6 +34,21 @@ class HtmlIndexGenerator {
       </html>
     """;
     new File(join(config.htmlPath, "index.html")).writeAsStringSync(content);
+    new File(join(config.templatesPath, "style.css")).copySync(join(config.htmlPath, "style.css"));
+  }
+
+  String get _scripts {
+    return """
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.95.3/css/materialize.min.css">
+      <link rel="stylesheet" href="/style.css" type="text/css">
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.95.3/js/materialize.min.js"></script>
+      <script src="/index.js"></script>
+    """;
+  }
+
+  String get _title {
+    return "CrossDart - cross-referenced Dart's pub packages";
   }
 
   void generatePackagePages() {
@@ -37,20 +58,25 @@ class HtmlIndexGenerator {
         <!doctype html>
         <html lang="en-us" >
           <head>
-            <title>Pub ${packageInfos.first.name} | CrossDart - cross-referenced Dart's pub packages</title>
+            ${_scripts}
+            <title>Pub ${packageInfos.first.name} | ${_title}</title>
           </head>
-          <body>
-            <h1 class="header">${packageInfos.first.name}</h1>
-            <h2 class="subheader">List of versions</h2>
-            <ul class="versions">
-              ${_packagesVersionsHtml(packageInfos)}
-            </ul>
+          <body class="package-page">
+            <h1 class="header"><a href='/'>CrossDart</a> - package '<span class='package-name'>${packageInfos.first.name}</span>'</h1>
+            <div class="versions">Versions: ${_versions(packageInfos)}</div>
+            <div class="files">${_packagesVersionsHtml(packageInfos)}</div>
           </body>
         </html>
       """;
 
       new File(join(config.htmlPath, packageInfos.first.name, "index.html")).writeAsStringSync(content);
     });
+  }
+
+  String _versions(Iterable<PackageInfo> packageInfos) {
+    return packageInfos.map((packageInfo) {
+      return "<span class='version' data-version='${packageInfo.version}'>${packageInfo.version}</span>";
+    }).join("\n");
   }
 
   String _packagesHtml() {
@@ -65,11 +91,10 @@ class HtmlIndexGenerator {
 
   String _packagesVersionsHtml(Iterable<PackageInfo> packageInfos) {
     return packageInfos.map((packageInfo) {
-      var content = "<li class='version'>";
-      content += "<div class='version-name'>${packageInfo.version}</div>";
+      var content = "<div class='files-version' data-version='${packageInfo.version}'>";
       content += "<ul>";
       content += packageInfo.generatedPaths.map((filePath) {
-        return "<li class='version-file'><a href='${filePath}.html'>${filePath}</a></li>";
+        return "<li class='files-version-file'><a href='${filePath}.html'>${filePath}</a></li>";
       }).join("\n");
       content += "</ul>";
       content += "</li>";

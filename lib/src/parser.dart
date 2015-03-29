@@ -116,6 +116,11 @@ Parser parser = new Parser();
 
 
 class _ASTVisitor extends GeneralizingAstVisitor {
+  static const KEYWORD = "keyword";
+  static const DECLARATION = "declaration";
+  static const ANNOTATION = "annotation";
+  static const STRING = "string";
+
   String file;
 
   _ASTVisitor(this.file);
@@ -123,24 +128,85 @@ class _ASTVisitor extends GeneralizingAstVisitor {
   ParsedData _parsedData = new ParsedData();
   ParsedData get parsedData => _parsedData;
 
-  visitNode(AstNode node) {
-    super.visitNode(node);
-    print("Node ${node}, type: ${node.runtimeType}, beginToken: ${node.beginToken}, endToken: ${node.endToken}");
-  }
-
-//  visitDirective(Directive node) {
-//    super.visitDirective(node);
-//    var token = node.keyword;
+//  visitNode(AstNode node) {
+//    super.visitNode(node);
+//    print("Node ${node}, type: ${node.runtimeType}, beginToken: ${node.beginToken}, endToken: ${node.endToken}");
 //  }
+
+  visitDirective(Directive node) {
+    super.visitDirective(node);
+    _addToken(KEYWORD, node.keyword);
+  }
 
   visitComment(Comment node) {
     super.visitComment(node);
-    _addToken(node.runtimeType, node.beginToken, node.endToken);
+    _addToken(node.runtimeType.toString().toLowerCase(), node.beginToken, node.endToken);
+  }
+
+  visitClassDeclaration(ClassDeclaration node) {
+    super.visitClassDeclaration(node);
+    if (node.abstractKeyword != null) {
+      _addToken(KEYWORD, node.abstractKeyword);
+    }
+    _addToken(KEYWORD, node.classKeyword);
+  }
+
+  visitExtendsClause(ExtendsClause node) {
+    super.visitExtendsClause(node);
+    _addToken(KEYWORD, node.keyword);
+  }
+
+  visitMethodDeclaration(MethodDeclaration node) {
+    super.visitMethodDeclaration(node);
+    [node.externalKeyword, node.modifierKeyword, node.operatorKeyword, node.propertyKeyword].forEach((keyword) {
+      if (keyword != null) {
+        _addToken(KEYWORD, keyword);
+      }
+    });
+
+    _addToken(DECLARATION, node.name.token);
+  }
+
+  visitPartOfDirecive(PartOfDirective node) {
+    super.visitPartOfDirective(node);
+    _addToken(KEYWORD, node.partToken, node.ofToken);
+  }
+
+  visitConstructorDeclaration(ConstructorDeclaration node) {
+    super.visitConstructorDeclaration(node);
+    [node.externalKeyword, node.constKeyword, node.factoryKeyword].forEach((keyword) {
+      if (keyword != null) {
+        _addToken(KEYWORD, keyword);
+      }
+    });
+    if (node.name != null) {
+      _addToken(DECLARATION, node.name.token);
+    }
+  }
+
+  visitSuperExpression(SuperExpression node) {
+    super.visitSuperExpression(node);
+    _addToken(KEYWORD, node.beginToken);
+  }
+
+  visitReturnStatement(ReturnStatement node) {
+    super.visitReturnStatement(node);
+    _addToken(KEYWORD, node.keyword);
+  }
+
+  visitInstanceCreationExpression(InstanceCreationExpression node) {
+    super.visitInstanceCreationExpression(node);
+    _addToken(KEYWORD, node.keyword);
+  }
+
+  visitAnnotation(Annotation node) {
+    super.visitAnnotation(node);
+    _addToken(ANNOTATION, node.beginToken, node.endToken);
   }
 
   visitSimpleStringLiteral(SimpleStringLiteral node) {
     super.visitSimpleStringLiteral(node);
-    //var token = node.literal;
+    _addToken(STRING, node.literal);
     try {
       if (node.parent is PartDirective) {
         var reference = new e.Reference(this.file, name: node.toString(), offset: node.offset, end: node.end);
@@ -205,10 +271,10 @@ class _ASTVisitor extends GeneralizingAstVisitor {
     parsedData.references[reference] = declaration;
   }
 
-  void _addToken(Type type, Token beginToken, [Token endToken]) {
+  void _addToken(String name, Token beginToken, [Token endToken]) {
     var offset = beginToken.offset;
     var end = endToken == null ? beginToken.end : endToken.end;
-    var newToken = new e.Token(this.file, name: type.toString().toLowerCase(), offset: offset, end: end);
+    var newToken = new e.Token(this.file, name: name, offset: offset, end: end);
 
     parsedData.tokens.add(newToken);
     if (parsedData.files[newToken.location.file] == null) {

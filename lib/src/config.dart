@@ -9,13 +9,15 @@ class Config {
   final String sdkPath;
   final String installPath;
   final String htmlPath;
+  final String templatesPath;
 
-  const Config(this.sdkPath, this.installPath, this.htmlPath);
+  const Config(this.sdkPath, this.installPath, this.htmlPath, this.templatesPath);
 
   Config.fromArgs(List args) :
     this.sdkPath = args[0],
     this.installPath = args[1],
-    this.htmlPath = args[2];
+    this.htmlPath = args[2],
+    this.templatesPath = args[3];
 
   String get packagesPath => join(installPath, "packages");
 
