@@ -2,6 +2,7 @@ library crossdart.store;
 
 import 'dart:async';
 import 'package:crossdart/src/parsed_data.dart';
+import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/entity.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/location.dart';
@@ -18,37 +19,38 @@ Map<Type, int> _types = {
   Import: 3
 };
 
-Future<ParsedData> load(Package givenPackage) async {
+// TODO: Refactor to a class
+
+Future<ParsedData> load(Environment environment) async {
   Set<String> handledFiles = new Set();
-  Set<String> unhandledFiles = givenPackage.files.map((f) => f.path).toSet();
+  Set<String> unhandledFiles = environment.package.files.map((f) => f.path).toSet();
   var parsedData = new ParsedData();
-  var packagesByPath = packages.fold({}, (Map<String, Package>memo, Package pkg) {
+  var packagesByPath = environment.packages.fold({}, (Map<String, Package>memo, Package pkg) {
     pkg.files.forEach((f) {
       memo[f.path] = pkg;
     });
     return memo;
   });
-  var packagesByName = packages.fold({}, (Map<String, Package>memo, Package pkg) {
+  var packagesByName = environment.packages.fold({}, (Map<String, Package>memo, Package pkg) {
     memo["${pkg.packageInfo.name}${pkg.packageInfo.version}"] = pkg;
     return memo;
   });
   while (unhandledFiles.difference(handledFiles).isNotEmpty) {
-    var timer = new DateTime.now();
     var filePath = unhandledFiles.difference(handledFiles).first;
     handledFiles.add(filePath);
     var package = packagesByPath[filePath];
-    var location = new Location(filePath, package);
+    var location = new Location(environment.config, filePath, package);
     Results results = await queryEntity(location);
     await results.forEach((Row row) {
       Package referencePackage = packagesByName["${row.r_package_name}${row.r_package_version}"];
-      var reference = new Reference(p.join(referencePackage.lib, row.r_file), name: row.r_name, offset: row.r_offset, end: row.r_end, package: referencePackage);
+      var reference = new Reference(environment, p.join(referencePackage.lib, row.r_file), name: row.r_name, offset: row.r_offset, end: row.r_end, package: referencePackage);
 
       Package declarationPackage = packagesByName["${row.d_package_name}${row.d_package_version}"];
       Declaration declaration;
       if (row.d_type == _types[Declaration]) {
-        declaration = new Declaration(p.join(declarationPackage.lib, row.d_file), name: row.d_name, offset: row.d_offset, end: row.d_end, package: declarationPackage);
+        declaration = new Declaration(environment, p.join(declarationPackage.lib, row.d_file), name: row.d_name, offset: row.d_offset, end: row.d_end, package: declarationPackage);
       } else if (row.d_type == _types[Import]) {
-        declaration = new Import(p.join(declarationPackage.lib, row.d_file), name: row.d_name, package: declarationPackage);
+        declaration = new Import(environment, p.join(declarationPackage.lib, row.d_file), name: row.d_name, package: declarationPackage);
       }
 
       parsedData.references[reference] = declaration;
@@ -84,12 +86,11 @@ Future<Results> queryEntity(Location location) {
   """);
 }
 
-Future store(ParsedData parsedData) async {
+Future store(Environment environment, ParsedData parsedData) async {
   return dbPool.prepare("""
     INSERT IGNORE INTO entities (declaration_id, type, name, offset, end, file, package_name, package_version)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   """).then((query) async {
-    var preparedEntities = [];
     var files = [];
     _logger.info("Preparing files");
     parsedData.files.forEach((filePath, entities) {
@@ -101,7 +102,7 @@ Future store(ParsedData parsedData) async {
       var filePath = tuple[0];
       var entities = tuple[1];
       var filteredEntities = entities.where((e) => e is Declaration);
-      return await _storeDeclarations(query, filePath, filteredEntities);
+      return await _storeDeclarations(environment, query, filePath, filteredEntities);
     }));
 
     _logger.info("Making idsByDeclaration map");
@@ -115,7 +116,7 @@ Future store(ParsedData parsedData) async {
       var filePath = tuple[0];
       var entities = tuple[1];
       var filteredEntities = entities.where((e) => e is Reference);
-      return _storeReferences(parsedData, query, filePath, filteredEntities, idsByDeclarations);
+      return _storeReferences(environment, parsedData, query, filePath, filteredEntities, idsByDeclarations);
     }));
   });
 }
@@ -132,8 +133,8 @@ List _buildValue(Entity entity, Location location, [int declarationId]) {
       location.package.version.toString()];
 }
 
-Future<Map<Declaration, int>> _storeDeclarations(Query query, String filePath, Iterable<Declaration> declarations) async {
-  var location = new Location(filePath, Package.fromFilePath(filePath));
+Future<Map<Declaration, int>> _storeDeclarations(Environment environment, Query query, String filePath, Iterable<Declaration> declarations) async {
+  var location = new Location(environment.config, filePath, Package.fromFilePath(environment, filePath));
   var idAndDeclaration = await Future.wait(declarations.map((declaration) async {
     var value = _buildValue(declaration, location);
     Results result = await query.execute(value);
@@ -146,8 +147,8 @@ Future<Map<Declaration, int>> _storeDeclarations(Query query, String filePath, I
   });
 }
 
-Future _storeReferences(ParsedData parsedData, Query query, String filePath, Iterable<Reference> references, [Map<Declaration, int> idsByDeclarations]) {
-  var location = new Location(filePath, Package.fromFilePath(filePath));
+Future _storeReferences(Environment environment, ParsedData parsedData, Query query, String filePath, Iterable<Reference> references, [Map<Declaration, int> idsByDeclarations]) {
+  var location = new Location(environment.config, filePath, Package.fromFilePath(environment, filePath));
   var values = references.map((reference) {
     var declaration = parsedData.references[reference];
     var declarationId = idsByDeclarations[declaration];

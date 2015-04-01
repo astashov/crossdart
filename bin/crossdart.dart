@@ -3,7 +3,9 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:crossdart/src/config.dart';
+import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/package.dart';
+import 'package:crossdart/src/parser.dart';
 import 'package:crossdart/src/logging.dart' as logging;
 import 'package:crossdart/crossdart.dart';
 import 'package:crossdart/src/service.dart';
@@ -15,11 +17,11 @@ import 'package:crossdart/src/db_pool.dart';
 Logger _logger = new Logger("main");
 
 Future main(args) async {
-  config = new Config.fromArgs(args);
+  var config = new Config.fromArgs(args);
   logging.initialize();
 
   var packageInfos = [
-      new PackageInfo("frappe", new Version("0.4.0+4"))
+      new PackageInfo(config, "frappe", new Version("0.4.0+4"))
       //new PackageInfo("route", new Version.fromString("0.4.6")),
       //new PackageInfo("dnd", new Version.fromString("0.2.1"))
       ];
@@ -39,12 +41,12 @@ Future main(args) async {
   for (PackageInfo packageInfo in packageInfos) {
     _logger.info("Handling package ${packageInfo.name} (${packageInfo.version}) - ${index}/${packageInfos.length}");
     try {
-      resetPackagesByFiles();
-      //install(packageInfo);
-      var package = new CustomPackage(packageInfo);
-      var parsedData = await parse(package);
-      generatePackageHtml(package, parsedData);
-      await store(parsedData);
+      install(config, packageInfo);
+      var package = new CustomPackage(config, packageInfo);
+      var environment = new Environment.build(config, package);
+      var parsedData = await parse(environment);
+      generatePackageHtml(environment, parsedData);
+      await store(environment, parsedData);
     } catch(exception, stackTrace) {
       _logger.severe("Exception while handling a package ${packageInfo.name} ${packageInfo.version}", exception, stackTrace);
       await storeError(packageInfo, exception, stackTrace);
@@ -52,5 +54,6 @@ Future main(args) async {
     index += 1;
   };
   dbPool.close();
-  generateIndexHtml();
+  generateIndexHtml(config);
+  return new Future.value();
 }

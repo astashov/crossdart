@@ -14,9 +14,12 @@ var _logger = new Logger("service");
 
 String _getUrl(int page) => "https://pub.dartlang.org/packages.json?page=${page}";
 
+// TODO: Refactor to a class
+
 Future<Iterable<PackageInfo>> getUpdatedPackages() async {
   Iterable<PackageInfo> generatedPackages = _getGeneratedPackages();
-  Iterable<PackageInfo> allPackages = _getPackagesFromFile(); //await _getPackagesFromPub();
+  Iterable<PackageInfo> allPackages = _getPackagesFromFile();
+  //Iterable<PackageInfo> allPackages = await _getPackagesFromPub();
 
   Map<String, PackageInfo> generatedPackagesByName = generatedPackages.fold({}, (memo, packageInfo) {
     memo[packageInfo.name] = packageInfo;

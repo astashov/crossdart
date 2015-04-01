@@ -4,6 +4,7 @@ import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/cache.dart';
 import 'package:crossdart/src/util.dart';
 import 'package:crossdart/src/package.dart';
+import 'package:crossdart/src/environment.dart';
 
 abstract class Entity {
   Location location;
@@ -23,15 +24,15 @@ abstract class Entity {
     }
   }
 
-  Location _buildLocation(String file, [Package package]) {
+  Location _buildLocation(Environment environment, String file, [Package package]) {
     if (package == null) {
-      package = packagesByFiles[file];
+      package = environment.packagesByFiles[file];
     }
-    return new Location(file, package);
+    return new Location(environment.config, file, package);
   }
 
-  Entity(String file, {this.name, this.offset, this.end, Package package}) {
-    this.location = _buildLocation(file, package);
+  Entity(Environment environment, String file, {this.name, this.offset, this.end, Package package}) {
+    this.location = _buildLocation(environment, file, package);
   }
 
   int get hashCode => hash([location, name, offset, end]);
@@ -49,14 +50,14 @@ abstract class Entity {
 }
 
 class Declaration extends Entity {
-  Declaration(String file, {String name, int offset, int end, Package package}) : super(file, name: name, offset: offset, end: end, package: package);
+  Declaration(Environment environment, String file, {String name, int offset, int end, Package package}) : super(environment, file, name: name, offset: offset, end: end, package: package);
 }
 class Import extends Declaration {
-  Import(String file, {String name, Package package}) : super(file, name: name, package: package);
+  Import(Environment environment, String file, {String name, Package package}) : super(environment, file, name: name, package: package);
 }
 class Token extends Entity {
-  Token(String file, {String name, int offset, int end, Package package}) : super(file, name: name, offset: offset, end: end, package: package);
+  Token(Environment environment, String file, {String name, int offset, int end, Package package}) : super(environment, file, name: name, offset: offset, end: end, package: package);
 }
 class Reference extends Token {
-  Reference(String file, {String name, int offset, int end, Package package}) : super(file, name: name, offset: offset, end: end, package: package);
+  Reference(Environment environment, String file, {String name, int offset, int end, Package package}) : super(environment, file, name: name, offset: offset, end: end, package: package);
 }

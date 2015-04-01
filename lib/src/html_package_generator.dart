@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'dart:convert';
 import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/parsed_data.dart';
+import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/entity.dart';
 import 'package:crossdart/src/cache.dart';
@@ -14,23 +15,22 @@ import 'package:logging/logging.dart';
 var _logger = new Logger("generator");
 
 class HtmlPackageGenerator {
-  Package _package;
   ParsedData _parsedData;
+  Environment _environment;
   HtmlEscape sanitizer = const HtmlEscape();
 
-  HtmlPackageGenerator(this._package, this._parsedData);
+  HtmlPackageGenerator(this._environment, this._parsedData);
 
   void generate() {
-    var handledFiles = new Set();
     this._parsedData.files.forEach((String fileName, Set<Entity> entities) {
-      var package = Package.fromFilePath(fileName);
-      var location = new Location(fileName, package);
+      var package = Package.fromFilePath(_environment, fileName);
+      var location = new Location(_environment.config, fileName, package);
       var tokens = entities.where((e) => e is Token).toSet();
       if (!(new File(location.writePath).existsSync())) {
         var directory = new Directory(path.dirname(location.writePath));
         directory.createSync(recursive: true);
         var file = new File(location.writePath).openSync(mode: FileMode.WRITE);
-        _writeContent(fileName, tokens, file);
+        _writeContent(fileName, tokens, file, package);
         file.closeSync();
       }
     });
@@ -58,18 +58,18 @@ class HtmlPackageGenerator {
     }
   }
 
-  String _headerContent(String fileName) {
-    var location = new Location(fileName, this._package);
+  String _headerContent(String fileName, Package package) {
+    var location = new Location(_environment.config, fileName, package);
     return """
       <!doctype html>
       <html lang="en-us">
         <head>
-          <title>'${_package.name}' - ${location.path} | CrossDart - cross-referenced Dart's pub packages</title>
+          <title>'${package.name}' - ${location.path} | CrossDart - cross-referenced Dart's pub packages</title>
           <link rel="stylesheet" href="/style.css" type="text/css">
         </head>
         <body class='source-code'>
           <nav class='nav'>
-            <a href='/${this._package.name}#${this._package.version}' class='nav-back'>${this._package.name} (${this._package.version})</a>
+            <a href='/${package.name}#${package.version}' class='nav-back'>${package.name} (${package.version})</a>
           </nav>
     """;
   }
@@ -81,9 +81,9 @@ class HtmlPackageGenerator {
     """;
   }
 
-  void _writeContent(String fileName, Set<Token> tokens, RandomAccessFile file) {
+  void _writeContent(String fileName, Set<Token> tokens, RandomAccessFile file, Package package) {
     _logger.info("Building content of ${fileName}");
-    file.writeStringSync(_headerContent(fileName));
+    file.writeStringSync(_headerContent(fileName, package));
     file.writeStringSync("<pre class='code'>");
     var fileContent = cache.fileContents(fileName);
     List<Reference> tokensList = tokens.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
@@ -133,11 +133,5 @@ class HtmlPackageGenerator {
 
     file.writeStringSync("</pre>");
     file.writeStringSync(_footerContent());
-  }
-
-  void _writeFile(Location location, String content) {
-    _logger.info("Writing to ${location.writePath}");
-
-    new File(location.writePath).writeAsStringSync(content);
   }
 }

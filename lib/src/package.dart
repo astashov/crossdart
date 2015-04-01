@@ -3,6 +3,7 @@ library crossdart.package;
 import 'dart:io';
 import 'dart:convert';
 import 'package:crossdart/src/config.dart';
+import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/util.dart';
 import 'package:path/path.dart' as path;
@@ -14,17 +15,19 @@ class PackageInfo {
   Version _version;
   Version get version => _version;
 
-  PackageInfo(this._name, this._version);
+  Config _config;
+
+  PackageInfo(this._config, this._name, this._version);
 
   String get htmlPath {
-    return path.join(config.htmlPath, name, version.toPath());
+    return path.join(_config.htmlPath, name, version.toPath());
   }
 
   Iterable<String> get generatedPaths {
     return new Directory(htmlPath)
         .listSync(recursive: true)
         .where((f) => f is File && f.path.endsWith(".html"))
-        .map((s) => s.path.replaceAll(config.htmlPath, "").replaceAll(new RegExp(r".html$"), ""));
+        .map((s) => s.path.replaceAll(_config.htmlPath, "").replaceAll(new RegExp(r".html$"), ""));
   }
 
   PackageInfo.fromJson(String json) {
@@ -65,8 +68,8 @@ abstract class Package {
     return new Directory(lib).listSync(recursive: true, followLinks: true);
   }
 
-  static Package fromFilePath(String filePath) {
-    return packages.firstWhere((p) => p.doesContainFile(filePath));
+  static Package fromFilePath(Environment environment, String filePath) {
+    return environment.packages.firstWhere((p) => p.doesContainFile(filePath));
   }
 
   Iterable<String> get filePaths {
@@ -93,11 +96,13 @@ class Sdk extends Package {
   PackageInfo _packageInfo;
   PackageInfo get packageInfo => _packageInfo;
 
-  Sdk(this._packageInfo);
+  Config _config;
+
+  Sdk(this._config, this._packageInfo);
 
   String get symlink => root;
 
-  String get root => config.sdkPath;
+  String get root => _config.sdkPath;
 
   String get lib => path.join(root, "lib");
 }
@@ -106,10 +111,12 @@ class CustomPackage extends Package {
   PackageInfo _packageInfo;
   PackageInfo get packageInfo => _packageInfo;
 
-  CustomPackage(this._packageInfo);
+  Config _config;
+
+  CustomPackage(this._config, this._packageInfo);
 
   String get symlink {
-    return path.join(config.installPath, "packages", packageInfo.name);
+    return path.join(_config.installPath, "packages", packageInfo.name);
   }
 
   String get root {
@@ -123,53 +130,4 @@ class CustomPackage extends Package {
     }
     return _lib;
   }
-}
-
-Iterable<CustomPackage> get customPackages {
-  return new Directory(config.packagesPath).listSync(recursive: false).map((name) {
-    var packageName =  path.basename(path.dirname(name.resolveSymbolicLinksSync()));
-    var match = new RegExp(r"-([a-zA-Z0-9\.+-]+)$").firstMatch(packageName);
-    var version;
-    if (match != null) {
-      version = new Version(match[1]);
-      packageName = packageName.replaceAll(new RegExp(r"-([a-zA-Z0-9\.+-]+)$"), "");
-    }
-    return new CustomPackage(new PackageInfo(packageName, version));
-  });
-}
-
-Iterable<Package> get packages {
-  return []..add(sdk)..addAll(customPackages);
-}
-
-Map<String, Package> _packagesByFiles;
-Map<String, Package> get packagesByFiles {
-  if (_packagesByFiles == null) {
-    _packagesByFiles = packages.fold({}, (memo, package) {
-      package.files.forEach((file) {
-        memo[file.path] = package;
-      });
-      return memo;
-    });
-  }
-  return _packagesByFiles;
-}
-void resetPackagesByFiles() {
-  _packagesByFiles = null;
-}
-
-Iterable<Iterable<PackageInfo>> getGeneratedPackageInfos() {
-  return new Directory(config.htmlPath).listSync().where((f) => f is Directory).map((Directory dir) {
-    var versions = dir.listSync().where((f) => f is Directory).map((d) => path.basename(d.path)).toList();
-    versions.sort();
-    return versions.map((version) => new PackageInfo(path.basename(dir.path), new Version(version)));
-  });
-}
-
-Sdk _sdk;
-Sdk get sdk {
-  if (_sdk == null) {
-    _sdk = new Sdk(new PackageInfo("sdk", new Version(config.sdk.sdkVersion)));
-  }
-  return _sdk;
 }

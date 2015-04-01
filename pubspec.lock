@@ -2,10 +2,8 @@
 # See http://pub.dartlang.org/doc/glossary.html#lockfile
 packages:
   analyzer:
-    description:
-      path: "../analyzer"
-      relative: true
-    source: path
+    description: analyzer
+    source: hosted
     version: "0.24.0"
   analyzer_experimental:
     description: analyzer_experimental

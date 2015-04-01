@@ -39,6 +39,10 @@ body {
   color: #d0d0d0;
 }
 
+.source-code .code .line:first-child {
+  padding-top: 0.5em;
+}
+
 .source-code .code .comment {
   color: #437D61;
 }
@@ -108,6 +112,14 @@ body {
   margin-right: 1em;
 }
 
+.index-page .packages.is-hidden .package {
+  display: none;
+}
+
+.index-page .packages.is-hidden .package.is-visible {
+  display: block;
+}
+
 .package-page a:hover {
   text-decoration: underline;
 }
@@ -129,9 +141,19 @@ body {
   color: #039be5;
 }
 
+.package-page .version.is-selected {
+  font-weight: bold;
+  cursor: default;
+}
+
 .package-page .version:hover {
   text-decoration: underline;
   cursor: pointer;
+}
+
+.package-page .version.is-selected:hover {
+  text-decoration: none;
+  cursor: default;
 }
 
 .package-page .files {
@@ -143,6 +165,11 @@ body {
 .package-page .files-version {
   position: relative;
   left: -50%;
+  display: none;
+}
+
+.package-page .files-version.is-visible {
+  display: block;
 }
 
 .package-page .package-name {

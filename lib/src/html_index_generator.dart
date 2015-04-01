@@ -3,13 +3,16 @@ library crossdart.html_index_generator;
 import 'dart:io';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/package.dart';
-import 'package:crossdart/src/version.dart';
 import 'package:path/path.dart';
 import 'package:logging/logging.dart';
 
 var _logger = new Logger("generator");
 
 class HtmlIndexGenerator {
+  final Config _config;
+
+  const HtmlIndexGenerator(this._config);
+
   void generate() {
     _logger.info("Generating index page");
     var content = """
@@ -27,14 +30,19 @@ class HtmlIndexGenerator {
             <input type="text" id="search" value="">
             <label for="search">Search by package name</label>
           </div>
-          <ul class="packages">
+          <div class="packages">
             ${_packagesHtml()}
-          </ul>
+          </div>
+          <script src="/index.js"></script>
         </body>
       </html>
     """;
-    new File(join(config.htmlPath, "index.html")).writeAsStringSync(content);
-    new File(join(config.templatesPath, "style.css")).copySync(join(config.htmlPath, "style.css"));
+    new File(join(_config.htmlPath, "index.html")).writeAsStringSync(content);
+
+    new File(join(_config.templatesPath, "style.css")).copySync(join(_config.htmlPath, "style.css"));
+    ["index", "package"].forEach((name) {
+      Process.runSync("dart2js", ["-o", join(_config.htmlPath, "$name.js"), join(_config.templatesPath, "$name.dart")]);
+    });
   }
 
   String get _scripts {
@@ -43,7 +51,6 @@ class HtmlIndexGenerator {
       <link rel="stylesheet" href="/style.css" type="text/css">
       <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.95.3/js/materialize.min.js"></script>
-      <script src="/index.js"></script>
     """;
   }
 
@@ -52,7 +59,7 @@ class HtmlIndexGenerator {
   }
 
   void generatePackagePages() {
-    getGeneratedPackageInfos().forEach((packageInfos) {
+    _config.generatedPackageInfos.forEach((packageInfos) {
       _logger.info("Generating page of the ${packageInfos.first.name} package");
       var content = """
         <!doctype html>
@@ -65,11 +72,12 @@ class HtmlIndexGenerator {
             <h1 class="header"><a href='/'>CrossDart</a> - package '<span class='package-name'>${packageInfos.first.name}</span>'</h1>
             <div class="versions">Versions: ${_versions(packageInfos)}</div>
             <div class="files">${_packagesVersionsHtml(packageInfos)}</div>
+            <script src="/package.js"></script>
           </body>
         </html>
       """;
 
-      new File(join(config.htmlPath, packageInfos.first.name, "index.html")).writeAsStringSync(content);
+      new File(join(_config.htmlPath, packageInfos.first.name, "index.html")).writeAsStringSync(content);
     });
   }
 
@@ -80,12 +88,9 @@ class HtmlIndexGenerator {
   }
 
   String _packagesHtml() {
-    return getGeneratedPackageInfos().map((packageInfos) {
+    return _config.generatedPackageInfos.map((packageInfos) {
       var packageInfo = packageInfos.first;
-      var content = "<li class='package'>";
-      content += "<div class='package-name'><a href='/${packageInfo.name}'>${packageInfo.name}</a></div>";
-      content += "</li>";
-      return content;
+      return "<a class='package' href='/${packageInfo.name}'>${packageInfo.name}</a>";
     }).join("\n");
   }
 
@@ -98,6 +103,7 @@ class HtmlIndexGenerator {
       }).join("\n");
       content += "</ul>";
       content += "</li>";
+      content += "</div>";
       return content;
     }).join("\n");
   }

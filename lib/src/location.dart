@@ -8,8 +8,9 @@ import 'package:path/path.dart' as p;
 class Location {
   final String file;
   final Package package;
+  final Config config;
 
-  const Location(this.file, this.package);
+  const Location(this.config, this.file, this.package);
 
   int get hashCode => hash([file, package]);
 

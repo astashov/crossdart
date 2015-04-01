@@ -1,6 +1,9 @@
 library crossdart.config;
 
-import 'package:path/path.dart';
+import 'dart:io';
+import 'package:path/path.dart' as path;
+import 'package:crossdart/src/package.dart';
+import 'package:crossdart/src/version.dart';
 import 'package:analyzer/src/generated/sdk.dart' show DartSdk;
 import 'package:analyzer/src/generated/java_io.dart';
 import 'package:analyzer/src/generated/sdk_io.dart' show DirectoryBasedDartSdk;
@@ -19,13 +22,23 @@ class Config {
     this.htmlPath = args[2],
     this.templatesPath = args[3];
 
-  String get packagesPath => join(installPath, "packages");
+  factory Config.build(List args) {
+    return new Config.fromArgs(args);
+  }
+
+  String get packagesPath => path.join(installPath, "packages");
 
   DartSdk get sdk {
     JavaSystemIO.setProperty("com.google.dart.sdk", sdkPath);
     return DirectoryBasedDartSdk.defaultSdk;
   }
 
-}
+  Iterable<Iterable<PackageInfo>> get generatedPackageInfos {
+    return new Directory(htmlPath).listSync().where((f) => f is Directory).map((Directory dir) {
+      var versions = dir.listSync().where((f) => f is Directory).map((d) => path.basename(d.path)).toList();
+      versions.sort();
+      return versions.map((version) => new PackageInfo(this, path.basename(dir.path), new Version(version)));
+    });
+  }
 
-Config config;
+}
