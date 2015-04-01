@@ -11,6 +11,7 @@ import 'package:analyzer/src/generated/source_io.dart';
 import 'package:analyzer/src/generated/scanner.dart';
 
 import 'package:crossdart/src/config.dart';
+import 'package:crossdart/src/isolate_events.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/parsed_data.dart';
@@ -21,13 +22,16 @@ var _logger = new logging.Logger("parser");
 
 ParsedData parseFile(Environment environment, String file) {
   _logger.info("Parsing file $file");
+  environment.sender.send(IsolateEvent.START_FILE_PARSING);
   var resolvedUnit = environment.parser.getCompilationUnit(file);
   if (resolvedUnit != null) {
     var visitor = new _ASTVisitor(environment, file);
     resolvedUnit.accept(visitor);
+    environment.sender.send(IsolateEvent.FINISH_FILE_PARSING);
     return visitor.parsedData;
   } else {
     _logger.warning("Wasn't be able to resolve unit, giving up...");
+    environment.sender.send(IsolateEvent.FINISH_FILE_PARSING);
     return new ParsedData();
   }
 }
@@ -200,10 +204,6 @@ class _ASTVisitor extends GeneralizingAstVisitor {
     if (node.parent != null && node.parent.parent is PartOfDirective) {
       try {
         PartOfDirective partOfNode = node.parent.parent;
-        print(node);
-        print(node.parent);
-        print((node.parent as LibraryIdentifier).bestElement);
-        print(node.parent.parent);
         var reference = new e.Reference(this.environment, this.file, name: node.toString(), offset: node.offset, end: node.end);
         var declaration = new e.Import(this.environment, partOfNode.element.source.fullName);
         _addReferenceAndDeclaration(reference, declaration);

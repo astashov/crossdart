@@ -1,6 +1,7 @@
 library crossdart.environment;
 
 import 'dart:io';
+import 'dart:isolate';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/parser.dart';
 import 'package:crossdart/src/config.dart';
@@ -14,10 +15,11 @@ class Environment {
   final Map<String, Package> packagesByFiles;
   final Parser parser;
   final Config config;
+  final SendPort sender;
 
-  const Environment(this.config, this.package, this.customPackages, this.sdk, this.packagesByFiles, this.parser);
+  const Environment(this.config, this.package, this.sender, this.customPackages, this.sdk, this.packagesByFiles, this.parser);
 
-  factory Environment.build(Config config, Package package) {
+  factory Environment.build(Config config, Package package, SendPort sender) {
     var customPackages = new Directory(config.packagesPath).listSync(recursive: false).map((name) {
       var packageName =  path.basename(path.dirname(name.resolveSymbolicLinksSync()));
       var match = new RegExp(r"-([a-zA-Z0-9\.+-]+)$").firstMatch(packageName);
@@ -39,7 +41,7 @@ class Environment {
       return memo;
     });
 
-    return new Environment(config, package, customPackages, sdk, packagesByFiles, new Parser.build(config, packages));
+    return new Environment(config, package, sender, customPackages, sdk, packagesByFiles, new Parser.build(config, packages));
   }
 
   Iterable<Package> get packages {
