@@ -7,6 +7,7 @@ import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/util.dart';
 import 'package:path/path.dart' as path;
+import 'package:yaml/yaml.dart';
 
 class PackageInfo {
   String _name;
@@ -56,6 +57,8 @@ class PackageInfo {
 }
 
 abstract class Package {
+  int get id;
+
   PackageInfo get packageInfo;
   String get symlink;
   String get root;
@@ -63,6 +66,8 @@ abstract class Package {
 
   String get name => packageInfo.name;
   Version get version => packageInfo.version;
+
+  Iterable<Package> dependencies(Environment environment);
 
   Iterable<FileSystemEntity> get children {
     return new Directory(lib).listSync(recursive: true, followLinks: true);
@@ -81,7 +86,7 @@ abstract class Package {
   }
 
   String toString() {
-    return "<Package ${{"name": packageInfo.name, "version": packageInfo.version.toString()}}>";
+    return "<Package ${{"name": packageInfo.name, "version": packageInfo.version.toString(), "id": id}}>";
   }
 
   bool doesContainFile(String file) {
@@ -98,13 +103,18 @@ class Sdk extends Package {
 
   Config _config;
 
-  Sdk(this._config, this._packageInfo);
+  int _id;
+  int get id => _id;
+
+  Sdk(this._config, this._packageInfo, this._id);
 
   String get symlink => root;
 
   String get root => _config.sdkPath;
 
   String get lib => path.join(root, "lib");
+
+  Iterable<Package> dependencies(_) => [];
 }
 
 class CustomPackage extends Package {
@@ -113,7 +123,10 @@ class CustomPackage extends Package {
 
   Config _config;
 
-  CustomPackage(this._config, this._packageInfo);
+  int _id;
+  int get id => _id;
+
+  CustomPackage(this._config, this._packageInfo, this._id);
 
   String get symlink {
     return path.join(_config.installPath, "packages", packageInfo.name);
@@ -129,5 +142,26 @@ class CustomPackage extends Package {
       _lib = new Directory(symlink).resolveSymbolicLinksSync();
     }
     return _lib;
+  }
+
+  Iterable<Package> dependencies(Environment environment) {
+    var pubspecPath = path.join(root, "pubspec.yaml");
+    var file = new File(pubspecPath);
+    if (file.existsSync()) {
+      var yaml = loadYaml(file.readAsStringSync());
+      var dependencies = yaml["dependencies"];
+      var packages = [];
+      if (dependencies != null) {
+        dependencies.forEach((name, version) {
+          var package = environment.customPackages.firstWhere((cp) => cp.packageInfo.name == name);
+          if (package != null) {
+            packages.add(package);
+          }
+        });
+      }
+      return packages;
+    } else {
+      return [];
+    }
   }
 }

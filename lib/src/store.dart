@@ -31,8 +31,8 @@ Future<ParsedData> load(Environment environment) async {
     });
     return memo;
   });
-  var packagesByName = environment.packages.fold({}, (Map<String, Package>memo, Package pkg) {
-    memo["${pkg.packageInfo.name}${pkg.packageInfo.version}"] = pkg;
+  var packagesById = environment.packages.fold({}, (Map<int, Package>memo, Package pkg) {
+    memo[pkg.id] = pkg;
     return memo;
   });
   while (unhandledFiles.difference(handledFiles).isNotEmpty) {
@@ -42,10 +42,10 @@ Future<ParsedData> load(Environment environment) async {
     var location = new Location(environment.config, filePath, package);
     Results results = await queryEntity(location);
     await results.forEach((Row row) {
-      Package referencePackage = packagesByName["${row.r_package_name}${row.r_package_version}"];
+      Package referencePackage = packagesById[row.r_package_id];
       var reference = new Reference(environment, p.join(referencePackage.lib, row.r_file), name: row.r_name, offset: row.r_offset, end: row.r_end, package: referencePackage);
 
-      Package declarationPackage = packagesByName["${row.d_package_name}${row.d_package_version}"];
+      Package declarationPackage = packagesById[row.d_package_id];
       Declaration declaration;
       if (row.d_type == _types[Declaration]) {
         declaration = new Declaration(environment, p.join(declarationPackage.lib, row.d_file), name: row.d_name, offset: row.d_offset, end: row.d_end, package: declarationPackage);
@@ -78,18 +78,18 @@ Future<ParsedData> load(Environment environment) async {
 
 Future<Results> queryEntity(Location location) {
   return dbPool.query("""
-    SELECT r.id AS 'r_id', r.name AS 'r_name', r.offset AS 'r_offset', r.end AS 'r_end', r.file AS 'r_file', r.package_name AS 'r_package_name', r.package_version AS 'r_package_version',
-           d.id AS 'd_id', d.type AS 'd_type', d.name AS 'd_name', d.offset AS 'd_offset', d.end AS 'd_end', d.file AS 'd_file', d.package_name AS 'd_package_name', d.package_version AS 'd_package_version'
+    SELECT r.id AS 'r_id', r.name AS 'r_name', r.offset AS 'r_offset', r.end AS 'r_end', r.file AS 'r_file', r.package_id AS 'r_package_id',
+           d.id AS 'd_id', d.type AS 'd_type', d.name AS 'd_name', d.offset AS 'd_offset', d.end AS 'd_end', d.file AS 'd_file', d.package_id AS 'd_package_id'
     FROM entities AS r
     INNER JOIN entities AS d ON r.declaration_id = d.id
-    WHERE r.type = ${_types[Reference]} AND r.file = '${location.path}' AND r.package_name = '${location.package.packageInfo.name}' AND r.package_version = '${location.package.packageInfo.version}'
+    WHERE r.type = ${_types[Reference]} AND r.file = '${location.path}' AND r.package_id = ${location.package.id}
   """);
 }
 
 Future store(Environment environment, ParsedData parsedData) async {
   return dbPool.prepare("""
-    INSERT IGNORE INTO entities (declaration_id, type, name, offset, end, file, package_name, package_version)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT IGNORE INTO entities (declaration_id, type, name, offset, end, file, package_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   """).then((query) async {
     var files = [];
     _logger.info("Preparing files");
@@ -129,8 +129,7 @@ List _buildValue(Entity entity, Location location, [int declarationId]) {
       entity.offset,
       entity.end,
       location.path,
-      location.package.name,
-      location.package.version.toString()];
+      location.package.id];
 }
 
 Future<Map<Declaration, int>> _storeDeclarations(Environment environment, Query query, String filePath, Iterable<Declaration> declarations) async {
@@ -161,6 +160,39 @@ Future _storeReferences(Environment environment, ParsedData parsedData, Query qu
 
 Future storeError(PackageInfo packageInfo, Object error, StackTrace stackTrace) {
   return dbPool.prepareExecute(
-      "INSERT IGNORE INTO errors (package_name, package_version, error) VALUES (?, ?, ?)",
+      "INSERT IGNORE INTO errors (package_id, error) VALUES (?, ?, ?)",
       [packageInfo.name, packageInfo.version.toString(), "${error}\n${stackTrace}"]);
+}
+
+Future storeDependencies(Environment environment, Package package) async {
+  for (Package dependency in package.dependencies(environment)) {
+    await storeDependencies(environment, dependency);
+    await _storeDependency(package.id, dependency.id);
+  }
+}
+
+Future<int> storePackage(PackageInfo packageInfo) async {
+  var result = await dbPool.prepareExecute(
+      "INSERT IGNORE INTO packages (name, version) VALUES (?, ?)",
+      [packageInfo.name, packageInfo.version.toString()]);
+  return result.insertId;
+}
+
+Future<Results> _storeDependency(int packageId, int dependencyId) {
+  return dbPool.prepareExecute(
+      "INSERT IGNORE INTO packages_dependencies (package_id, dependency_id) VALUES (?, ?)",
+      [packageId, dependencyId]);
+}
+
+
+Future<int> getPackageId(PackageInfo packageInfo) async {
+  var results = (await (await dbPool.query("""
+    SELECT id FROM packages
+    WHERE name = '${packageInfo.name}' AND version = '${packageInfo.version}'
+  """)).toList());
+  if (results.isNotEmpty) {
+    return results.first.id;
+  } else {
+    return null;
+  }
 }

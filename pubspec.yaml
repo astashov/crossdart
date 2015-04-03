@@ -13,6 +13,7 @@ dependencies:
   logging: any
   http: any
   sqljocky: any
+  yaml: any
 
 dev_dependencies:
   unittest: any

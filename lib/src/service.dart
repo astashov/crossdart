@@ -16,10 +16,10 @@ String _getUrl(int page) => "https://pub.dartlang.org/packages.json?page=${page}
 
 // TODO: Refactor to a class
 
-Future<Iterable<PackageInfo>> getUpdatedPackages() async {
-  Iterable<PackageInfo> generatedPackages = _getGeneratedPackages();
-  Iterable<PackageInfo> allPackages = _getPackagesFromFile();
-  //Iterable<PackageInfo> allPackages = await _getPackagesFromPub();
+Future<Iterable<PackageInfo>> getUpdatedPackages(Config config) async {
+  Iterable<PackageInfo> generatedPackages = _getGeneratedPackages(config);
+  Iterable<PackageInfo> allPackages = _getPackagesFromFile(config);
+//  Iterable<PackageInfo> allPackages = await _getPackagesFromPub(config);
 
   Map<String, PackageInfo> generatedPackagesByName = generatedPackages.fold({}, (memo, packageInfo) {
     memo[packageInfo.name] = packageInfo;
@@ -36,26 +36,22 @@ Future<Iterable<PackageInfo>> getUpdatedPackages() async {
   return updatedPackages;
 }
 
-bool get _arePackagesCached {
-  return new File(join(config.htmlPath, "packages.json")).existsSync();
-}
-
-Iterable<PackageInfo> _getGeneratedPackages() {
+Iterable<PackageInfo> _getGeneratedPackages(Config config) {
   return new Directory(config.htmlPath).listSync().where((f) => f is Directory).map((Directory dir) {
     var versions = dir.listSync().map((d) => basename(d.path)).toList();
     versions.sort();
-    return new PackageInfo(basename(dir.path), new Version(versions.last));
+    return new PackageInfo(config, basename(dir.path), new Version(versions.last));
   });
 }
 
-Iterable<PackageInfo> _getPackagesFromFile() {
+Iterable<PackageInfo> _getPackagesFromFile(Config config) {
   var packages = JSON.decode(new File(join(config.htmlPath, "packages.json")).readAsStringSync())
       .map((json) => new PackageInfo.fromJson(json));
   _logger.info("The number of the available packages - ${packages.length}");
   return packages;
 }
 
-Future<Iterable<PackageInfo>> _getPackagesFromPub() async {
+Future<Iterable<PackageInfo>> _getPackagesFromPub(Config config) async {
   _logger.info("Retrieving available packages...");
   var page = 1;
   var packages = new Set();
@@ -68,7 +64,7 @@ Future<Iterable<PackageInfo>> _getPackagesFromPub() async {
     var pageOfPackages = await Future.wait(json["packages"].map((packageUrl) {
       return http.get(packageUrl).then((r) => JSON.decode(r.body));
     }));
-    packages.addAll(pageOfPackages.map((p) => new PackageInfo(p["name"], new Version(p["versions"].last))));
+    packages.addAll(pageOfPackages.map((p) => new PackageInfo(config, p["name"], new Version(p["versions"].last))));
   } while (json["next"] != null);
   //} while (page < 2);
 

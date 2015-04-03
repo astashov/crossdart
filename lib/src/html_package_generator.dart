@@ -9,6 +9,7 @@ import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/entity.dart';
 import 'package:crossdart/src/cache.dart';
+import 'package:crossdart/src/google_analytics.dart' as ga;
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
 
@@ -76,6 +77,7 @@ class HtmlPackageGenerator {
 
   String _footerContent() {
     return """
+        ${ga.script}
       </body>
       </html>
     """;

@@ -6,7 +6,6 @@ import 'dart:async';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/package.dart';
-import 'package:crossdart/src/parser.dart';
 import 'package:crossdart/src/logging.dart' as logging;
 import 'package:crossdart/crossdart.dart';
 import 'package:crossdart/src/service.dart';
@@ -23,19 +22,19 @@ Future main(args) async {
   logging.initialize();
 
   var packageInfos = [
-      new PackageInfo(config, "stagexl", new Version("0.9.2+1"))
-      //new PackageInfo("route", new Version.fromString("0.4.6")),
+      //new PackageInfo(config, "stagexl", new Version("0.9.2+1"))
+      new PackageInfo(config, "route", new Version("0.4.6"))
       //new PackageInfo("dnd", new Version.fromString("0.2.1"))
       ];
-//  List<PackageInfo> packageInfos = (await getUpdatedPackages()).toList();
+//  List<PackageInfo> packageInfos = (await getUpdatedPackages(config)).toList();
 //  var erroredPackageInfos = await dbPool.query("SELECT package_name, package_version FROM errors");
 //  erroredPackageInfos = (await erroredPackageInfos.toList()).map((p) {
-//    return new PackageInfo(p.package_name, new Version(p.package_version));
+//    return new PackageInfo(config, p.package_name, new Version(p.package_version));
 //  });
 //  erroredPackageInfos.forEach((packageInfo) {
 //    packageInfos.remove(packageInfo);
 //  });
-//  getGeneratedPackageInfos().expand((i) => i).forEach((packageInfo) {
+//  config.generatedPackageInfos.expand((i) => i).forEach((packageInfo) {
 //    packageInfos.remove(packageInfo);
 //  });
 
@@ -58,19 +57,26 @@ Future main(args) async {
           if (timer != null) {
             timer.cancel();
           }
-          timer = new Timer(new Duration(seconds: 5), () {
+          timer = new Timer(new Duration(seconds: 30), () {
             _logger.warning("Timeout while waiting for parsing a file, skipping this package");
             isolate.kill(Isolate.IMMEDIATE);
             completer.completeError("timeout");
           });
-        } else if ((msg == IsolateEvent.FINISH_FILE_PARSING || msg == IsolateEvent.ERROR) && timer != null) {
+        } else if (msg == IsolateEvent.FINISH_FILE_PARSING && timer != null) {
           timer.cancel();
           timer = null;
+        } else if (msg == IsolateEvent.ERROR) {
+          if (timer != null) {
+            timer.cancel();
+            timer = null;
+          }
+          isolate.kill(Isolate.IMMEDIATE);
+          completer.completeError("error");
         }
       });
     } catch (exception, stackTrace) {
       await storeError(packageInfo, exception, stackTrace);
-      if (exception != "timeout") {
+      if (exception != "timeout" && exception != "error") {
         rethrow;
       }
     }
@@ -117,9 +123,9 @@ Future analyze(SendPort sender) async {
     var packageInfo = data[1];
     try {
       sender.send(IsolateEvent.START);
-      install(config, packageInfo);
-      var package = new CustomPackage(config, packageInfo);
-      var environment = new Environment.build(config, package, sender);
+      //install(config, packageInfo);
+      var environment = await buildEnvironment(config, packageInfo, sender);
+      await storeDependencies(environment, environment.package);
       var parsedData = await parse(environment);
       generatePackageHtml(environment, parsedData);
       await store(environment, parsedData);

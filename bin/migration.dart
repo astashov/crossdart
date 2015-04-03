@@ -17,12 +17,11 @@ main(args) async {
       `offset` int(11) unsigned DEFAULT NULL,
       `end` int(11) unsigned DEFAULT NULL,
       `file` varchar(255) NOT NULL,
-      `package_name` varchar(255) NOT NULL,
-      `package_version` varchar(255) NOT NULL,
+      `package_id` int(11) unsigned NOT NULL,
       PRIMARY KEY (`id`),
-      UNIQUE KEY `uniq` (`type`,`offset`,`end`,`file`,`package_name`,`package_version`),
+      UNIQUE KEY `uniq` (`type`,`offset`,`end`,`file`,`package_id`),
       KEY `type` (`type`),
-      KEY `package` (`package_name`,`package_version`),
+      KEY `package_id` (`package_id`),
       KEY `file` (`file`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8
   """, []);
@@ -31,13 +30,32 @@ main(args) async {
   await dbPool.prepareExecute("""
     CREATE TABLE `errors` (
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-      `package_name` varchar(255) NOT NULL,
-      `package_version` varchar(255) NOT NULL,
+      `package_id` int(11) unsigned NOT NULL,
       `error` text NOT NULL,
       PRIMARY KEY (`id`),
-      UNIQUE KEY `uniq` (`package_name`,`package_version`)
+      UNIQUE KEY `uniq` (`package_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8
   """, []);
+
+  await dbPool.prepareExecute("DROP TABLE IF EXISTS `packages`", []);
+  await dbPool.prepareExecute("""
+    CREATE TABLE `packages` (
+      `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `name` varchar(255) NOT NULL,
+      `version` varchar(255) NOT NULL,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `uniq` (`name`,`version`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+  """, []);
+
+  await dbPool.prepareExecute("DROP TABLE IF EXISTS `packages_dependencies`", []);
+  await dbPool.prepareExecute("""
+      CREATE TABLE `packages_dependencies` (
+        `package_id` int(11) unsigned NOT NULL,
+        `dependency_id` int(11) unsigned NOT NULL,
+        UNIQUE KEY `uniq` (`package_id`,`dependency_id`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+    """, []);
 
   dbPool.close();
 }

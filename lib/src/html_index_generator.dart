@@ -2,6 +2,7 @@ library crossdart.html_index_generator;
 
 import 'dart:io';
 import 'package:crossdart/src/config.dart';
+import 'package:crossdart/src/google_analytics.dart' as ga;
 import 'package:crossdart/src/package.dart';
 import 'package:path/path.dart';
 import 'package:logging/logging.dart';
@@ -34,6 +35,7 @@ class HtmlIndexGenerator {
             ${_packagesHtml()}
           </div>
           <script src="/index.js"></script>
+          ${ga.script}
         </body>
       </html>
     """;
@@ -73,6 +75,7 @@ class HtmlIndexGenerator {
             <div class="versions">Versions: ${_versions(packageInfos)}</div>
             <div class="files">${_packagesVersionsHtml(packageInfos)}</div>
             <script src="/package.js"></script>
+            ${ga.script}
           </body>
         </html>
       """;

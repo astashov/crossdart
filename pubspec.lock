@@ -77,3 +77,7 @@ packages:
     description: watcher
     source: hosted
     version: "0.9.5"
+  yaml:
+    description: yaml
+    source: hosted
+    version: "2.1.2"
