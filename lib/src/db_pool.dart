@@ -9,3 +9,10 @@ ConnectionPool get dbPool {
   }
   return _dbPool;
 }
+
+deallocDbPool() {
+  if (_dbPool != null) {
+    _dbPool.close();
+  }
+  _dbPool = null;
+}

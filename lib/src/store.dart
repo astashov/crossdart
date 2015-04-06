@@ -5,6 +5,7 @@ import 'package:crossdart/src/parsed_data.dart';
 import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/entity.dart';
 import 'package:crossdart/src/package.dart';
+import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/db_pool.dart';
 import 'package:sqljocky/sqljocky.dart';
@@ -13,7 +14,7 @@ import 'package:path/path.dart' as p;
 
 var _logger = new Logger("store");
 
-Map<Type, int> _types = {
+Map<Type, int> entityTypeIds = {
   Reference: 1,
   Declaration: 2,
   Import: 3
@@ -21,74 +22,9 @@ Map<Type, int> _types = {
 
 // TODO: Refactor to a class
 
-Future<ParsedData> load(Environment environment) async {
-  Set<String> handledFiles = new Set();
-  Set<String> unhandledFiles = environment.package.files.map((f) => f.path).toSet();
-  var parsedData = new ParsedData();
-  var packagesByPath = environment.packages.fold({}, (Map<String, Package>memo, Package pkg) {
-    pkg.files.forEach((f) {
-      memo[f.path] = pkg;
-    });
-    return memo;
-  });
-  var packagesById = environment.packages.fold({}, (Map<int, Package>memo, Package pkg) {
-    memo[pkg.id] = pkg;
-    return memo;
-  });
-  while (unhandledFiles.difference(handledFiles).isNotEmpty) {
-    var filePath = unhandledFiles.difference(handledFiles).first;
-    handledFiles.add(filePath);
-    var package = packagesByPath[filePath];
-    var location = new Location(environment.config, filePath, package);
-    Results results = await queryEntity(location);
-    await results.forEach((Row row) {
-      Package referencePackage = packagesById[row.r_package_id];
-      var reference = new Reference(environment, p.join(referencePackage.lib, row.r_file), name: row.r_name, offset: row.r_offset, end: row.r_end, package: referencePackage);
-
-      Package declarationPackage = packagesById[row.d_package_id];
-      Declaration declaration;
-      if (row.d_type == _types[Declaration]) {
-        declaration = new Declaration(environment, p.join(declarationPackage.lib, row.d_file), name: row.d_name, offset: row.d_offset, end: row.d_end, package: declarationPackage);
-      } else if (row.d_type == _types[Import]) {
-        declaration = new Import(environment, p.join(declarationPackage.lib, row.d_file), name: row.d_name, package: declarationPackage);
-      }
-
-      parsedData.references[reference] = declaration;
-
-      if (parsedData.declarations[declaration] == null) {
-        parsedData.declarations[declaration] = new Set();
-      }
-      parsedData.declarations[declaration].add(reference);
-
-      if (parsedData.files[reference.location.file] == null) {
-        parsedData.files[reference.location.file] = new Set();
-      }
-      parsedData.files[reference.location.file].add(reference);
-
-      if (parsedData.files[declaration.location.file] == null) {
-        parsedData.files[declaration.location.file] = new Set();
-      }
-      parsedData.files[declaration.location.file].add(declaration);
-    });
-
-    unhandledFiles.addAll(parsedData.files.keys);
-  }
-  return parsedData;
-}
-
-Future<Results> queryEntity(Location location) {
-  return dbPool.query("""
-    SELECT r.id AS 'r_id', r.name AS 'r_name', r.offset AS 'r_offset', r.end AS 'r_end', r.file AS 'r_file', r.package_id AS 'r_package_id',
-           d.id AS 'd_id', d.type AS 'd_type', d.name AS 'd_name', d.offset AS 'd_offset', d.end AS 'd_end', d.file AS 'd_file', d.package_id AS 'd_package_id'
-    FROM entities AS r
-    INNER JOIN entities AS d ON r.declaration_id = d.id
-    WHERE r.type = ${_types[Reference]} AND r.file = '${location.path}' AND r.package_id = ${location.package.id}
-  """);
-}
-
 Future store(Environment environment, ParsedData parsedData) async {
   return dbPool.prepare("""
-    INSERT IGNORE INTO entities (declaration_id, type, name, offset, end, file, package_id)
+    INSERT IGNORE INTO entities (declaration_id, type, name, offset, end, path, package_id)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   """).then((query) async {
     var files = [];
@@ -124,7 +60,7 @@ Future store(Environment environment, ParsedData parsedData) async {
 List _buildValue(Entity entity, Location location, [int declarationId]) {
   return [
       declarationId,
-      _types[entity.runtimeType],
+      entityTypeIds[entity.runtimeType],
       entity.name,
       entity.offset,
       entity.end,
@@ -133,7 +69,7 @@ List _buildValue(Entity entity, Location location, [int declarationId]) {
 }
 
 Future<Map<Declaration, int>> _storeDeclarations(Environment environment, Query query, String filePath, Iterable<Declaration> declarations) async {
-  var location = new Location(environment.config, filePath, Package.fromFilePath(environment, filePath));
+  var location = new Location.fromEnvironment(environment, filePath);
   var idAndDeclaration = await Future.wait(declarations.map((declaration) async {
     var value = _buildValue(declaration, location);
     Results result = await query.execute(value);
@@ -147,7 +83,7 @@ Future<Map<Declaration, int>> _storeDeclarations(Environment environment, Query 
 }
 
 Future _storeReferences(Environment environment, ParsedData parsedData, Query query, String filePath, Iterable<Reference> references, [Map<Declaration, int> idsByDeclarations]) {
-  var location = new Location(environment.config, filePath, Package.fromFilePath(environment, filePath));
+  var location = new Location.fromEnvironment(environment, filePath);
   var values = references.map((reference) {
     var declaration = parsedData.references[reference];
     var declarationId = idsByDeclarations[declaration];
@@ -158,27 +94,35 @@ Future _storeReferences(Environment environment, ParsedData parsedData, Query qu
   }));
 }
 
-Future storeError(PackageInfo packageInfo, Object error, StackTrace stackTrace) {
+Future storeError(PackageInfo packageInfo, Object error, StackTrace stackTrace) async {
+  var id = await getPackageId(packageInfo);
   return dbPool.prepareExecute(
-      "INSERT IGNORE INTO errors (package_id, error) VALUES (?, ?, ?)",
-      [packageInfo.name, packageInfo.version.toString(), "${error}\n${stackTrace}"]);
+      "INSERT IGNORE INTO errors (package_id, error) VALUES (?, ?)",
+      [id, "${error}\n${stackTrace}"]);
 }
 
-Future storeDependencies(Environment environment, Package package) async {
-  for (Package dependency in package.dependencies(environment)) {
-    await storeDependencies(environment, dependency);
-    await _storeDependency(package.id, dependency.id);
+Future storeDependencies(Environment environment, Package package, [Set handledPackages]) async {
+  if (handledPackages == null) {
+    handledPackages = new Set();
+  }
+  if (!handledPackages.contains(package)) {
+    handledPackages.add(package);
+    for (Package dependency in package.dependencies(environment)) {
+      await storeDependencies(environment, dependency, handledPackages);
+      await _storeDependency(package.id, dependency.id);
+    }
   }
 }
 
-Future<int> storePackage(PackageInfo packageInfo) async {
+Future<int> storePackage(PackageInfo packageInfo, PackageSource source, String description) async {
   var result = await dbPool.prepareExecute(
-      "INSERT IGNORE INTO packages (name, version) VALUES (?, ?)",
-      [packageInfo.name, packageInfo.version.toString()]);
+      "INSERT IGNORE INTO packages (name, version, source_type, description) VALUES (?, ?, ?, ?)",
+      [packageInfo.name, packageInfo.version.toString(), packageSourceIds[source], description]);
   return result.insertId;
 }
 
 Future<Results> _storeDependency(int packageId, int dependencyId) {
+  print("Inserting ${packageId}, ${dependencyId}");
   return dbPool.prepareExecute(
       "INSERT IGNORE INTO packages_dependencies (package_id, dependency_id) VALUES (?, ?)",
       [packageId, dependencyId]);

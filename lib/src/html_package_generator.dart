@@ -5,7 +5,7 @@ import 'dart:math' as math;
 import 'dart:convert';
 import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/parsed_data.dart';
-import 'package:crossdart/src/environment.dart';
+import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/entity.dart';
 import 'package:crossdart/src/cache.dart';
@@ -17,21 +17,22 @@ var _logger = new Logger("generator");
 
 class HtmlPackageGenerator {
   ParsedData _parsedData;
-  Environment _environment;
+  Iterable<Package> _packages;
   HtmlEscape sanitizer = const HtmlEscape();
+  Config _config;
 
-  HtmlPackageGenerator(this._environment, this._parsedData);
+  HtmlPackageGenerator(this._config, this._packages, this._parsedData);
 
   void generate() {
-    this._parsedData.files.forEach((String fileName, Set<Entity> entities) {
-      var package = Package.fromFilePath(_environment, fileName);
-      var location = new Location(_environment.config, fileName, package);
+    this._parsedData.files.forEach((String absolutePath, Set<Entity> entities) {
+      var package = _packages.firstWhere((p) => p.absolutePaths.contains(absolutePath));
+      var location = new Location(package, absolutePath);
       var tokens = entities.where((e) => e is Token).toSet();
-      if (!(new File(location.writePath).existsSync())) {
-        var directory = new Directory(path.dirname(location.writePath));
+      if (!(new File(location.writePath(_config)).existsSync())) {
+        var directory = new Directory(path.dirname(location.writePath(_config)));
         directory.createSync(recursive: true);
-        var file = new File(location.writePath).openSync(mode: FileMode.WRITE);
-        _writeContent(fileName, tokens, file, package);
+        var file = new File(location.writePath(_config)).openSync(mode: FileMode.WRITE);
+        _writeContent(absolutePath, tokens, file, package);
         file.closeSync();
       }
     });
@@ -59,8 +60,8 @@ class HtmlPackageGenerator {
     }
   }
 
-  String _headerContent(String fileName, Package package) {
-    var location = new Location(_environment.config, fileName, package);
+  String _headerContent(String absolutePath, Package package) {
+    var location = new Location(package, package.relativePath(absolutePath));
     return """
       <!doctype html>
       <html lang="en-us">
@@ -83,11 +84,11 @@ class HtmlPackageGenerator {
     """;
   }
 
-  void _writeContent(String fileName, Set<Token> tokens, RandomAccessFile file, Package package) {
-    _logger.info("Building content of ${fileName}");
-    file.writeStringSync(_headerContent(fileName, package));
+  void _writeContent(String absolutePath, Set<Token> tokens, RandomAccessFile file, Package package) {
+    _logger.info("Building content of ${absolutePath}");
+    file.writeStringSync(_headerContent(absolutePath, package));
     file.writeStringSync("<pre class='code'>");
-    var fileContent = cache.fileContents(fileName);
+    var fileContent = cache.fileContents(absolutePath);
     List<Reference> tokensList = tokens.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
 
     var lastOffset = 0;

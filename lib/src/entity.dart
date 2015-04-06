@@ -24,16 +24,7 @@ abstract class Entity {
     }
   }
 
-  Location _buildLocation(Environment environment, String file, [Package package]) {
-    if (package == null) {
-      package = environment.packagesByFiles[file];
-    }
-    return new Location(environment.config, file, package);
-  }
-
-  Entity(Environment environment, String file, {this.name, this.offset, this.end, Package package}) {
-    this.location = _buildLocation(environment, file, package);
-  }
+  Entity(this.location, {this.name, this.offset, this.end});
 
   int get hashCode => hash([location, name, offset, end]);
 
@@ -50,14 +41,14 @@ abstract class Entity {
 }
 
 class Declaration extends Entity {
-  Declaration(Environment environment, String file, {String name, int offset, int end, Package package}) : super(environment, file, name: name, offset: offset, end: end, package: package);
+  Declaration(Location location, {String name, int offset, int end}) : super(location, name: name, offset: offset, end: end);
 }
 class Import extends Declaration {
-  Import(Environment environment, String file, {String name, Package package}) : super(environment, file, name: name, package: package);
+  Import(Location location, {String name}) : super(location, name: name);
 }
 class Token extends Entity {
-  Token(Environment environment, String file, {String name, int offset, int end, Package package}) : super(environment, file, name: name, offset: offset, end: end, package: package);
+  Token(Location location, {String name, int offset, int end}) : super(location, name: name, offset: offset, end: end);
 }
 class Reference extends Token {
-  Reference(Environment environment, String file, {String name, int offset, int end, Package package}) : super(environment, file, name: name, offset: offset, end: end, package: package);
+  Reference(Location location, {String name, int offset, int end}) : super(location, name: name, offset: offset, end: end);
 }

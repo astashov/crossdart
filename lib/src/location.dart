@@ -3,30 +3,35 @@ library crossdart.location;
 import 'package:crossdart/src/util.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/config.dart';
+import 'package:crossdart/src/environment.dart';
 import 'package:path/path.dart' as p;
 
 class Location {
-  final String file;
+  final String path;
   final Package package;
-  final Config config;
 
-  const Location(this.config, this.file, this.package);
+  Location(this.package, this.path);
 
-  int get hashCode => hash([file, package]);
+  factory Location.fromEnvironment(Environment environment, String absolutePath) {
+    var package = Package.fromAbsolutePath(environment, absolutePath);
+    return new Location(package, package.relativePath(absolutePath));
+  }
+
+  int get hashCode => hash([path, package]);
 
   bool operator ==(other) => other is Location
-      && file == other.file
+      && path == other.path
       && package == other.package;
 
-  String get path {
-    return file.replaceAll("${package.lib}/", "");
+  String get file {
+    return p.join(package.lib, path);
   }
 
   String get htmlPath {
     return "/" + p.join(package.name, _versionPart, "${path}.html");
   }
 
-  String get writePath {
+  String writePath(Config config) {
     var result = p.join(config.htmlPath, package.name, _versionPart);
     if (p.dirname(path) != ".") {
       result = p.join(result, p.dirname(path));
@@ -38,7 +43,7 @@ class Location {
   String get _versionPart => package.version != null ? package.version.toPath() : "unknown";
 
   String toString() {
-    var map = {"file": file, "package": package};
+    var map = {"path": path, "package": package};
     return "<Location ${map.toString()}>";
   }
 }

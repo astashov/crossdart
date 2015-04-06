@@ -3,7 +3,7 @@ library crossdart.html_index_generator;
 import 'dart:io';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/google_analytics.dart' as ga;
-import 'package:crossdart/src/package.dart';
+import 'package:crossdart/src/package_info.dart';
 import 'package:path/path.dart';
 import 'package:logging/logging.dart';
 
@@ -101,7 +101,7 @@ class HtmlIndexGenerator {
     return packageInfos.map((packageInfo) {
       var content = "<div class='files-version' data-version='${packageInfo.version}'>";
       content += "<ul>";
-      content += packageInfo.generatedPaths.map((filePath) {
+      content += packageInfo.generatedPaths(_config).map((filePath) {
         return "<li class='files-version-file'><a href='${filePath}.html'>${filePath}</a></li>";
       }).join("\n");
       content += "</ul>";

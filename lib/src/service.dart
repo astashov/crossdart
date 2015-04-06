@@ -5,7 +5,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
-import 'package:crossdart/src/package.dart';
+import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:path/path.dart';
@@ -40,7 +40,7 @@ Iterable<PackageInfo> _getGeneratedPackages(Config config) {
   return new Directory(config.htmlPath).listSync().where((f) => f is Directory).map((Directory dir) {
     var versions = dir.listSync().map((d) => basename(d.path)).toList();
     versions.sort();
-    return new PackageInfo(config, basename(dir.path), new Version(versions.last));
+    return new PackageInfo(basename(dir.path), new Version(versions.last));
   });
 }
 
@@ -64,7 +64,7 @@ Future<Iterable<PackageInfo>> _getPackagesFromPub(Config config) async {
     var pageOfPackages = await Future.wait(json["packages"].map((packageUrl) {
       return http.get(packageUrl).then((r) => JSON.decode(r.body));
     }));
-    packages.addAll(pageOfPackages.map((p) => new PackageInfo(config, p["name"], new Version(p["versions"].last))));
+    packages.addAll(pageOfPackages.map((p) => new PackageInfo(p["name"], new Version(p["versions"].last))));
   } while (json["next"] != null);
   //} while (page < 2);
 

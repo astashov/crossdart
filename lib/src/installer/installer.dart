@@ -3,7 +3,7 @@ library crossdart.installer.installer;
 import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:crossdart/src/config.dart';
-import 'package:crossdart/src/package.dart';
+import 'package:crossdart/src/package_info.dart';
 
 var _logger = new Logger("installer");
 

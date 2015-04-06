@@ -1,11 +1,13 @@
 #!/usr/bin/env dart
 
+library parse_and_generate;
+
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:async';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/environment.dart';
-import 'package:crossdart/src/package.dart';
+import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/logging.dart' as logging;
 import 'package:crossdart/crossdart.dart';
 import 'package:crossdart/src/service.dart';
@@ -15,21 +17,26 @@ import 'package:logging/logging.dart';
 import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/isolate_events.dart';
 
-Logger _logger = new Logger("main");
+Logger _logger = new Logger("parse");
 
 Future main(args) async {
   var config = new Config.fromArgs(args);
   logging.initialize();
+  await runParser(config);
+  dbPool.close();
+  exit(0);
+}
 
+Future runParser(Config config) async {
   var packageInfos = [
       //new PackageInfo(config, "stagexl", new Version("0.9.2+1"))
-      new PackageInfo(config, "route", new Version("0.4.6"))
-      //new PackageInfo("dnd", new Version.fromString("0.2.1"))
+      //new PackageInfo(config, "dagre", new Version("0.0.2"))
+      new PackageInfo("dnd", new Version("0.2.1"))
       ];
 //  List<PackageInfo> packageInfos = (await getUpdatedPackages(config)).toList();
-//  var erroredPackageInfos = await dbPool.query("SELECT package_name, package_version FROM errors");
+//  var erroredPackageInfos = await dbPool.query("SELECT name, version FROM errors AS e INNER JOIN packages as p ON p.id = e.package_id");
 //  erroredPackageInfos = (await erroredPackageInfos.toList()).map((p) {
-//    return new PackageInfo(config, p.package_name, new Version(p.package_version));
+//    return new PackageInfo(config, p.name, new Version(p.version));
 //  });
 //  erroredPackageInfos.forEach((packageInfo) {
 //    packageInfos.remove(packageInfo);
@@ -43,7 +50,7 @@ Future main(args) async {
     _logger.info("Handling package ${packageInfo.name} (${packageInfo.version}) - ${index}/${packageInfos.length}");
     Timer timer;
     try {
-      await runIsolate(analyze, [config, packageInfo], (isolate, msg, completer) {
+      await _runIsolate(_analyze, [config, packageInfo], (isolate, msg, completer) {
         _logger.fine("Received a message - ${msg}");
         if (msg == IsolateEvent.FINISH) {
           if (timer != null) {
@@ -82,13 +89,9 @@ Future main(args) async {
     }
     index += 1;
   };
-  dbPool.close();
-  generateIndexHtml(config);
-  exit(0);
-  return new Future.value();
 }
 
-Future runIsolate(Function isolateFunction, input, void callback(Isolate isolate, message, Completer completer)) {
+Future _runIsolate(Function isolateFunction, input, void callback(Isolate isolate, message, Completer completer)) {
   var receivePort = new ReceivePort();
   var completer = new Completer();
 
@@ -108,7 +111,7 @@ Future runIsolate(Function isolateFunction, input, void callback(Isolate isolate
   });
 }
 
-void runInIsolate(SendPort sender, void callback(data)) {
+void _runInIsolate(SendPort sender, void callback(data)) {
   var receivePort = new ReceivePort();
   sender.send(receivePort.sendPort);
   receivePort.listen((data) {
@@ -116,23 +119,24 @@ void runInIsolate(SendPort sender, void callback(data)) {
   });
 }
 
-Future analyze(SendPort sender) async {
-  runInIsolate(sender, await (data) async {
+Future _analyze(SendPort sender) async {
+  _runInIsolate(sender, await (data) async {
     logging.initialize();
     var config = data[0];
     var packageInfo = data[1];
     try {
       sender.send(IsolateEvent.START);
-      //install(config, packageInfo);
+      install(config, packageInfo);
       var environment = await buildEnvironment(config, packageInfo, sender);
       await storeDependencies(environment, environment.package);
       var parsedData = await parse(environment);
-      generatePackageHtml(environment, parsedData);
       await store(environment, parsedData);
+      deallocDbPool();
       sender.send(IsolateEvent.FINISH);
     } catch(exception, stackTrace) {
       _logger.severe("Exception while handling a package ${packageInfo.name} ${packageInfo.version}", exception, stackTrace);
       await storeError(packageInfo, exception, stackTrace);
+      deallocDbPool();
       sender.send(IsolateEvent.ERROR);
     }
   });

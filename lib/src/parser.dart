@@ -1,6 +1,5 @@
 library crossdart.parser;
 
-import 'dart:io';
 import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
@@ -13,6 +12,7 @@ import 'package:analyzer/src/generated/scanner.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/isolate_events.dart';
 import 'package:crossdart/src/package.dart';
+import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/parsed_data.dart';
 import 'package:crossdart/src/entity.dart' as e;
@@ -20,12 +20,12 @@ import 'package:logging/logging.dart' as logging;
 
 var _logger = new logging.Logger("parser");
 
-ParsedData parseFile(Environment environment, String file) {
-  _logger.info("Parsing file $file");
+ParsedData parseFile(Environment environment, String absolutePath) {
+  _logger.info("Parsing file $absolutePath");
   environment.sender.send(IsolateEvent.START_FILE_PARSING);
-  var resolvedUnit = environment.parser.getCompilationUnit(file);
+  var resolvedUnit = environment.parser.getCompilationUnit(absolutePath);
   if (resolvedUnit != null) {
-    var visitor = new _ASTVisitor(environment, file);
+    var visitor = new _ASTVisitor(environment, absolutePath);
     resolvedUnit.accept(visitor);
     environment.sender.send(IsolateEvent.FINISH_FILE_PARSING);
     return visitor.parsedData;
@@ -51,16 +51,16 @@ class Parser {
     var analysisContext = AnalysisEngine.instance.createAnalysisContext();
     analysisContext.sourceFactory = new SourceFactory(resolvers);
 
-    var files = packages.map((p) => p.files).expand((i) => i);
+    var files = packages.map((p) => p.absolutePaths).expand((i) => i);
     var changeSet = new ChangeSet();
-    files.forEach((File f) {
-      Source s = new FileBasedSource.con1(new JavaFile(f.path));
+    files.forEach((String f) {
+      Source s = new FileBasedSource.con1(new JavaFile(f));
       changeSet.addedSource(s);
     });
     analysisContext.applyChanges(changeSet);
 
-    var librariesByParts = files.fold({}, (Map<String, LibraryElement> memo, File f) {
-      Source s = new FileBasedSource.con1(new JavaFile(f.path));
+    var librariesByParts = files.fold({}, (Map<String, LibraryElement> memo, String f) {
+      Source s = new FileBasedSource.con1(new JavaFile(f));
       var libElement = analysisContext.computeLibraryElement(s);
       if (libElement != null) {
         libElement.parts.map((p) => p.toString()).forEach((part) {
@@ -96,10 +96,10 @@ class _ASTVisitor extends GeneralizingAstVisitor {
   static const ANNOTATION = "annotation";
   static const STRING = "string";
 
-  Environment environment;
-  String file;
+  Environment _environment;
+  String _absolutePath;
 
-  _ASTVisitor(this.environment, this.file);
+  _ASTVisitor(this._environment, this._absolutePath);
 
   ParsedData _parsedData = new ParsedData();
   ParsedData get parsedData => _parsedData;
@@ -186,12 +186,12 @@ class _ASTVisitor extends GeneralizingAstVisitor {
     try {
       var parent = node.parent;
       if (parent is PartDirective) {
-        var reference = new e.Reference(this.environment, this.file, name: node.toString(), offset: node.offset, end: node.end);
-        var declaration = new e.Import(this.environment, parent.element.source.fullName);
+        var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.toString(), offset: node.offset, end: node.end);
+        var declaration = new e.Import(new Location.fromEnvironment(_environment, parent.element.source.fullName));
         _addReferenceAndDeclaration(reference, declaration);
       } else if (parent is ImportDirective) {// && parent.element != null) {
-        var reference = new e.Reference(this.environment, this.file, name: node.toString(), offset: node.offset, end: node.end);
-        var declaration = new e.Import(this.environment, parent.element.importedLibrary.definingCompilationUnit.source.fullName);
+        var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.toString(), offset: node.offset, end: node.end);
+        var declaration = new e.Import(new Location.fromEnvironment(_environment, parent.element.importedLibrary.definingCompilationUnit.source.fullName));
         _addReferenceAndDeclaration(reference, declaration);
       }
     } catch(error, stackTrace) {
@@ -204,8 +204,8 @@ class _ASTVisitor extends GeneralizingAstVisitor {
     if (node.parent != null && node.parent.parent is PartOfDirective) {
       try {
         PartOfDirective partOfNode = node.parent.parent;
-        var reference = new e.Reference(this.environment, this.file, name: node.toString(), offset: node.offset, end: node.end);
-        var declaration = new e.Import(this.environment, partOfNode.element.source.fullName);
+        var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.toString(), offset: node.offset, end: node.end);
+        var declaration = new e.Import(new Location.fromEnvironment(_environment, partOfNode.element.source.fullName));
         _addReferenceAndDeclaration(reference, declaration);
       } catch(error, stackTrace) {
         _logger.severe("Error parsing 'part of' node $node", error, stackTrace);
@@ -214,9 +214,9 @@ class _ASTVisitor extends GeneralizingAstVisitor {
       try {
         Element element = node.bestElement;
         if (element != null && element.library != null && element.node is Declaration && !node.inDeclarationContext()) {
-          var reference = new e.Reference(this.environment, this.file, name: node.bestElement.displayName, offset: node.offset, end: node.end);
+          var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.bestElement.displayName, offset: node.offset, end: node.end);
           var declarationElement = (element.node as Declaration).element;
-          var declaration = new e.Declaration(this.environment, declarationElement.source.fullName,
+          var declaration = new e.Declaration(new Location.fromEnvironment(_environment, declarationElement.source.fullName),
               name: declarationElement.displayName,
               offset: element.node.offset,
               end: element.node.end);
@@ -251,7 +251,7 @@ class _ASTVisitor extends GeneralizingAstVisitor {
   void _addToken(String name, Token beginToken, [Token endToken]) {
     var offset = beginToken.offset;
     var end = endToken == null ? beginToken.end : endToken.end;
-    var newToken = new e.Token(this.environment, this.file, name: name, offset: offset, end: end);
+    var newToken = new e.Token(new Location.fromEnvironment(_environment, _absolutePath), name: name, offset: offset, end: end);
 
     parsedData.tokens.add(newToken);
     if (parsedData.files[newToken.location.file] == null) {

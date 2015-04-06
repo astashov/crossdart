@@ -1,167 +1,212 @@
 library crossdart.package;
 
 import 'dart:io';
+import 'dart:async';
 import 'dart:convert';
+import 'package:crossdart/src/util/map.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/version.dart';
+import 'package:crossdart/src/entity.dart';
+import 'package:crossdart/src/package_info.dart';
+import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/util.dart';
-import 'package:path/path.dart' as path;
+import 'package:crossdart/src/store.dart';
+import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
-class PackageInfo {
-  String _name;
-  String get name => _name;
-
-  Version _version;
-  Version get version => _version;
-
-  Config _config;
-
-  PackageInfo(this._config, this._name, this._version);
-
-  String get htmlPath {
-    return path.join(_config.htmlPath, name, version.toPath());
-  }
-
-  Iterable<String> get generatedPaths {
-    return new Directory(htmlPath)
-        .listSync(recursive: true)
-        .where((f) => f is File && f.path.endsWith(".html"))
-        .map((s) => s.path.replaceAll(_config.htmlPath, "").replaceAll(new RegExp(r".html$"), ""));
-  }
-
-  PackageInfo.fromJson(String json) {
-    var map = JSON.decode(json);
-    _name = map["name"];
-    _version = new Version(map["version"]);
-  }
-
-  int get hashCode => hash([name, version]);
-
-  bool operator ==(other) => other is PackageInfo
-      && name == other.name
-      && version == other.version;
-
-  String toString() {
-    return "<PackageInfo ${{"name": name, "version": version.toString()}}>";
-  }
-
-  Map<String, String> toMap() {
-    return {"name": name, "version": version.toString()};
-  }
-
-  String toJson() {
-    return JSON.encode(toMap());
-  }
-}
+//enum PackageType { IO, HTML }
+enum PackageSource { GIT, HOSTED }
+Map<PackageSource, int> packageSourceIds = {PackageSource.GIT: 1, PackageSource.HOSTED: 2};
 
 abstract class Package {
-  int get id;
+  final int id;
+  final PackageInfo packageInfo;
+  //final PackageType type;
+  final PackageSource source;
+  final String description;
+  final Config config;
+  final Iterable<String> paths;
 
-  PackageInfo get packageInfo;
-  String get symlink;
-  String get root;
-  String get lib;
+  Package(this.config, this.id, this.packageInfo, this.source, this.description, this.paths);
+
+  static Package fromAbsolutePath(Environment environment, String filePath) {
+    return environment.packages.firstWhere((p) => p.absolutePaths.contains(filePath));
+  }
 
   String get name => packageInfo.name;
   Version get version => packageInfo.version;
 
+  String get lib;
   Iterable<Package> dependencies(Environment environment);
 
-  Iterable<FileSystemEntity> get children {
-    return new Directory(lib).listSync(recursive: true, followLinks: true);
+  Iterable<String> get absolutePaths {
+    return paths.map(absolutePath);
   }
 
-  static Package fromFilePath(Environment environment, String filePath) {
-    return environment.packages.firstWhere((p) => p.doesContainFile(filePath));
+  String absolutePath(String relativePath) {
+    return p.join(lib, relativePath);
   }
 
-  Iterable<String> get filePaths {
-    return files.map((f) => f.path.replaceAll(lib, ""));
-  }
-
-  Iterable<File> get files {
-    return children.where((f) => f is File && f.path.endsWith(".dart"));
+  String relativePath(String absolutePath) {
+    return absolutePath.replaceFirst(lib, "").replaceFirst(new RegExp(r"^/"), "");
   }
 
   String toString() {
-    return "<Package ${{"name": packageInfo.name, "version": packageInfo.version.toString(), "id": id}}>";
+    return "<Package ${toMap()}>";
   }
 
-  bool doesContainFile(String file) {
-    return children.where((f) => f is File).map((f) => f.path).contains(file);
+  Map<String, Object> toMap() {
+    return {
+        "name": name,
+        "version": version,
+        "id": id,
+        "source": source,
+        "description": description,
+        "paths": paths};
   }
 
   int get hashCode => hash([packageInfo]);
   bool operator ==(other) => other is Package && packageInfo == other.packageInfo;
 }
 
+
 class Sdk extends Package {
-  PackageInfo _packageInfo;
-  PackageInfo get packageInfo => _packageInfo;
-
-  Config _config;
-
-  int _id;
-  int get id => _id;
-
-  Sdk(this._config, this._packageInfo, this._id);
-
-  String get symlink => root;
-
-  String get root => _config.sdkPath;
-
-  String get lib => path.join(root, "lib");
+  Sdk(
+      Config config,
+      int id,
+      PackageInfo packageInfo,
+      PackageSource source,
+      String description,
+      Iterable<String> paths) :
+      super(config, id, packageInfo, source, description, paths);
 
   Iterable<Package> dependencies(_) => [];
+
+  String get _root => config.sdkPath;
+  String get lib => p.join(_root, "lib");
 }
 
+
 class CustomPackage extends Package {
-  PackageInfo _packageInfo;
-  PackageInfo get packageInfo => _packageInfo;
+  CustomPackage(
+      Config config,
+      int id,
+      PackageInfo packageInfo,
+      PackageSource source,
+      String description,
+      Iterable<String> paths) :
+      super(config, id, packageInfo, source, description, paths);
 
-  Config _config;
-
-  int _id;
-  int get id => _id;
-
-  CustomPackage(this._config, this._packageInfo, this._id);
-
-  String get symlink {
-    return path.join(_config.installPath, "packages", packageInfo.name);
-  }
-
-  String get root {
-    return path.dirname(lib);
-  }
-
-  String _lib;
-  String get lib {
-    if (_lib == null) {
-      _lib = new Directory(symlink).resolveSymbolicLinksSync();
+  String get _packagesRoot {
+    if (source == PackageSource.GIT) {
+      return config.gitPackagesRoot;
+    } else {
+      return config.hostedPackagesRoot;
     }
-    return _lib;
   }
 
+  String get _root => p.join(_packagesRoot, "${name}-${version}");
+
+  String get lib => p.join(_root, "lib");
+
+  Iterable<Package> _dependencies;
   Iterable<Package> dependencies(Environment environment) {
-    var pubspecPath = path.join(root, "pubspec.yaml");
+    if (_dependencies == null) {
+      var pubspecPath = p.join(_root, "pubspec.yaml");
+      var file = new File(pubspecPath);
+      if (file.existsSync()) {
+        var yaml = loadYaml(file.readAsStringSync());
+        var dependencies = yaml["dependencies"];
+        var packages = [];
+        if (dependencies != null) {
+          dependencies.forEach((name, version) {
+            var package = environment.customPackages.firstWhere((cp) => cp.packageInfo.name == name);
+            if (package != null) {
+              packages.add(package);
+            }
+          });
+        }
+        _dependencies = packages;
+      } else {
+        _dependencies = [];
+      }
+    }
+    return _dependencies;
+  }
+}
+
+
+Future<Package> buildFromDatabase(Config config, PackageInfo packageInfo) async {
+  var result = await (await dbPool.query("""
+      SELECT id, source_type, description FROM packages WHERE name = '${packageInfo.name}' AND version = '${packageInfo.version}'  
+  """)).toList();
+  var row = result.isNotEmpty ? result.first : null;
+  if (row != null) {
+    var paths = (await (await dbPool.query("""
+        SELECT DISTINCT path FROM entities WHERE package_id = ${row.id} AND type = ${entityTypeIds[Reference]}  
+    """)).toList()).map((r) => r.path);
+    var source = key(packageSourceIds, row.source_type);
+    if (packageInfo.name == "sdk") {
+      return new Sdk(config, row.id, packageInfo, source, null, paths);
+    } else {
+      return new CustomPackage(config, row.id, packageInfo, source, null, paths);
+    }
+  } else {
+    return null;
+  }
+}
+
+Future<Sdk> buildSdkFromFileSystem(Config config, PackageInfo packageInfo) async {
+  var lib = p.join(config.sdkPath, "lib");
+  var source = PackageSource.HOSTED;
+
+  var id = await getPackageId(packageInfo);
+  if (id == null) {
+    id = await storePackage(packageInfo, source, null);
+  }
+  var paths = new Directory(lib).listSync(recursive: true).where((f) => f is File && f.path.endsWith(".dart")).map((file) {
+    return file.path.replaceAll(lib, "").replaceFirst(new RegExp(r"^/"), "");
+  });
+
+  return new Sdk(config, id, packageInfo, source, null, paths);
+}
+
+Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInfo packageInfo) async {
+  Directory getDirectory() {
+    return new Directory(config.packagesPath).listSync().firstWhere((entity) {
+      return p.basename(entity.path) == packageInfo.name;
+    }, orElse: () => null);
+  }
+
+  var lib = getDirectory().resolveSymbolicLinksSync();
+  var root = p.dirname(lib);
+
+  YamlNode getPubspec() {
+    var pubspecPath = p.join(root, "pubspec.yaml");
     var file = new File(pubspecPath);
     if (file.existsSync()) {
-      var yaml = loadYaml(file.readAsStringSync());
-      var dependencies = yaml["dependencies"];
-      var packages = [];
-      if (dependencies != null) {
-        dependencies.forEach((name, version) {
-          var package = environment.customPackages.firstWhere((cp) => cp.packageInfo.name == name);
-          if (package != null) {
-            packages.add(package);
-          }
-        });
-      }
-      return packages;
+      return loadYaml(file.readAsStringSync());
     } else {
-      return [];
+      return null;
     }
   }
+
+  var source;
+  if (lib.contains("/git/")) {
+    source = PackageSource.GIT;
+  } else {
+    source = PackageSource.HOSTED;
+  }
+  var paths = new Directory(lib).listSync(recursive: true).where((f) => f is File && f.path.endsWith(".dart")).map((file) {
+    return file.path.replaceAll(lib, "").replaceFirst(new RegExp(r"^/"), "");
+  });
+
+  var pubspec = getPubspec();
+  var id = await getPackageId(packageInfo);
+  if (id == null) {
+    id = await storePackage(packageInfo, source, pubspec["description"]);
+  }
+
+  return new CustomPackage(config, id, packageInfo, source, pubspec["description"], paths);
 }
