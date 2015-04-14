@@ -39,11 +39,11 @@ class HtmlIndexGenerator {
         </body>
       </html>
     """;
-    new File(join(_config.htmlPath, "index.html")).writeAsStringSync(content);
+    new File(join(_config.outputPath, "index.html")).writeAsStringSync(content);
 
-    new File(join(_config.templatesPath, "style.css")).copySync(join(_config.htmlPath, "style.css"));
+    new File(join(_config.templatesPath, "style.css")).copySync(join(_config.outputPath, "style.css"));
     ["index", "package"].forEach((name) {
-      Process.runSync("dart2js", ["-o", join(_config.htmlPath, "$name.js"), join(_config.templatesPath, "$name.dart")]);
+      Process.runSync("dart2js", ["-o", join(_config.outputPath, "$name.js"), join(_config.templatesPath, "$name.dart")]);
     });
   }
 
@@ -80,7 +80,7 @@ class HtmlIndexGenerator {
         </html>
       """;
 
-      new File(join(_config.htmlPath, packageInfos.first.name, "index.html")).writeAsStringSync(content);
+      new File(join(_config.outputPath, packageInfos.first.name, "index.html")).writeAsStringSync(content);
     });
   }
 

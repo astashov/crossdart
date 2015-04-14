@@ -20,7 +20,7 @@ class PackageInfo {
       && version == other.version;
 
   Iterable<String> generatedPaths(Config config) {
-    var absolutePath = p.join(config.htmlPath, name, version.toPath());
+    var absolutePath = p.join(config.outputPath, name, version.toPath());
     return new Directory(absolutePath)
         .listSync(recursive: true)
         .where((f) => f is File && f.path.endsWith(".html"))

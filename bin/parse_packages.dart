@@ -1,6 +1,6 @@
 #!/usr/bin/env dart
 
-library parse_and_generate;
+library parse_packages;
 
 import 'dart:io';
 import 'dart:isolate';
@@ -20,7 +20,11 @@ import 'package:crossdart/src/isolate_events.dart';
 Logger _logger = new Logger("parse");
 
 Future main(args) async {
-  var config = new Config.fromArgs(args);
+  var config = new Config(
+      sdkPath: args[0],
+      installPath: args[1],
+      outputPath: args[2],
+      templatesPath: args[3]);
   logging.initialize();
   await runParser(config);
   dbPool.close();
@@ -129,7 +133,7 @@ Future _analyze(SendPort sender) async {
       install(config, packageInfo);
       var environment = await buildEnvironment(config, packageInfo, sender);
       await storeDependencies(environment, environment.package);
-      var parsedData = await parse(environment);
+      var parsedData = await parseEnvironment(environment);
       await store(environment, parsedData);
       deallocDbPool();
       sender.send(IsolateEvent.FINISH);

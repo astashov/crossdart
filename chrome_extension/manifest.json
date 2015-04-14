@@ -1,0 +1,23 @@
+{
+  "manifest_version": 2,
+  "name": "Crossdart <-> Github Chrome Extension",
+  "version": "0.0.1",
+
+  "description": "Uses crossdart.json to add links to the source code",
+
+  // Optional
+  "author": "Anton Astashov",
+  "background": {
+      "scripts": ["background.js"],
+      "persistent": false
+  },
+  "page_action": {
+    "default_icon": "icon.png",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [{
+      "matches": ["https://github.com/*"],
+      "js": ["utils.js", "path.js", "request.js", "github.js", "crossdart.js"],
+      "css": ["crossdart.css"]
+  }]
+}

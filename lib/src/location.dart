@@ -31,8 +31,28 @@ class Location {
     return "/" + p.join(package.name, _versionPart, "${path}.html");
   }
 
+  String remotePath(int lineNumber) {
+    if (package is Project) {
+      var result = path;
+      if (lineNumber != null) {
+        result += "#L${lineNumber + 1}";
+      }
+      return result;
+    } else if (package is Sdk || package.source == PackageSource.HOSTED) {
+      var result = p.join("http://crossdart.info", package.name, package.version.toPath(), "${path}.html");
+      if (lineNumber != null) {
+        result += "#line-${lineNumber}";
+      }
+      return result;
+    } else if (package is CustomPackage && package.source == PackageSource.GIT) {
+      return "TBD";
+    } else {
+      return null;
+    }
+  }
+
   String writePath(Config config) {
-    var result = p.join(config.htmlPath, package.name, _versionPart);
+    var result = p.join(config.outputPath, package.name, _versionPart);
     if (p.dirname(path) != ".") {
       result = p.join(result, p.dirname(path));
     }
@@ -43,7 +63,10 @@ class Location {
   String get _versionPart => package.version != null ? package.version.toPath() : "unknown";
 
   String toString() {
-    var map = {"path": path, "package": package};
-    return "<Location ${map.toString()}>";
+    return "<Location ${toMap()}>";
+  }
+
+  Map toMap() {
+    return {"path": path, "package": package};
   }
 }

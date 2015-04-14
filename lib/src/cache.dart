@@ -27,6 +27,22 @@ class Cache {
     }
   }
 
+  int lineOffset(String file, int offset) {
+    if (offset == 0) {
+      return 0;
+    } else {
+      if (_lineNumbers[file] == null) {
+        _lineNumbers[file] = _createLineNumbersMap(fileContents(file));
+      }
+      var lastKey = _lineNumbers[file].lastKeyBefore(offset);
+      var result = offset - lastKey;
+      if (lineNumber(file, offset) > 0) {
+        result -= 1;
+      }
+      return result;
+    }
+  }
+
   SplayTreeMap<int, int> _createLineNumbersMap(String contents) {
     var newlineChar = getNewlineChar(contents);
     var offset = 0;

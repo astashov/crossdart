@@ -11,16 +11,12 @@ import 'package:analyzer/src/generated/sdk_io.dart' show DirectoryBasedDartSdk;
 class Config {
   final String sdkPath;
   final String installPath;
-  final String htmlPath;
+  final String outputPath;
   final String templatesPath;
+  final String projectPath;
+  final String packagesPath;
 
-  Config(this.sdkPath, this.installPath, this.htmlPath, this.templatesPath);
-
-  Config.fromArgs(List args) :
-    this.sdkPath = args[0],
-    this.installPath = args[1],
-    this.htmlPath = args[2],
-    this.templatesPath = args[3];
+  Config({this.sdkPath, this.installPath, this.outputPath, this.templatesPath, this.projectPath, this.packagesPath});
 
   String __packagesRoot;
   String get _packagesRoot {
@@ -39,10 +35,8 @@ class Config {
   }
 
   String get gitPackagesRoot {
-      return _packagesRoot.replaceFirst("/hosted/pub.dartlang.org/", "/git/").replaceFirst(new RegExp(r"/$"), "");
-    }
-
-  String get packagesPath => path.join(installPath, "packages");
+    return _packagesRoot.replaceFirst("/hosted/pub.dartlang.org/", "/git/").replaceFirst(new RegExp(r"/$"), "");
+  }
 
   DartSdk get sdk {
     JavaSystemIO.setProperty("com.google.dart.sdk", sdkPath);
@@ -50,7 +44,7 @@ class Config {
   }
 
   Iterable<Iterable<PackageInfo>> get generatedPackageInfos {
-    return new Directory(htmlPath).listSync().where((f) => f is Directory).map((Directory dir) {
+    return new Directory(outputPath).listSync().where((f) => f is Directory).map((Directory dir) {
       var versions = dir.listSync().where((f) => f is Directory).map((d) => path.basename(d.path)).toList();
       versions.sort();
       return versions.map((version) => new PackageInfo(path.basename(dir.path), new Version(version)));

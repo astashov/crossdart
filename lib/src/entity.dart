@@ -24,6 +24,18 @@ abstract class Entity {
     }
   }
 
+  int _lineOffset;
+  int get lineOffset {
+    if (offset != null) {
+      if (_lineOffset == null) {
+        _lineOffset = cache.lineOffset(location.file, offset);
+      }
+      return _lineOffset;
+    } else {
+      return null;
+    }
+  }
+
   Entity(this.location, {this.name, this.offset, this.end});
 
   int get hashCode => hash([location, name, offset, end]);
@@ -35,8 +47,11 @@ abstract class Entity {
       && end == other.end;
 
   String toString() {
-    var map = {"location": location, "name": name, "offset": offset, "end": end};
-    return "<${runtimeType} ${map.toString()}>";
+    return "<${runtimeType} ${toMap()}>";
+  }
+
+  Map<String, Object> toMap() {
+    return {"location": location, "name": name, "offset": offset, "end": end};
   }
 }
 

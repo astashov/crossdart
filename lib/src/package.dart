@@ -87,6 +87,22 @@ class Sdk extends Package {
   String get lib => p.join(_root, "lib");
 }
 
+class Project extends Package {
+  Project(
+      Config config,
+      int id,
+      PackageInfo packageInfo,
+      PackageSource source,
+      String description,
+      Iterable<String> paths) :
+      super(config, id, packageInfo, source, description, paths);
+
+  Iterable<Package> dependencies(_) => [];
+
+  String get _root => config.projectPath;
+  String get lib => p.join(_root, "lib");
+}
+
 
 class CustomPackage extends Package {
   CustomPackage(
@@ -171,6 +187,17 @@ Future<Sdk> buildSdkFromFileSystem(Config config, PackageInfo packageInfo) async
 
   return new Sdk(config, id, packageInfo, source, null, paths);
 }
+
+Project buildProjectFromFileSystem(Config config) {
+  var lib = p.join(config.projectPath, "lib");
+
+  var paths = new Directory(lib).listSync(recursive: true).where((f) => f is File && f.path.endsWith(".dart")).map((file) {
+    return file.path.replaceAll(lib, "").replaceFirst(new RegExp(r"^/"), "");
+  });
+
+  return new Project(config, null, new PackageInfo("project", new Version("")), null, null, paths);
+}
+
 
 Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInfo packageInfo) async {
   Directory getDirectory() {

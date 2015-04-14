@@ -1,5 +1,8 @@
 #!/usr/bin/env dart
 
+library generate_packages_html;
+
+import 'dart:io';
 import 'dart:async';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/package.dart';
@@ -13,12 +16,17 @@ import 'package:logging/logging.dart';
 Logger _logger = new Logger("generate_html");
 
 Future main(args) async {
-  var config = new Config.fromArgs(args);
+  var config = new Config(
+      sdkPath: args[0],
+      installPath: args[1],
+      outputPath: args[2],
+      templatesPath: args[3]);
   logging.initialize();
 
   await runHtmlGenerator(config);
 
   dbPool.close();
+  exit(0);
 }
 
 Future runHtmlGenerator(Config config) async {

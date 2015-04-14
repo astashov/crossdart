@@ -1,5 +1,7 @@
 #!/usr/bin/env dart
 
+library migration;
+
 import 'package:logging/logging.dart';
 import 'package:crossdart/src/db_pool.dart';
 
