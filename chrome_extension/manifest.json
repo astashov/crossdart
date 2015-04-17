@@ -17,7 +17,17 @@
   },
   "content_scripts": [{
       "matches": ["https://github.com/*"],
-      "js": ["utils.js", "path.js", "request.js", "github.js", "crossdart.js"],
+      "js": [
+        "utils.js",
+        "path.js",
+        "request.js",
+        "github.js",
+        "github/tree_path.js",
+        "github/pull_path.js",
+        "crossdart/pull.js",
+        "crossdart/tree.js",
+        "crossdart.js"
+      ],
       "css": ["crossdart.css"]
   }]
 }

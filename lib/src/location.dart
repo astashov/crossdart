@@ -33,7 +33,7 @@ class Location {
 
   String remotePath(int lineNumber) {
     if (package is Project) {
-      var result = path;
+      var result = p.join("lib", path);
       if (lineNumber != null) {
         result += "#L${lineNumber + 1}";
       }

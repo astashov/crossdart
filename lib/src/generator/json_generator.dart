@@ -26,7 +26,7 @@ class JsonGenerator {
         value["offset"] = reference.lineOffset;
         value["length"] = reference.end - reference.offset;
         value["remotePath"] = declaration.location.remotePath(declaration.lineNumber);
-        var relativePath = reference.location.package.relativePath(absolutePath);
+        var relativePath = p.join("lib", reference.location.package.relativePath(absolutePath));
         if (output[relativePath] == null) {
           output[relativePath] = [];
         }

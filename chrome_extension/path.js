@@ -1,6 +1,6 @@
 Path = {
   normalize: function (part) {
-    return part.replace(/(^\/|\/$)/, "");
+    return (part || "").toString().replace(/(^\/|\/$)/, "");
   },
 
   join: function (parts) {
