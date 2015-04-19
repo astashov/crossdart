@@ -1,14 +1,59 @@
-var textField = document.querySelector("#url");
-textField.value = localStorage.getItem('crossdartUrl');
+var basePath;
 
-function sendChangesInTextField() {
+var urlField = document.querySelector("#url");
+urlField.value = localStorage.getItem('crossdartUrl');
+var tokenField = document.querySelector("#token");
+
+urlField.addEventListener("change", saveChangesInUrl);
+tokenField.addEventListener("change", saveChangesInToken);
+
+var button = document.querySelector("#button");
+button.addEventListener("click", function () {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    localStorage.setItem('crossdartUrl', textField.value);
-    var tab = tabs[0];
-    chrome.tabs.sendMessage(tab.id, {url: textField.value});
+    sendApplyMessage(tabs[0].id);
+  });
+});
+
+function setTokenFieldValue() {
+  tokenField.value = getTokenFromLocalStorage();
+}
+
+function setTokenToLocalStorage(value) {
+  localStorage.setItem(getTokenKey(), value);
+}
+
+function getTokenKey() {
+  return basePath + '/crossdartToken';
+}
+
+function getTokenFromLocalStorage() {
+  return localStorage.getItem(getTokenKey());
+}
+
+function getUrlFromLocalStorage() {
+  return localStorage.getItem("crossdartUrl");
+}
+
+function saveChangesInUrl() {
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    localStorage.setItem('crossdartUrl', urlField.value);
   });
 }
 
-textField.addEventListener("blur", sendChangesInTextField);
-textField.addEventListener("keydown", sendChangesInTextField);
-textField.addEventListener("change", sendChangesInTextField);
+function saveChangesInToken() {
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    setTokenToLocalStorage(tokenField.value);
+  });
+}
+
+function sendApplyMessage(id) {
+  var token = getTokenFromLocalStorage(pathname);
+  var url = getUrlFromLocalStorage();
+  chrome.tabs.sendMessage(id, {crossdart: {action: "apply", jsonUrl: url, token: token}});
+}
+
+chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+  var pathname = tabs[0].url.replace(/https?:\/\/(www.)?github.com\//, "");
+  basePath = pathname.split("/").slice(0, 2).join("/");
+  setTokenFieldValue();
+});

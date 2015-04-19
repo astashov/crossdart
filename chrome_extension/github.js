@@ -1,14 +1,15 @@
 (function () {
   window.Github = function () {
-    var splittedPath = Path.split(location.pathname);
+    var pathname = location.pathname;
+    var splittedPath = Path.split(pathname);
     this.user = splittedPath[0];
     this.project = splittedPath[1];
     this.basePath = Path.join([this.user, this.project]);
-    this.type = getType(location.pathname);
+    this.type = getType(pathname);
     if (this.type === Github.TREE) {
       this.path = buildTreePath(this);
     } else if (this.type === Github.PULL_REQUEST) {
-      this.path = new PullPath(this, location.pathname);
+      this.path = new PullPath(this);
     }
   };
 
@@ -26,7 +27,12 @@
   }
 
   window.Github.api = function (path, callback, errorCallback) {
-    Request.get(Path.join([API_HOST, path]), callback, errorCallback);
+    var url = Path.join([API_HOST, path]);
+    if (Github.token) {
+      url += (url.match(/\?/) ? "&" : "?");
+      url += "access_token=" + Github.token;
+    }
+    Request.get(url, callback, errorCallback);
   };
 
 }());

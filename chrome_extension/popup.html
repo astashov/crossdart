@@ -1,2 +1,18 @@
-<input id="url" type="text" value=""></input>
-<script src="popup.js"></script>
+<div class="popup">
+  <link href="popup.css" media="screen" rel="stylesheet" />
+  <div class="crossdart-url">
+    <div class="crossdart-url--info">Enter the URL where crossdart.json files are</div>
+    <input id="url" type="text" value=""></input>
+  </div>
+  <div class="github-token">
+    <div class="github-token--info">
+      Accessing private repositories requires a GitHub access token. Follow
+      this link to create one and paste it below.
+    </div>
+    <input id="token" type="text" value=""></input>
+  </div>
+  <div class="button-container">
+    <input type="button" id="button" value="Apply" />
+  </div>
+  <script src="popup.js"></script>
+</div>

@@ -42,11 +42,12 @@
     }
   }
 
-  chrome.extension.sendMessage({type:'showPageAction'});
+  chrome.extension.sendMessage({crossdart: {action: 'initPopup', pathname: location.pathname}});
 
   chrome.runtime.onMessage.addListener(function (request) {
-    if (request.url) {
-      applyCrossdart(request.url);
+    if (request.crossdart && request.crossdart.action === 'popupInitialized') {
+      window.Github.token = request.crossdart.token;
+      applyCrossdart(request.crossdart.jsonUrl);
     }
   });
 }());
