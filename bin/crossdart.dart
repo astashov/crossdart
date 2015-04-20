@@ -27,14 +27,13 @@ Future main(args) async {
       sdkPath: new File(args[0]).resolveSymbolicLinksSync(),
       packagesPath: new File(p.join(args[1], 'packages')).resolveSymbolicLinksSync(),
       outputPath: new File(args[1]).resolveSymbolicLinksSync(),
-      projectPath: new File(args[1]).resolveSymbolicLinksSync());
+      projectPath: new File(args[1]).resolveSymbolicLinksSync(),
+      isDbUsed: false);
   logging.initialize();
 
   var environment = await buildEnvironment(config);
   var parsedData = await new Parser(environment).parseProject();
   new JsonGenerator(environment, parsedData).generate();
-  deallocDbPool();
 
-  dbPool.close();
   exit(0);
 }

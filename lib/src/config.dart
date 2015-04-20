@@ -15,8 +15,9 @@ class Config {
   final String templatesPath;
   final String projectPath;
   final String packagesPath;
+  final bool isDbUsed;
 
-  Config({this.sdkPath, this.installPath, this.outputPath, this.templatesPath, this.projectPath, this.packagesPath});
+  Config({this.sdkPath, this.installPath, this.outputPath, this.templatesPath, this.projectPath, this.packagesPath, this.isDbUsed});
 
   String __packagesRoot;
   String get _packagesRoot {
