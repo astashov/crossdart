@@ -29,6 +29,10 @@ class CompilationUnitResolver {
     var analysisContext = AnalysisEngine.instance.createAnalysisContext();
     analysisContext.sourceFactory = new SourceFactory(resolvers);
 
+    AnalysisOptionsImpl contextOptions = new AnalysisOptionsImpl();
+    contextOptions.cacheSize = 512;
+    analysisContext.analysisOptions = contextOptions;
+
     var changeSet = new ChangeSet();
     absolutePaths.forEach((String f) {
       Source s = new FileBasedSource.con1(new JavaFile(f));

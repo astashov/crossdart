@@ -31,7 +31,7 @@ abstract class Package {
   Package(this.config, this.id, this.packageInfo, this.source, this.description, this.paths);
 
   static Package fromAbsolutePath(Environment environment, String filePath) {
-    return environment.packages.firstWhere((p) => p.absolutePaths.contains(filePath));
+    return environment.packagesByFiles[filePath];
   }
 
   String get name => packageInfo.name;

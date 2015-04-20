@@ -29,7 +29,7 @@ class Parser {
     });
   }
 
-  Future<ParsedData> parseProject() {
+  ParsedData parseProject() {
     var absolutePaths = environment.packages.map((p) => p.absolutePaths).expand((i) => i);
     var compilationUnitResolver = new CompilationUnitResolver.build(environment.config, absolutePaths);
     var parsedData = new ParsedData();
