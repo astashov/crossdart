@@ -1,13 +1,16 @@
 name: crossdart
 version: 0.0.1
 author: Anton Astashov
-description: Cross references in the pub world
+description:
+  Generates crossdart.info content.
+  Also, allows to generate metadata for the project, and then use
+  the Chrome Extension (also included) to add links to the declarations
+  on Github
 homepage: http://crossdart.info
 environment:
   sdk: '>=1.8.0'
 dependencies:
   analyzer: 0.24.0
-    #path: ../analyzer
   collection: any
   intl: any
   logging: any
