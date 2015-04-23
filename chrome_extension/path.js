@@ -1,4 +1,8 @@
 Path = {
+  current: function () {
+    return decodeURIComponent(location.pathname);
+  },
+
   normalize: function (part) {
     return (part || "").toString().replace(/(^\/|\/$)/, "");
   },
@@ -9,5 +13,13 @@ Path = {
 
   split: function (path) {
     return Path.normalize(path).split("/");
+  },
+
+  isTree: function (path) {
+    return path.match(/^\/[^\/]+\/[^\/]+\/blob\/[^\/]+\/lib\/(.*)$/);
+  },
+
+  isPull: function (path) {
+    return path.match(/^\/[^\/]+\/[^\/]+\/pull\/\d+\/files/);
   }
 };

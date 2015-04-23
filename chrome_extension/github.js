@@ -1,14 +1,15 @@
 (function () {
   window.Github = function () {
-    var pathname = location.pathname;
+    var pathname = Path.current();
     var splittedPath = Path.split(pathname);
     this.user = splittedPath[0];
     this.project = splittedPath[1];
     this.basePath = Path.join([this.user, this.project]);
-    this.type = getType(pathname);
-    if (this.type === Github.TREE) {
+    if (Path.isTree(pathname)) {
+      this.type = Github.TREE;
       this.path = buildTreePath(this);
-    } else if (this.type === Github.PULL_REQUEST) {
+    } else if (Path.isPull(pathname)) {
+      this.type = Github.PULL_REQUEST;
       this.path = new PullPath(this);
     }
   };
@@ -18,13 +19,19 @@
   var API_HOST = "https://api.github.com";
   window.Github.HOST = "https://github.com";
 
-  function getType(url) {
-    if (url.match(/^\/[^\/]+\/[^\/]+\/blob\/[^\/]+\/lib\/(.*)$/)) {
-      return Github.TREE;
-    } else if (url.match(/^\/[^\/]+\/[^\/]+\/pull\/\d+\/files/)) {
-      return Github.PULL_REQUEST;
-    }
-  }
+  window.Github.isTree = function () {
+    return Path.isTree(Path.current());
+  };
+
+  window.Github.isPullSplit = function () {
+    return Path.isPull(Path.current()) &&
+      document.querySelector("meta[name='diff-view']").attributes.content.value === "split";
+  };
+
+  window.Github.isPullUnified = function () {
+    return Path.isPull(Path.current()) &&
+      document.querySelector("meta[name='diff-view']").attributes.content.value === "unified";
+  };
 
   window.Github.api = function (path, callback, errorCallback) {
     var url = Path.join([API_HOST, path]);
@@ -34,5 +41,4 @@
     }
     Request.get(url, callback, errorCallback);
   };
-
 }());

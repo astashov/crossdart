@@ -6,7 +6,7 @@
   };
 
   window.buildTreePath = function (github) {
-    var splittedPath = Path.split(location.pathname);
+    var splittedPath = Path.split(Path.current());
     return new TreePath(github, splittedPath[3], splittedPath.slice(4).join("/"));
   };
 

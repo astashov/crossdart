@@ -21,6 +21,7 @@
   "content_scripts": [{
       "matches": ["https://github.com/*"],
       "js": [
+        "constants.js",
         "utils.js",
         "path.js",
         "request.js",
@@ -29,6 +30,7 @@
         "github/pull_path.js",
         "crossdart/pull.js",
         "crossdart/tree.js",
+        "location_change_detector.js",
         "crossdart.js"
       ],
       "css": ["crossdart.css"]

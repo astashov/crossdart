@@ -1,7 +1,6 @@
 var basePath;
 
 var urlField = document.querySelector("#url");
-urlField.value = localStorage.getItem('crossdartUrl');
 var tokenField = document.querySelector("#token");
 
 urlField.addEventListener("change", saveChangesInUrl);
@@ -18,12 +17,24 @@ function setTokenFieldValue() {
   tokenField.value = getTokenFromLocalStorage();
 }
 
+function setUrlFieldValue() {
+  urlField.value = getUrlFromLocalStorage();
+}
+
 function setTokenToLocalStorage(value) {
   localStorage.setItem(getTokenKey(), value);
 }
 
+function setUrlToLocalStorage(value) {
+  localStorage.setItem(getUrlKey(), value);
+}
+
 function getTokenKey() {
   return basePath + '/crossdartToken';
+}
+
+function getUrlKey() {
+  return basePath + '/crossdartUrl';
 }
 
 function getTokenFromLocalStorage() {
@@ -31,12 +42,12 @@ function getTokenFromLocalStorage() {
 }
 
 function getUrlFromLocalStorage() {
-  return localStorage.getItem("crossdartUrl");
+  return localStorage.getItem(getUrlKey());
 }
 
 function saveChangesInUrl() {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    localStorage.setItem('crossdartUrl', urlField.value);
+    setUrlToLocalStorage(urlField.value);
   });
 }
 
@@ -53,7 +64,8 @@ function sendApplyMessage(id) {
 }
 
 chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-  var pathname = tabs[0].url.replace(/https?:\/\/(www.)?github.com\//, "");
+  var pathname = decodeURIComponent(tabs[0].url.replace(/https?:\/\/(www.)?github.com\//, ""));
   basePath = pathname.split("/").slice(0, 2).join("/");
   setTokenFieldValue();
+  setUrlFieldValue();
 });
