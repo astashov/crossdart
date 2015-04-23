@@ -1,9 +1,8 @@
 (function () {
-  function applyTreeCrossdart(github, crossdartBaseUrl) {
+  function applyTreeCrossdart(github, crossdartBaseUrl, crossdart) {
     github.path.getRealRef(function (ref) {
       var crossdartUrl = Path.join([crossdartBaseUrl, ref, "crossdart.json"]);
       Request.get(crossdartUrl, function (json) {
-        var crossdart = new CrossdartTree(github);
         crossdart.applyJson(json);
       }, function () {
         console.log("the default Github's Crossdart file is missing");
@@ -26,16 +25,19 @@
     });
   }
 
-  var crossdartPullSplit;
+  var crossdart;
   function applyCrossdart(crossdartBaseUrl, shouldReuseCrossdart) {
     var github = new Github();
     if (Github.isTree()) {
-      applyTreeCrossdart(github, crossdartBaseUrl);
-    } else if (Github.isPullSplit()) {
-      if (!shouldReuseCrossdart || !crossdartPullSplit) {
-        crossdartPullSplit = new CrossdartPullSplit(github);
+      if (!shouldReuseCrossdart || !crossdart) {
+        crossdart = new CrossdartTree(github);
       }
-      applyPullSplitCrossdart(github, crossdartBaseUrl, crossdartPullSplit);
+      applyTreeCrossdart(github, crossdartBaseUrl, crossdart);
+    } else if (Github.isPullSplit()) {
+      if (!shouldReuseCrossdart || !crossdart) {
+        crossdart = new CrossdartPullSplit(github);
+      }
+      applyPullSplitCrossdart(github, crossdartBaseUrl, crossdart);
     }
   }
 
@@ -43,15 +45,16 @@
 
   var jsonUrl;
   chrome.runtime.onMessage.addListener(function (request) {
-    if (request.crossdart && request.crossdart.action === 'popupInitialized') {
-      window.Github.token = request.crossdart.token;
-      jsonUrl = request.crossdart.jsonUrl;
-      applyCrossdart(jsonUrl);
+    if (request.crossdart) {
+      if (request.crossdart.action === 'popupInitialized' || request.crossdart.action === 'apply') {
+        window.Github.token = request.crossdart.token;
+        jsonUrl = request.crossdart.jsonUrl;
+        applyCrossdart(jsonUrl, request.crossdart.action === 'apply');
+      }
     }
   });
 
   document.addEventListener(EVENT.LOCATION_CHANGE, function (e) {
-    console.log(e);
     var oldPath = e.detail.before.pathname;
     var newPath = e.detail.now.pathname;
     var condition = false;

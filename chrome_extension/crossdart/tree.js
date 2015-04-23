@@ -1,6 +1,7 @@
 (function () {
   window.CrossdartTree = function (github) {
     this.github = github;
+    this.handledLines = [];
   };
 
   window.CrossdartTree.prototype.applyJson = function (json) {
@@ -9,9 +10,12 @@
     if (allReferences) {
       var referencesByLines = groupBy(allReferences, function (r) { return parseInt(r.line, 10); });
       for (var line in referencesByLines) {
-        var references = referencesByLines[line];
-        var newContent = applyReferences(this.github, this.github.path.ref, getLineContent(line), references);
-        setLineContent(line, newContent);
+        if (this.handledLines.indexOf(line) === -1) {
+          var references = referencesByLines[line];
+          var newContent = applyReferences(this.github, this.github.path.ref, getLineContent(line), references);
+          setLineContent(line, newContent);
+          this.handledLines.push(line);
+        }
       }
     }
   };

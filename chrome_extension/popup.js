@@ -58,7 +58,7 @@ function saveChangesInToken() {
 }
 
 function sendApplyMessage(id) {
-  var token = getTokenFromLocalStorage(pathname);
+  var token = getTokenFromLocalStorage();
   var url = getUrlFromLocalStorage();
   chrome.tabs.sendMessage(id, {crossdart: {action: "apply", jsonUrl: url, token: token}});
 }
