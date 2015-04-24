@@ -59,6 +59,7 @@
     var newPath = e.detail.now.pathname;
     var condition = false;
     condition = condition || (oldPath !== newPath && Path.isTree(newPath));
+    condition = condition || (!Path.isPull(oldPath) && Path.isPull(newPath));
     if (condition) {
       applyCrossdart(jsonUrl);
     }
