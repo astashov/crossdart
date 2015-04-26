@@ -2,7 +2,6 @@ library crossdart.package;
 
 import 'dart:io';
 import 'dart:async';
-import 'dart:convert';
 import 'package:crossdart/src/util/map.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/environment.dart';
@@ -81,7 +80,14 @@ class Sdk extends Package {
       Iterable<String> paths) :
       super(config, id, packageInfo, source, description, paths);
 
-  Iterable<Package> dependencies(_) => [];
+  Iterable<Package> _dependencies;
+  Iterable<Package> dependencies(Environment environment) {
+    if (_dependencies == null) {
+      var names = ["barback", "stack_trace"];
+      _dependencies = environment.customPackages.where((cp) => names.contains(cp.packageInfo.name));
+    }
+    return _dependencies;
+  }
 
   String get _root => config.sdkPath;
   String get lib => p.join(_root, "lib");
@@ -235,7 +241,7 @@ Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInf
   var pubspec = getPubspec();
   var id = null;
   if (config.isDbUsed) {
-    var id = await getPackageId(packageInfo);
+    id = await getPackageId(packageInfo);
     if (id == null) {
       id = await storePackage(packageInfo, source, pubspec["description"]);
     }

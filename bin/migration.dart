@@ -22,6 +22,7 @@ main(args) async {
       `version` varchar(255) NOT NULL,
       `source_type` tinyint NOT NULL,
       `description` text,
+      `readme` text,
       PRIMARY KEY (`id`),
       UNIQUE KEY `uniq` (`name`,`version`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8

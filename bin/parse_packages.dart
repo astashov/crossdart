@@ -9,11 +9,14 @@ import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/logging.dart' as logging;
-import 'package:crossdart/crossdart.dart';
 import 'package:crossdart/src/service.dart';
+import 'package:crossdart/src/store/db_package_loader.dart';
 import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/store.dart';
+import 'package:crossdart/src/parser.dart';
+import 'package:crossdart/src/installer/installer.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/isolate_events.dart';
 
@@ -24,7 +27,9 @@ Future main(args) async {
       sdkPath: args[0],
       installPath: args[1],
       outputPath: args[2],
-      templatesPath: args[3]);
+      templatesPath: args[3],
+      packagesPath: p.join(args[1], "packages"),
+      isDbUsed: true);
   logging.initialize();
   await runParser(config);
   dbPool.close();
@@ -35,12 +40,13 @@ Future runParser(Config config) async {
   var packageInfos = [
       //new PackageInfo(config, "stagexl", new Version("0.9.2+1"))
       //new PackageInfo(config, "dagre", new Version("0.0.2"))
-      new PackageInfo("dnd", new Version("0.2.1"))
+      new PackageInfo("dnd", new Version("0.2.1")),
+      new PackageInfo("pool", new Version("1.0.1"))
       ];
 //  List<PackageInfo> packageInfos = (await getUpdatedPackages(config)).toList();
 //  var erroredPackageInfos = await dbPool.query("SELECT name, version FROM errors AS e INNER JOIN packages as p ON p.id = e.package_id");
 //  erroredPackageInfos = (await erroredPackageInfos.toList()).map((p) {
-//    return new PackageInfo(config, p.name, new Version(p.version));
+//    return new PackageInfo(p.name, new Version(p.version));
 //  });
 //  erroredPackageInfos.forEach((packageInfo) {
 //    packageInfos.remove(packageInfo);
@@ -130,12 +136,14 @@ Future _analyze(SendPort sender) async {
     var packageInfo = data[1];
     try {
       sender.send(IsolateEvent.START);
-      install(config, packageInfo);
-      var environment = await buildEnvironment(config, packageInfo, sender);
-      await storeDependencies(environment, environment.package);
-      var parsedData = await parseEnvironment(environment);
-      await store(environment, parsedData);
-      deallocDbPool();
+      if (!(await (new DbPackageLoader(config).doesPackageExist(packageInfo)))) {
+        new Installer(config, packageInfo).install();
+        var environment = await buildEnvironment(config, packageInfo, sender);
+        await storeDependencies(environment, environment.package);
+        var parsedData = await new Parser(environment).parsePackages();
+        await store(environment, parsedData);
+        deallocDbPool();
+      }
       sender.send(IsolateEvent.FINISH);
     } catch(exception, stackTrace) {
       _logger.severe("Exception while handling a package ${packageInfo.name} ${packageInfo.version}", exception, stackTrace);

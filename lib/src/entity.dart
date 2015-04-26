@@ -3,8 +3,6 @@ library crossdart.entity;
 import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/cache.dart';
 import 'package:crossdart/src/util.dart';
-import 'package:crossdart/src/package.dart';
-import 'package:crossdart/src/environment.dart';
 
 abstract class Entity {
   Location location;
@@ -38,13 +36,15 @@ abstract class Entity {
 
   Entity(this.location, {this.name, this.offset, this.end});
 
-  int get hashCode => hash([location, name, offset, end]);
+  int get hashCode => hash([this.runtimeType, location, name, offset, end]);
 
-  bool operator ==(other) => other is Entity
+  bool operator ==(other) {
+    return (other.runtimeType == this.runtimeType)
       && location == other.location
       && name == other.name
       && offset == other.offset
       && end == other.end;
+  }
 
   String toString() {
     return "<${runtimeType} ${toMap()}>";

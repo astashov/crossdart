@@ -24,9 +24,16 @@ class HtmlPackageGenerator {
   HtmlPackageGenerator(this._config, this._packages, this._parsedData);
 
   void generate() {
+    var packagesByFiles = _packages.fold({}, (Map<String, Package> memo, Package package) {
+      package.absolutePaths.forEach((file) {
+        memo[file] = package;
+      });
+      return memo;
+    });
+
     this._parsedData.files.forEach((String absolutePath, Set<Entity> entities) {
-      var package = _packages.firstWhere((p) => p.absolutePaths.contains(absolutePath));
-      var location = new Location(package, absolutePath);
+      Package package = packagesByFiles[absolutePath];
+      var location = new Location(package, package.relativePath(absolutePath));
       var tokens = entities.where((e) => e is Token).toSet();
       if (!(new File(location.writePath(_config)).existsSync())) {
         var directory = new Directory(path.dirname(location.writePath(_config)));
@@ -88,8 +95,10 @@ class HtmlPackageGenerator {
     _logger.info("Building content of ${absolutePath}");
     file.writeStringSync(_headerContent(absolutePath, package));
     file.writeStringSync("<pre class='code'>");
-    var fileContent = cache.fileContents(absolutePath);
-    List<Reference> tokensList = tokens.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
+    String fileContent = cache.fileContents(absolutePath);
+    List<Token> tokensList = tokens.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
+
+
 
     var lastOffset = 0;
     var currentLine = 0;
@@ -107,27 +116,30 @@ class HtmlPackageGenerator {
       nextNewlinePos = nextNewlinePos == -1 ? null : nextNewlinePos;
       var tokenEndPos = stack.isNotEmpty ? stack.last.end : null;
 
-
       var positions = [tokenStartPos, nextNewlinePos, tokenEndPos].where((i) => i != null);
       if (positions.isNotEmpty) {
         var nextStop = positions.reduce(math.min);
         file.writeStringSync(sanitizer.convert(fileContent.substring(lastOffset, nextStop)));
-        if (tokenEndPos == nextStop) {
-          Token referenceFromStack = stack.removeLast();
-          file.writeStringSync(_addTokenEnd(referenceFromStack));
-        }
-        if (tokenStartPos == nextStop) {
-          stack.add(token);
-          file.writeStringSync(_addTokenStart(token));
-          token = tokensList.isNotEmpty ? tokensList.removeAt(0) : null;
-        }
-        if (nextNewlinePos == nextStop) {
-          file.writeStringSync(newlineChar);
-          file.writeStringSync("<a id='line-${currentLine}' class='line'>${currentLine}</a>");
-          currentLine += 1;
-          lastOffset = nextStop + 1;
-        } else {
+        if (tokenEndPos == nextStop || tokenStartPos == nextStop) {
+          if (tokenEndPos == nextStop) {
+            Token referenceFromStack = stack.removeLast();
+            file.writeStringSync(_addTokenEnd(referenceFromStack));
+          }
+          if (tokenStartPos == nextStop) {
+            stack.add(token);
+            file.writeStringSync(_addTokenStart(token));
+            token = tokensList.isNotEmpty ? tokensList.removeAt(0) : null;
+          }
           lastOffset = nextStop;
+        } else {
+          if (nextNewlinePos == nextStop) {
+            file.writeStringSync(newlineChar);
+            file.writeStringSync("<a id='line-${currentLine}' class='line'>${currentLine}</a>");
+            currentLine += 1;
+            lastOffset = nextStop + 1;
+          } else {
+            lastOffset = nextStop;
+          }
         }
       } else {
         file.writeStringSync(sanitizer.convert(fileContent.substring(lastOffset)));

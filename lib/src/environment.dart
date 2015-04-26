@@ -32,7 +32,7 @@ Future<Environment> buildEnvironment(Config config, [PackageInfo mainPackageInfo
   var customPackages = [];
   for (var dir in (new Directory(config.packagesPath).listSync(recursive: false))) {
     var resolvedDir = dir.resolveSymbolicLinksSync();
-    if (!resolvedDir.contains(config.projectPath)) {
+    if (config.projectPath == null || !resolvedDir.contains(config.projectPath)) {
       var name = path.basename(dir.path);
       var version = path.basename(path.dirname(resolvedDir)).replaceFirst("${name}-", "");
       var packageInfo = new PackageInfo(name, new Version(version));

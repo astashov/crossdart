@@ -10,14 +10,14 @@ import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/db_pool.dart';
 import 'package:sqljocky/sqljocky.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as p;
 
 var _logger = new Logger("store");
 
 Map<Type, int> entityTypeIds = {
   Reference: 1,
   Declaration: 2,
-  Import: 3
+  Import: 3,
+  Token: 4
 };
 
 // TODO: Refactor to a class
@@ -48,11 +48,19 @@ Future store(Environment environment, ParsedData parsedData) async {
     });
 
     _logger.info("Storing references");
-    return await Future.wait(files.map((tuple) {
+    await Future.wait(files.map((tuple) {
       var filePath = tuple[0];
       var entities = tuple[1];
       var filteredEntities = entities.where((e) => e is Reference);
       return _storeReferences(environment, parsedData, query, filePath, filteredEntities, idsByDeclarations);
+    }));
+
+    _logger.info("Storing tokens");
+    return await Future.wait(files.map((tuple) {
+      var filePath = tuple[0];
+      var entities = tuple[1];
+      var filteredEntities = entities.where((e) => e.runtimeType == Token);
+      return _storeTokens(environment, parsedData, query, filePath, filteredEntities);
     }));
   });
 }
@@ -94,6 +102,17 @@ Future _storeReferences(Environment environment, ParsedData parsedData, Query qu
   }));
 }
 
+Future _storeTokens(Environment environment, ParsedData parsedData, Query query, String filePath, Iterable<Token> tokens) {
+  var location = new Location.fromEnvironment(environment, filePath);
+  var values = tokens.map((token) {
+    return _buildValue(token, location);
+  }).toList();
+  return Future.wait(values.map((value) {
+    return query.execute(value);
+  }));
+}
+
+
 Future storeError(PackageInfo packageInfo, Object error, StackTrace stackTrace) async {
   var id = await getPackageId(packageInfo);
   return dbPool.prepareExecute(
@@ -122,7 +141,6 @@ Future<int> storePackage(PackageInfo packageInfo, PackageSource source, String d
 }
 
 Future<Results> _storeDependency(int packageId, int dependencyId) {
-  print("Inserting ${packageId}, ${dependencyId}");
   return dbPool.prepareExecute(
       "INSERT IGNORE INTO packages_dependencies (package_id, dependency_id) VALUES (?, ?)",
       [packageId, dependencyId]);

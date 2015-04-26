@@ -24,7 +24,7 @@ class PackageInfo {
     return new Directory(absolutePath)
         .listSync(recursive: true)
         .where((f) => f is File && f.path.endsWith(".html"))
-        .map((s) => s.path.replaceAll(absolutePath, "").replaceAll(new RegExp(r".html$"), ""));
+        .map((s) => s.path.replaceAll(config.outputPath, "").replaceAll(new RegExp(r".html$"), ""));
   }
 
   String toString() {
@@ -33,6 +33,10 @@ class PackageInfo {
 
   Map<String, String> toMap() {
     return {"name": name, "version": version.toString()};
+  }
+
+  String toJson() {
+    return JSON.encode(toMap());
   }
 
   factory PackageInfo.fromJson(String json) {

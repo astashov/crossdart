@@ -42,11 +42,12 @@ class Installer {
     _logger.info("Creating new project for package ${_packageInfo.name} ${_packageInfo.version} in ${_config.installPath}");
     var file = new File("pubspec.yaml");
     file.writeAsStringSync("""
-      name: crossdart_example
-      description: CrossDart example
-      dependencies:
-        ${_packageInfo.name}: ${_packageInfo.version}
-    """);
+name: crossdart_example
+description: CrossDart example
+dependencies:
+  ${_packageInfo.name}: ${_packageInfo.version}
+  barback: any
+  stack_trace: any""");
   }
 
   void _runPub() {

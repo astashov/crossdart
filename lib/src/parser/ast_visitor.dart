@@ -22,9 +22,9 @@ class ASTVisitor extends GeneralizingAstVisitor {
   Environment _environment;
   String _absolutePath;
 
-  ASTVisitor(this._environment, this._absolutePath);
+  ASTVisitor(this._environment, this._absolutePath, this._parsedData);
 
-  ParsedData _parsedData = new ParsedData();
+  ParsedData _parsedData;
   ParsedData get parsedData => _parsedData;
 
   visitNode(AstNode node) {
