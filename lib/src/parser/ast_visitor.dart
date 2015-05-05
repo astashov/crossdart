@@ -139,8 +139,13 @@ class ASTVisitor extends GeneralizingAstVisitor {
         if (element != null && element.library != null && element.node is Declaration && !node.inDeclarationContext()) {
           var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.bestElement.displayName, offset: node.offset, end: node.end);
           var declarationElement = (element.node as Declaration).element;
+          String contextName;
+          if (declarationElement is ClassMemberElement) {
+            contextName = declarationElement.enclosingElement.name;
+          }
           var declaration = new e.Declaration(new Location.fromEnvironment(_environment, declarationElement.source.fullName),
               name: declarationElement.displayName,
+              contextName: contextName,
               offset: element.node.offset,
               end: element.node.end);
 

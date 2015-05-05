@@ -8,12 +8,12 @@ import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/entity.dart';
 import 'package:crossdart/src/package_info.dart';
-import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/util.dart';
 import 'package:crossdart/src/store.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
+//TODO: Add package type
 //enum PackageType { IO, HTML }
 enum PackageSource { GIT, HOSTED }
 Map<PackageSource, int> packageSourceIds = {PackageSource.GIT: 1, PackageSource.HOSTED: 2};
@@ -160,12 +160,12 @@ class CustomPackage extends Package {
 
 
 Future<Package> buildFromDatabase(Config config, PackageInfo packageInfo) async {
-  var result = await (await dbPool.query("""
+  var result = await (await config.dbPool.query("""
       SELECT id, source_type, description FROM packages WHERE name = '${packageInfo.name}' AND version = '${packageInfo.version}'  
   """)).toList();
   var row = result.isNotEmpty ? result.first : null;
   if (row != null) {
-    var paths = (await (await dbPool.query("""
+    var paths = (await (await config.dbPool.query("""
         SELECT DISTINCT path FROM entities WHERE package_id = ${row.id} AND type = ${entityTypeIds[Reference]}  
     """)).toList()).map((r) => r.path);
     var source = key(packageSourceIds, row.source_type);
@@ -185,9 +185,9 @@ Future<Sdk> buildSdkFromFileSystem(Config config, PackageInfo packageInfo) async
 
   var id = null;
   if (config.isDbUsed) {
-    id = await getPackageId(packageInfo);
+    id = await getPackageId(config, packageInfo);
     if (id == null) {
-      id = await storePackage(packageInfo, source, null);
+      id = await storePackage(config, packageInfo, source, null);
     }
   }
   var paths = new Directory(lib).listSync(recursive: true).where((f) => f is File && f.path.endsWith(".dart")).map((file) {
@@ -241,9 +241,9 @@ Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInf
   var pubspec = getPubspec();
   var id = null;
   if (config.isDbUsed) {
-    id = await getPackageId(packageInfo);
+    id = await getPackageId(config, packageInfo);
     if (id == null) {
-      id = await storePackage(packageInfo, source, pubspec["description"]);
+      id = await storePackage(config, packageInfo, source, pubspec["description"]);
     }
   }
 

@@ -7,7 +7,6 @@ import 'package:crossdart/src/entity.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/util/iterable.dart';
-import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/store.dart';
 import 'package:sqljocky/sqljocky.dart';
 import 'package:logging/logging.dart';
@@ -95,7 +94,7 @@ class DbParsedDataLoader {
   }
 
   Future<Results> _queryReferences(Package package) {
-    return dbPool.query("""
+    return _config.dbPool.query("""
       SELECT r.id AS 'r_id', r.name AS 'r_name', r.offset AS 'r_offset', r.end AS 'r_end', r.path AS 'r_path', r.package_id AS 'r_package_id',
              d.id AS 'd_id', d.type AS 'd_type', d.name AS 'd_name', d.offset AS 'd_offset', d.end AS 'd_end', d.path AS 'd_path', d.package_id AS 'd_package_id'
       FROM entities AS r
@@ -105,7 +104,7 @@ class DbParsedDataLoader {
   }
 
   Future<Results> _queryTokens(Package package) {
-    return dbPool.query("""
+    return _config.dbPool.query("""
       SELECT e.id AS 'e_id', e.name AS 'e_name', e.offset AS 'e_offset', e.end AS 'e_end', e.path AS 'e_path', e.package_id AS 'e_package_id'
       FROM entities AS e
       WHERE e.type = ${entityTypeIds[Token]} AND e.package_id = ${package.id}

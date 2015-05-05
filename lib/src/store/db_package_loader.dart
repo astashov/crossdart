@@ -6,7 +6,6 @@ import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/util/iterable.dart';
 import 'package:crossdart/src/util/map.dart';
 import 'package:crossdart/src/package_info.dart';
-import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/store.dart';
 import 'package:crossdart/src/entity.dart';
@@ -21,14 +20,14 @@ class DbPackageLoader {
   DbPackageLoader(this._config);
 
   Future<bool> doesPackageExist(PackageInfo packageInfo) async {
-    var results = await (await dbPool.query("""
+    var results = await (await _config.dbPool.query("""
         SELECT p.id FROM packages AS p WHERE p.name = '${packageInfo.name}' AND p.version = '${packageInfo.version}' 
     """)).toList();
     return results.isNotEmpty;
   }
 
   Future<Iterable<Package>> getAllPackages() async {
-    var results = await (await dbPool.query("""
+    var results = await (await _config.dbPool.query("""
         SELECT DISTINCT p.id, p.name, p.version, p.source_type, p.description, e.path FROM packages AS p
         INNER JOIN entities AS e ON p.id = e.package_id 
     """)).toList();
@@ -44,6 +43,15 @@ class DbPackageLoader {
         memo.add(new CustomPackage(_config, row.id, packageInfo, source, row.description.toString(), rows.map((r) => r.path)));
       }
       return memo;
+    });
+  }
+
+  Future<Iterable<PackageInfo>> getAllPackageInfos() async {
+    var results = await (await _config.dbPool.query("""
+        SELECT DISTINCT p.name, p.version FROM packages AS p
+    """)).toList();
+    return results.map((Row r) {
+      return new PackageInfo(r.name, new Version(r.version));
     });
   }
 
@@ -72,7 +80,7 @@ class DbPackageLoader {
   }
 
   Future<Iterable<Package>> _getDependencies(Package package) async {
-    var results = await (await dbPool.query("""
+    var results = await (await _config.dbPool.query("""
         SELECT DISTINCT p.name, p.version
             FROM entities AS r
             INNER JOIN entities AS d ON r.declaration_id = d.id

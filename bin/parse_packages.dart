@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:async';
 import 'package:crossdart/src/config.dart';
+import 'package:crossdart/src/args.dart';
 import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/logging.dart' as logging;
@@ -16,23 +17,31 @@ import 'package:crossdart/src/store.dart';
 import 'package:crossdart/src/parser.dart';
 import 'package:crossdart/src/installer/installer.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as p;
-import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/isolate_events.dart';
 
 Logger _logger = new Logger("parse");
 
 Future main(args) async {
+  var parsePackagesArgs = new ParsePackagesArgs(args);
+  if (!parsePackagesArgs.runChecks()) {
+    return;
+  }
+  var results = parsePackagesArgs.results;
+
   var config = new Config(
-      sdkPath: args[0],
-      installPath: args[1],
-      outputPath: args[2],
-      templatesPath: args[3],
-      packagesPath: p.join(args[1], "packages"),
-      isDbUsed: true);
+      sdkPath: new File(results[Config.SDK_PATH]).resolveSymbolicLinksSync(),
+      packagesPath: new File(results[Config.PACKAGES_PATH]).resolveSymbolicLinksSync(),
+      installPath: new File(results[Config.INSTALL_PATH]).resolveSymbolicLinksSync(),
+      isDbUsed: true,
+      dbLogin: results[Config.DB_LOGIN],
+      dbPassword: results[Config.DB_PASSWORD],
+      dbHost: results[Config.DB_HOST],
+      dbPort: results[Config.DB_PORT],
+      dbName: results[Config.DB_NAME]);
+
   logging.initialize();
   await runParser(config);
-  dbPool.close();
+  config.deallocDbPool();
   exit(0);
 }
 
@@ -41,17 +50,19 @@ Future runParser(Config config) async {
       //new PackageInfo(config, "stagexl", new Version("0.9.2+1"))
       //new PackageInfo(config, "dagre", new Version("0.0.2"))
       new PackageInfo("dnd", new Version("0.2.1")),
-      new PackageInfo("pool", new Version("1.0.1"))
+      //new PackageInfo("pool", new Version("1.0.1"))
       ];
 //  List<PackageInfo> packageInfos = (await getUpdatedPackages(config)).toList();
-//  var erroredPackageInfos = await dbPool.query("SELECT name, version FROM errors AS e INNER JOIN packages as p ON p.id = e.package_id");
+//  var erroredPackageInfos = await dbPool.query("""
+//    SELECT package_name AS name, package_version AS version FROM errors
+//  """);
 //  erroredPackageInfos = (await erroredPackageInfos.toList()).map((p) {
 //    return new PackageInfo(p.name, new Version(p.version));
 //  });
 //  erroredPackageInfos.forEach((packageInfo) {
 //    packageInfos.remove(packageInfo);
 //  });
-//  config.generatedPackageInfos.expand((i) => i).forEach((packageInfo) {
+//  (await new DbPackageLoader(config).getAllPackageInfos()).forEach((packageInfo) {
 //    packageInfos.remove(packageInfo);
 //  });
 
@@ -92,7 +103,7 @@ Future runParser(Config config) async {
         }
       });
     } catch (exception, stackTrace) {
-      await storeError(packageInfo, exception, stackTrace);
+      await storeError(config, packageInfo, exception, stackTrace);
       if (exception != "timeout" && exception != "error") {
         rethrow;
       }
@@ -142,13 +153,13 @@ Future _analyze(SendPort sender) async {
         await storeDependencies(environment, environment.package);
         var parsedData = await new Parser(environment).parsePackages();
         await store(environment, parsedData);
-        deallocDbPool();
+        config.deallocDbPool();
       }
       sender.send(IsolateEvent.FINISH);
     } catch(exception, stackTrace) {
       _logger.severe("Exception while handling a package ${packageInfo.name} ${packageInfo.version}", exception, stackTrace);
-      await storeError(packageInfo, exception, stackTrace);
-      deallocDbPool();
+      await storeError(config, packageInfo, exception, stackTrace);
+      config.deallocDbPool();
       sender.send(IsolateEvent.ERROR);
     }
   });

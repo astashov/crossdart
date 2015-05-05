@@ -7,6 +7,8 @@ import 'package:crossdart/src/version.dart';
 import 'package:analyzer/src/generated/sdk.dart' show DartSdk;
 import 'package:analyzer/src/generated/java_io.dart';
 import 'package:analyzer/src/generated/sdk_io.dart' show DirectoryBasedDartSdk;
+import 'package:sqljocky/sqljocky.dart';
+
 
 class Config {
   final String sdkPath;
@@ -16,8 +18,37 @@ class Config {
   final String projectPath;
   final String packagesPath;
   final bool isDbUsed;
+  final String dbLogin;
+  final String dbPassword;
+  final String dbHost;
+  final String dbPort;
+  final String dbName;
 
-  Config({this.sdkPath, this.installPath, this.outputPath, this.templatesPath, this.projectPath, this.packagesPath, this.isDbUsed});
+  static const String SDK_PATH = "sdkpath";
+  static const String INSTALL_PATH = "installpath";
+  static const String OUTPUT_PATH = "outputpath";
+  static const String TEMPLATES_PATH = "templatespath";
+  static const String PROJECT_PATH = "projectpath";
+  static const String PACKAGES_PATH = "packagespath";
+  static const String DB_LOGIN = "dblogin";
+  static const String DB_PASSWORD = "dbpassword";
+  static const String DB_HOST = "dbhost";
+  static const String DB_PORT = "dbport";
+  static const String DB_NAME = "dbname";
+
+  Config({
+    this.sdkPath,
+    this.installPath,
+    this.outputPath,
+    this.templatesPath,
+    this.projectPath,
+    this.packagesPath,
+    this.isDbUsed,
+    this.dbLogin,
+    this.dbPassword,
+    this.dbHost,
+    this.dbPort,
+    this.dbName});
 
   String __packagesRoot;
   String get _packagesRoot {
@@ -52,4 +83,33 @@ class Config {
     });
   }
 
+  ConnectionPool _dbPool;
+  ConnectionPool get dbPool {
+    if (_dbPool == null) {
+      if (this.isDbUsed) {
+        var login = dbLogin != null ? dbLogin : "root";
+        var password = dbPassword != null ? dbPassword : "";
+        var host = dbHost != null ? dbHost : "localhost";
+        var port = dbPort != null ? dbPort : "3306";
+        var name = dbName != null ? dbName : "crossdart";
+        _dbPool = new ConnectionPool(
+            host: host,
+            port: int.parse(port),
+            user: login,
+            password: (password == '' ? null : password),
+            db: name,
+            max: 5);
+      } else {
+        throw "This application should not use the database";
+      }
+    }
+    return _dbPool;
+  }
+
+  void deallocDbPool() {
+    if (_dbPool != null) {
+      _dbPool.close();
+    }
+    _dbPool = null;
+  }
 }

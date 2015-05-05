@@ -18,8 +18,8 @@ String _getUrl(int page) => "https://pub.dartlang.org/packages.json?page=${page}
 
 Future<Iterable<PackageInfo>> getUpdatedPackages(Config config) async {
   Iterable<PackageInfo> generatedPackages = _getGeneratedPackages(config);
-  //Iterable<PackageInfo> allPackages = _getPackagesFromFile(config);
-  Iterable<PackageInfo> allPackages = await _getPackagesFromPub(config);
+  Iterable<PackageInfo> allPackages = _getPackagesFromFile(config);
+  //Iterable<PackageInfo> allPackages = await _getPackagesFromPub(config);
 
   Map<String, PackageInfo> generatedPackagesByName = generatedPackages.fold({}, (memo, packageInfo) {
     memo[packageInfo.name] = packageInfo;
