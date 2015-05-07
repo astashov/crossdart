@@ -52,7 +52,13 @@ dependencies:
 
   void _runPub() {
     _logger.info("Running pub get");
-    var result = Process.runSync("gtimeout", ["30", "pub", "get"]);
+    var commandName;
+    if (Process.runSync("which", ["gtimeout"]).stdout != "") {
+      commandName = "gtimeout";
+    } else {
+      commandName = "timeout";
+    }
+    var result = Process.runSync(commandName, ["30", "pub", "get"]);
     sleep(new Duration(seconds: 1));
     if (result.stdout != "") {
       _logger.info("Output - ${result.stdout}");
