@@ -131,10 +131,10 @@ class HtmlPackageGenerator {
           lastOffset = nextStop;
         } else {
           if (nextNewlinePos == nextStop) {
-            file.writeStringSync(newlineChar);
+            file.writeStringSync("\n");
             file.writeStringSync("<a id='line-${currentLine}' class='line'>${currentLine}</a>");
             currentLine += 1;
-            lastOffset = nextStop + 1;
+            lastOffset = nextStop + newlineChar.length;
           } else {
             lastOffset = nextStop;
           }
