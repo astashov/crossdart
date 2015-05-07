@@ -13,7 +13,7 @@ import 'package:crossdart/src/google_analytics.dart' as ga;
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
 
-var _logger = new Logger("generator");
+var _logger = new Logger("html_package_generator");
 
 class HtmlPackageGenerator {
   ParsedData _parsedData;
@@ -97,8 +97,6 @@ class HtmlPackageGenerator {
     file.writeStringSync("<pre class='code'>");
     String fileContent = cache.fileContents(absolutePath);
     List<Token> tokensList = tokens.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
-
-
 
     var lastOffset = 0;
     var currentLine = 0;

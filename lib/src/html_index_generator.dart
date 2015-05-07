@@ -7,7 +7,7 @@ import 'package:crossdart/src/package_info.dart';
 import 'package:path/path.dart';
 import 'package:logging/logging.dart';
 
-var _logger = new Logger("generator");
+var _logger = new Logger("html_index_generator");
 
 class HtmlIndexGenerator {
   final Config _config;
