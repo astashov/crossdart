@@ -15,7 +15,9 @@ void initialize() {
   };
 
   Logger.root.onRecord.listen((record) {
-    print(logFormatter(record));
+    if (record.loggerName != "ConnectionPool") {
+      print(logFormatter(record));
+    }
   });
 
   Logger.root.level = Level.INFO;
