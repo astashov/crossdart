@@ -5,6 +5,7 @@ library generate_packages_html;
 import 'dart:io';
 import 'dart:async';
 import 'package:crossdart/src/args.dart';
+import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/store/db_parsed_data_loader.dart';
 import 'package:crossdart/src/store/db_package_loader.dart';
@@ -43,10 +44,20 @@ Future main(args) async {
 
 Future runHtmlGenerator(Config config) async {
   var packageLoader = new DbPackageLoader(config);
-  var allPackages = await packageLoader.getAllPackages();
+  Iterable<Package> allPackages = await packageLoader.getAllPackages();
 
   var parsedData = await (new DbParsedDataLoader(config).load(allPackages));
 
   new HtmlPackageGenerator(config, allPackages, parsedData).generate();
-  new HtmlIndexGenerator(config)..generate()..generatePackagePages();
+  var generatedPackages = config.generatedPackageInfos.map((packageInfos) {
+    return packageInfos.fold([], (memo, packageInfo) {
+      var package = allPackages.firstWhere((p) => p.packageInfo == packageInfo, orElse: () => null);
+      if (package != null) {
+        memo.add(package);
+      }
+      return memo;
+    });
+  });
+  print(generatedPackages);
+  new HtmlIndexGenerator(config, generatedPackages)..generate()..generatePackagePages();
 }

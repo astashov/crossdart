@@ -1,9 +1,10 @@
 library crossdart.html_index_generator;
 
 import 'dart:io';
+import 'package:intl/intl.dart';
 import 'package:crossdart/src/config.dart';
+import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/google_analytics.dart' as ga;
-import 'package:crossdart/src/package_info.dart';
 import 'package:path/path.dart';
 import 'package:logging/logging.dart';
 
@@ -11,8 +12,9 @@ var _logger = new Logger("html_index_generator");
 
 class HtmlIndexGenerator {
   final Config _config;
+  final Iterable<Iterable<Package>> _generatedPackages;
 
-  const HtmlIndexGenerator(this._config);
+  const HtmlIndexGenerator(this._config, this._generatedPackages);
 
   void generate() {
     _logger.info("Generating index page");
@@ -27,6 +29,10 @@ class HtmlIndexGenerator {
         <body class="index-page">
           <h1 class="header">CrossDart</h1>
           <h2 class="subheader">Cross-referenced Dart's pub packages</h2>
+          <div class="info">
+            <div class="info--last-update">Last update: ${_currentDate}</div>
+            <div class="info--github"><a href="https://github.com/astashov/crossdart">Github</a></div>
+          </div>
           <div class="search input-field">
             <input type="text" id="search" value="">
             <label for="search">Search by package name</label>
@@ -60,48 +66,59 @@ class HtmlIndexGenerator {
     return "CrossDart - cross-referenced Dart's pub packages";
   }
 
-  void generatePackagePages() {
-    _config.generatedPackageInfos.forEach((packageInfos) {
-      _logger.info("Generating page of the ${packageInfos.first.name} package");
-      var content = """
-        <!doctype html>
-        <html lang="en-us" >
-          <head>
-            ${_scripts}
-            <title>Pub ${packageInfos.first.name} | ${_title}</title>
-          </head>
-          <body class="package-page">
-            <h1 class="header"><a href='/'>CrossDart</a> - package '<span class='package-name'>${packageInfos.first.name}</span>'</h1>
-            <div class="versions">Versions: ${_versions(packageInfos)}</div>
-            <div class="files">${_packagesVersionsHtml(packageInfos)}</div>
-            <script src="/package.js"></script>
-            ${ga.script}
-          </body>
-        </html>
-      """;
+  String get _currentDate {
+    return new DateFormat.yMMMMd().format(new DateTime.now());
+  }
 
-      new File(join(_config.outputPath, packageInfos.first.name, "index.html")).writeAsStringSync(content);
+  void generatePackagePages() {
+    _generatedPackages.forEach((packages) {
+      if (packages.isNotEmpty) {
+        _logger.info("Generating page of the ${packages.first.name} package");
+        var content = """
+          <!doctype html>
+          <html lang="en-us" >
+            <head>
+              ${_scripts}
+              <title>Pub ${packages.first.name} | ${_title}</title>
+            </head>
+            <body class="package-page">
+              <h1 class="header"><a href='/'>CrossDart</a> - package '<span class='package-name'>${packages.first.name}</span>'</h1>
+              <div class="versions">Versions: ${_versions(packages)}</div>
+              <div class="files">${_packagesVersionsHtml(packages)}</div>
+              <script src="/package.js"></script>
+              ${ga.script}
+            </body>
+          </html>
+        """;
+
+        new File(join(_config.outputPath, packages.first.name, "index.html")).writeAsStringSync(content);
+      }
     });
   }
 
-  String _versions(Iterable<PackageInfo> packageInfos) {
-    return packageInfos.map((packageInfo) {
-      return "<span class='version' data-version='${packageInfo.version}'>${packageInfo.version}</span>";
+  String _versions(Iterable<Package> packages) {
+    return packages.map((package) {
+      return "<span class='version' data-version='${package.version}'>${package.version}</span>";
     }).join("\n");
   }
 
   String _packagesHtml() {
-    return _config.generatedPackageInfos.map((packageInfos) {
-      var packageInfo = packageInfos.first;
-      return "<a class='package' href='/${packageInfo.name}'>${packageInfo.name}</a>";
+    return _generatedPackages.map((packages) {
+      if (packages.isNotEmpty) {
+        var package = packages.first;
+        return "<a class='package' href='/${package.name}'>${package.name}</a>";
+      } else {
+        return "";
+      }
     }).join("\n");
   }
 
-  String _packagesVersionsHtml(Iterable<PackageInfo> packageInfos) {
-    return packageInfos.map((packageInfo) {
-      var content = "<div class='files-version' data-version='${packageInfo.version}'>";
+  String _packagesVersionsHtml(Iterable<Package> packages) {
+    return packages.map((package) {
+      var content = "<div class='files-version' data-version='${package.version}'>";
+      content += "<div class='files-version--description'>${package.description}</div>";
       content += "<ul>";
-      content += packageInfo.generatedPaths(_config).map((filePath) {
+      content += package.packageInfo.generatedPaths(_config).map((filePath) {
         return "<li class='files-version-file'><a href='${filePath}.html'>${filePath}</a></li>";
       }).join("\n");
       content += "</ul>";

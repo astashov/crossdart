@@ -21,7 +21,7 @@ class DbPackageLoader {
 
   Future<bool> doesPackageExist(PackageInfo packageInfo) async {
     var results = await (await _config.dbPool.query("""
-        SELECT p.id FROM packages AS p WHERE p.name = '${packageInfo.name}' AND p.version = '${packageInfo.version}' 
+        SELECT * FROM packages AS p WHERE p.name = '${packageInfo.name}' AND p.version = '${packageInfo.version}' 
     """)).toList();
     return results.isNotEmpty;
   }
