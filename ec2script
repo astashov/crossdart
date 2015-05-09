@@ -1,0 +1,47 @@
+#!/bin/bash -x
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+sudo su - ubuntu
+cd /home/ubuntu
+sudo apt-get update && apt-get upgrade -y
+wget http://storage.googleapis.com/dart-archive/channels/stable/release/44672/editor/darteditor-linux-x64.zip
+sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password password test'
+sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password_again password test'
+sudo apt-get install --yes s3cmd unzip git mysql-server
+unzip -q darteditor-linux-x64.zip -d .temp
+sudo service mysql start
+export DART_SDK="$(pwd)/.temp/dart/dart-sdk"
+export HOME="$(pwd)"
+export PATH="$PATH:$DART_SDK/bin"
+mysql -u root -ptest -e 'CREATE DATABASE crossdart';
+export INSTALL_PATH=~/crossdart-out
+mkdir -p $INSTALL_PATH/packages
+
+wget http://crossdart.info.s3.amazonaws.com/__crossdart-snapshots/crossdart.sql.gz
+gunzip crossdart.sql.gz
+mysql -u root -ptest crossdart < crossdart.sql
+
+wget http://crossdart.info.s3.amazonaws.com/__crossdart-snapshots/pubcache.tar.gz
+rm -rf ~/.pub-cache
+tar -zxf pubcache.tar.gz
+
+git clone https://github.com/astashov/crossdart.git
+cd crossdart
+pub get
+
+dart --old_gen_heap_size=12288 --package-root=./packages ./bin/parse_packages.dart --sdkpath $DART_SDK --installpath $INSTALL_PATH --dbpassword test
+
+rm -rf ./pubcache.tar.gz
+tar cvfCz ./pubcache.tar.gz ~ .pub-cache
+mysqldump -u root -ptest crossdart > crossdart.sql
+gzip -f crossdart.sql
+echo "[default]
+access_key = aws-key
+secret_key = secret-key
+use_https = True
+" > .s3cfg
+s3cmd -P -c ./.s3cfg put crossdart.sql.gz s3://crossdart.info/__crossdart-snapshots/crossdart.sql.gz
+s3cmd -P -c ./.s3cfg put pubcache.tar.gz s3://crossdart.info/__crossdart-snapshots/pubcache.tar.gz
+sleep 60
+shutdown -h now
+exit 0
