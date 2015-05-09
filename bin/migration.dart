@@ -3,7 +3,6 @@
 library migration;
 
 import 'dart:async';
-import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/args.dart';
@@ -43,8 +42,10 @@ Future<Null> runMigrations(Config config) async {
       `source_type` tinyint NOT NULL,
       `description` text,
       `readme` text,
+      `created_at` DATETIME,
       PRIMARY KEY (`id`),
-      UNIQUE KEY `uniq` (`name`,`version`)
+      UNIQUE KEY `uniq` (`name`,`version`),
+      KEY `created_at` (`created_at`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8
   """, []);
 
@@ -59,12 +60,14 @@ Future<Null> runMigrations(Config config) async {
       `end` int(11) unsigned DEFAULT NULL,
       `path` varchar(255) NOT NULL,
       `package_id` int(11) unsigned NOT NULL,
+      `created_at` DATETIME,
       FOREIGN KEY foreign_package_id (`package_id`) REFERENCES `packages` (`id`) ON DELETE CASCADE,
       PRIMARY KEY (`id`),
       UNIQUE KEY `uniq` (`type`,`offset`,`end`,`path`,`package_id`),
       KEY `type` (`type`),
       KEY `package_id` (`package_id`),
-      KEY `path` (`path`)
+      KEY `path` (`path`),
+      KEY `created_at` (`created_at`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8
   """, []);
 
@@ -74,8 +77,10 @@ Future<Null> runMigrations(Config config) async {
       `package_name` varchar(255) NOT NULL,
       `package_version` varchar(255) NOT NULL,
       `error` text NOT NULL,
+      `created_at` DATETIME,
       PRIMARY KEY (`id`),
-      UNIQUE KEY `uniq` (`package_name`, `package_version`)
+      UNIQUE KEY `uniq` (`package_name`, `package_version`),
+      KEY `created_at` (`created_at`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8
   """, []);
 

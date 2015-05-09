@@ -32,7 +32,7 @@ pub get
 dart --old_gen_heap_size=12288 --package-root=./packages ./bin/parse_packages.dart --sdkpath $DART_SDK --installpath $INSTALL_PATH --dbpassword test
 
 rm -rf ./pubcache.tar.gz
-tar cvfCz ./pubcache.tar.gz ~ .pub-cache
+tar cfCz ./pubcache.tar.gz ~ .pub-cache
 mysqldump -u root -ptest crossdart > crossdart.sql
 gzip -f crossdart.sql
 echo "[default]

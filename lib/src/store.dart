@@ -25,8 +25,8 @@ Map<Type, int> entityTypeIds = {
 Future store(Environment environment, ParsedData parsedData) async {
   var config = environment.config;
   return config.dbPool.prepare("""
-    INSERT IGNORE INTO entities (declaration_id, type, name, context_name, offset, end, path, package_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT IGNORE INTO entities (declaration_id, type, name, context_name, offset, end, path, package_id, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   """).then((query) async {
     var files = [];
     _logger.info("Preparing files");
@@ -75,7 +75,8 @@ List _buildValue(Entity entity, Location location, [int declarationId]) {
       entity.offset,
       entity.end,
       location.path,
-      location.package.id];
+      location.package.id,
+      new DateTime.now().toUtc()];
 }
 
 Future<Map<Declaration, int>> _storeDeclarations(Environment environment, Query query, String filePath, Iterable<Declaration> declarations) async {
@@ -117,8 +118,8 @@ Future _storeTokens(Environment environment, ParsedData parsedData, Query query,
 
 Future storeError(Config config, PackageInfo packageInfo, Object error, StackTrace stackTrace) async {
   return config.dbPool.prepareExecute(
-      "INSERT IGNORE INTO errors (package_name, package_version, error) VALUES (?, ?, ?)",
-      [packageInfo.name, packageInfo.version.toString(), "${error}\n${stackTrace}"]);
+      "INSERT IGNORE INTO errors (package_name, package_version, error, created_at) VALUES (?, ?, ?, ?)",
+      [packageInfo.name, packageInfo.version.toString(), "${error}\n${stackTrace}", new DateTime.now().toUtc()]);
 }
 
 Future storeDependencies(Environment environment, Package package, [Set handledPackages]) async {
@@ -136,8 +137,8 @@ Future storeDependencies(Environment environment, Package package, [Set handledP
 
 Future<int> storePackage(Config config, PackageInfo packageInfo, PackageSource source, String description) async {
   var result = await config.dbPool.prepareExecute(
-      "INSERT IGNORE INTO packages (name, version, source_type, description) VALUES (?, ?, ?, ?)",
-      [packageInfo.name, packageInfo.version.toString(), packageSourceIds[source], description]);
+      "INSERT IGNORE INTO packages (name, version, source_type, description, created_at) VALUES (?, ?, ?, ?, ?)",
+      [packageInfo.name, packageInfo.version.toString(), packageSourceIds[source], description, new DateTime.now().toUtc()]);
   return result.insertId;
 }
 
