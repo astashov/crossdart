@@ -4,6 +4,7 @@ library migration;
 
 import 'dart:async';
 import 'package:logging/logging.dart';
+import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/args.dart';
 
@@ -29,12 +30,12 @@ main(args) async {
 }
 
 Future<Null> runMigrations(Config config) async {
-  await config.dbPool.prepareExecute("DROP TABLE IF EXISTS `packages_dependencies`", []);
-  await config.dbPool.prepareExecute("DROP TABLE IF EXISTS `errors`", []);
-  await config.dbPool.prepareExecute("DROP TABLE IF EXISTS `entities`", []);
-  await config.dbPool.prepareExecute("DROP TABLE IF EXISTS `packages`", []);
+  await dbPool(config).prepareExecute("DROP TABLE IF EXISTS `packages_dependencies`", []);
+  await dbPool(config).prepareExecute("DROP TABLE IF EXISTS `errors`", []);
+  await dbPool(config).prepareExecute("DROP TABLE IF EXISTS `entities`", []);
+  await dbPool(config).prepareExecute("DROP TABLE IF EXISTS `packages`", []);
 
-  await config.dbPool.prepareExecute("""
+  await dbPool(config).prepareExecute("""
     CREATE TABLE `packages` (
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `name` varchar(255) NOT NULL,
@@ -49,7 +50,7 @@ Future<Null> runMigrations(Config config) async {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8
   """, []);
 
-  await config.dbPool.prepareExecute("""
+  await dbPool(config).prepareExecute("""
     CREATE TABLE `entities` (
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `declaration_id` int(11) unsigned DEFAULT NULL,
@@ -71,7 +72,7 @@ Future<Null> runMigrations(Config config) async {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8
   """, []);
 
-  await config.dbPool.prepareExecute("""
+  await dbPool(config).prepareExecute("""
     CREATE TABLE `errors` (
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `package_name` varchar(255) NOT NULL,
@@ -84,7 +85,7 @@ Future<Null> runMigrations(Config config) async {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8
   """, []);
 
-  await config.dbPool.prepareExecute("""
+  await dbPool(config).prepareExecute("""
       CREATE TABLE `packages_dependencies` (
         `package_id` int(11) unsigned NOT NULL,
         `dependency_id` int(11) unsigned NOT NULL,
@@ -94,5 +95,5 @@ Future<Null> runMigrations(Config config) async {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8
     """, []);
 
-  config.deallocDbPool();
+  deallocDbPool();
 }

@@ -4,6 +4,7 @@ library generate_packages_html;
 
 import 'dart:io';
 import 'dart:async';
+import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/args.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/config.dart';
@@ -38,7 +39,7 @@ Future main(args) async {
 
   await runHtmlGenerator(config);
 
-  config.deallocDbPool();
+  deallocDbPool();
   exit(0);
 }
 
@@ -58,6 +59,5 @@ Future runHtmlGenerator(Config config) async {
       return memo;
     });
   });
-  print(generatedPackages);
   new HtmlIndexGenerator(config, generatedPackages)..generate()..generatePackagePages();
 }

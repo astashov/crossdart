@@ -5,6 +5,7 @@ library parse_packages;
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:async';
+import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/args.dart';
 import 'package:crossdart/src/environment.dart';
@@ -41,30 +42,30 @@ Future main(args) async {
 
   logging.initialize();
   await runParser(config);
-  config.deallocDbPool();
+  deallocDbPool();
   exit(0);
 }
 
 Future runParser(Config config) async {
-  var packageInfos = [
-      //new PackageInfo(config, "stagexl", new Version("0.9.2+1"))
-      //new PackageInfo(config, "dagre", new Version("0.0.2"))
-      new PackageInfo("dnd", new Version("0.2.1")),
-      //new PackageInfo("pool", new Version("1.0.1"))
-      ];
-//  List<PackageInfo> packageInfos = (await getUpdatedPackages(config)).toList();
-//  var erroredPackageInfos = await dbPool.query("""
-//    SELECT package_name AS name, package_version AS version FROM errors
-//  """);
-//  erroredPackageInfos = (await erroredPackageInfos.toList()).map((p) {
-//    return new PackageInfo(p.name, new Version(p.version));
-//  });
-//  erroredPackageInfos.forEach((packageInfo) {
-//    packageInfos.remove(packageInfo);
-//  });
-//  (await new DbPackageLoader(config).getAllPackageInfos()).forEach((packageInfo) {
-//    packageInfos.remove(packageInfo);
-//  });
+//  var packageInfos = [
+//      //new PackageInfo(config, "stagexl", new Version("0.9.2+1"))
+//      //new PackageInfo(config, "dagre", new Version("0.0.2"))
+//      new PackageInfo("dnd", new Version("0.2.1")),
+//      //new PackageInfo("pool", new Version("1.0.1"))
+//      ];
+  List<PackageInfo> packageInfos = (await getUpdatedPackages(config)).toList();
+  var erroredPackageInfos = await dbPool(config).query("""
+    SELECT package_name AS name, package_version AS version FROM errors
+  """);
+  erroredPackageInfos = (await erroredPackageInfos.toList()).map((p) {
+    return new PackageInfo(p.name, new Version(p.version));
+  });
+  erroredPackageInfos.forEach((packageInfo) {
+    packageInfos.remove(packageInfo);
+  });
+  (await new DbPackageLoader(config).getAllPackageInfos()).forEach((packageInfo) {
+    packageInfos.remove(packageInfo);
+  });
 
   var index = 0;
   for (PackageInfo packageInfo in packageInfos) {
@@ -143,8 +144,8 @@ void _runInIsolate(SendPort sender, void callback(data)) {
 Future _analyze(SendPort sender) async {
   _runInIsolate(sender, await (data) async {
     logging.initialize();
-    var config = data[0];
-    var packageInfo = data[1];
+    Config config = data[0];
+    PackageInfo packageInfo = data[1];
     try {
       sender.send(IsolateEvent.START);
       if (!(await (new DbPackageLoader(config).doesPackageExist(packageInfo)))) {
@@ -153,13 +154,13 @@ Future _analyze(SendPort sender) async {
         await storeDependencies(environment, environment.package);
         var parsedData = await new Parser(environment).parsePackages();
         await store(environment, parsedData);
-        config.deallocDbPool();
+        deallocDbPool();
       }
       sender.send(IsolateEvent.FINISH);
     } catch(exception, stackTrace) {
       _logger.severe("Exception while handling a package ${packageInfo.name} ${packageInfo.version}", exception, stackTrace);
       await storeError(config, packageInfo, exception, stackTrace);
-      config.deallocDbPool();
+      deallocDbPool();
       sender.send(IsolateEvent.ERROR);
     }
   });

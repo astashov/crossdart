@@ -37,7 +37,7 @@ Future<Iterable<PackageInfo>> getUpdatedPackages(Config config) async {
 }
 
 Iterable<PackageInfo> _getGeneratedPackages(Config config) {
-  return new Directory(config.outputPath).listSync().where((f) => f is Directory).map((Directory dir) {
+  return new Directory(config.currentDir).listSync().where((f) => f is Directory).map((Directory dir) {
     var versions = dir.listSync().map((d) => basename(d.path)).toList();
     versions.sort();
     return new PackageInfo(basename(dir.path), new Version(versions.last));
@@ -45,7 +45,7 @@ Iterable<PackageInfo> _getGeneratedPackages(Config config) {
 }
 
 Iterable<PackageInfo> _getPackagesFromFile(Config config) {
-  var packages = JSON.decode(new File(join(config.outputPath, "packages.json")).readAsStringSync())
+  var packages = JSON.decode(new File(join(config.currentDir, "packages.json")).readAsStringSync())
       .map((json) => new PackageInfo.fromJson(json));
   _logger.info("The number of the available packages - ${packages.length}");
   return packages;
@@ -73,7 +73,7 @@ Future<Iterable<PackageInfo>> _getPackagesFromPub(Config config) async {
   } while (json["next"] != null);
   //} while (page < 2);
 
-  new File(join(config.outputPath, "packages.json")).writeAsStringSync(JSON.encode(packages.toList()));
+  new File(join(config.currentDir, "packages.json")).writeAsStringSync(JSON.encode(packages.toList()));
 
   _logger.info("The number of the available packages - ${packages.length}");
   return packages;

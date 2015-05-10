@@ -7,8 +7,6 @@ import 'package:crossdart/src/version.dart';
 import 'package:analyzer/src/generated/sdk.dart' show DartSdk;
 import 'package:analyzer/src/generated/java_io.dart';
 import 'package:analyzer/src/generated/sdk_io.dart' show DirectoryBasedDartSdk;
-import 'package:sqljocky/sqljocky.dart';
-
 
 class Config {
   final String sdkPath;
@@ -83,33 +81,19 @@ class Config {
     });
   }
 
-  ConnectionPool _dbPool;
-  ConnectionPool get dbPool {
-    if (_dbPool == null) {
-      if (this.isDbUsed) {
-        var login = dbLogin != null ? dbLogin : "root";
-        var password = dbPassword != null ? dbPassword : "";
-        var host = dbHost != null ? dbHost : "localhost";
-        var port = dbPort != null ? dbPort : "3306";
-        var name = dbName != null ? dbName : "crossdart";
-        _dbPool = new ConnectionPool(
-            host: host,
-            port: int.parse(port),
-            user: login,
-            password: (password == '' ? null : password),
-            db: name,
-            max: 5);
-      } else {
-        throw "This application should not use the database";
-      }
+  DateTime _currentDate;
+  DateTime get currentDate {
+    if (_currentDate == null) {
+      _currentDate = new DateTime.now().toUtc();
     }
-    return _dbPool;
+    return _currentDate;
   }
 
-  void deallocDbPool() {
-    if (_dbPool != null) {
-      _dbPool.close();
+  String _currentDir;
+  String get currentDir {
+    if (_currentDir == null) {
+      _currentDir = new File(".").resolveSymbolicLinksSync();
     }
-    _dbPool = null;
+    return _currentDir;
   }
 }

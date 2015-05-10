@@ -2,6 +2,7 @@ library crossdart.package;
 
 import 'dart:io';
 import 'dart:async';
+import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/util/map.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/environment.dart';
@@ -103,7 +104,9 @@ class Project extends Package {
       Iterable<String> paths) :
       super(config, id, packageInfo, source, description, paths);
 
-  Iterable<Package> dependencies(_) => [];
+  Iterable<Package> dependencies(Environment environment) {
+    return environment.customPackages.where((cp) => ["barback", "stack_trace"].contains(cp.packageInfo.name));
+  }
 
   String get _root => config.projectPath;
   String get lib => p.join(_root, "lib");
@@ -132,26 +135,23 @@ class CustomPackage extends Package {
 
   String get lib => p.join(_root, "lib");
 
-  Iterable<Package> _dependencies;
+  List<Package> _dependencies;
   Iterable<Package> dependencies(Environment environment) {
     if (_dependencies == null) {
+      _dependencies = [environment.sdk];
       var pubspecPath = p.join(_root, "pubspec.yaml");
       var file = new File(pubspecPath);
       if (file.existsSync()) {
         var yaml = loadYaml(file.readAsStringSync());
         var dependencies = yaml["dependencies"];
-        var packages = [];
         if (dependencies != null) {
           dependencies.forEach((name, version) {
             var package = environment.customPackages.firstWhere((cp) => cp.packageInfo.name == name);
             if (package != null) {
-              packages.add(package);
+              _dependencies.add(package);
             }
           });
         }
-        _dependencies = packages;
-      } else {
-        _dependencies = [];
       }
     }
     return _dependencies;
@@ -160,12 +160,12 @@ class CustomPackage extends Package {
 
 
 Future<Package> buildFromDatabase(Config config, PackageInfo packageInfo) async {
-  var result = await (await config.dbPool.query("""
+  var result = await (await dbPool(config).query("""
       SELECT id, source_type, description FROM packages WHERE name = '${packageInfo.name}' AND version = '${packageInfo.version}'  
   """)).toList();
   var row = result.isNotEmpty ? result.first : null;
   if (row != null) {
-    var paths = (await (await config.dbPool.query("""
+    var paths = (await (await dbPool(config).query("""
         SELECT DISTINCT path FROM entities WHERE package_id = ${row.id} AND type = ${entityTypeIds[Reference]}  
     """)).toList()).map((r) => r.path);
     var source = key(packageSourceIds, row.source_type);
