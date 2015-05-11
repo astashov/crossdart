@@ -1,5 +1,7 @@
 library crossdart.location;
 
+import 'dart:io';
+import 'package:yaml/yaml.dart';
 import 'package:crossdart/src/util.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/config.dart';
@@ -31,7 +33,7 @@ class Location {
     return "/" + p.join(package.name, _versionPart, "${path}.html");
   }
 
-  String remotePath(int lineNumber) {
+  String remotePath(int lineNumber, [String pubspecLockPath]) {
     if (package is Project) {
       var result = p.join("lib", path);
       if (lineNumber != null) {
@@ -44,8 +46,22 @@ class Location {
         result += "#line-${lineNumber}";
       }
       return result;
-    } else if (package is CustomPackage && package.source == PackageSource.GIT) {
-      return "TBD";
+    } else if (package is CustomPackage && package.source == PackageSource.GIT && pubspecLockPath != null) {
+      var pubspecLockFile = new File(pubspecLockPath);
+      if (pubspecLockFile.existsSync()) {
+        var yaml = loadYaml(pubspecLockFile.readAsStringSync());
+        String ref = yaml["packages"][package.name]["description"]["resolved-ref"];
+        String url = yaml["packages"][package.name]["description"]["url"];
+        url = url.replaceAll("git@github.com:", "https://github.com/");
+        url = url.replaceAll(new RegExp(r".git$"), "");
+        var result = p.join(url, "tree", ref, "lib", path);
+        if (lineNumber != null) {
+          result += "#L${lineNumber + 1}";
+        }
+        return result;
+      } else {
+        return null;
+      }
     } else {
       return null;
     }

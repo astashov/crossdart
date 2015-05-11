@@ -18,8 +18,23 @@
       Request.get(crossdartUrlOld, function (oldJson) {
         var crossdartUrlNew = Path.join([crossdartBaseUrl, newRef, "crossdart.json"]);
         Request.get(crossdartUrlNew, function (newJson) {
-          crossdart.applyJson(CrossdartPullSplit.OLD, oldJson, oldRef);
-          crossdart.applyJson(CrossdartPullSplit.NEW, newJson, newRef);
+          crossdart.applyJson(CROSSDART_PULL_OLD, oldJson, oldRef);
+          crossdart.applyJson(CROSSDART_PULL_NEW, newJson, newRef);
+        });
+      });
+    });
+  }
+
+  function applyPullUnifiedCrossdart(github, crossdartBaseUrl, crossdart) {
+    github.path.getRealRefs(function (refs) {
+      var oldRef = refs[0];
+      var newRef = refs[1];
+      var crossdartUrlOld = Path.join([crossdartBaseUrl, oldRef, "crossdart.json"]);
+      Request.get(crossdartUrlOld, function (oldJson) {
+        var crossdartUrlNew = Path.join([crossdartBaseUrl, newRef, "crossdart.json"]);
+        Request.get(crossdartUrlNew, function (newJson) {
+          crossdart.applyJson(CROSSDART_PULL_OLD, oldJson, oldRef);
+          crossdart.applyJson(CROSSDART_PULL_NEW, newJson, newRef);
         });
       });
     });
@@ -38,6 +53,11 @@
         crossdart = new CrossdartPullSplit(github);
       }
       applyPullSplitCrossdart(github, crossdartBaseUrl, crossdart);
+    } else if (Github.isPullUnified()) {
+      if (!shouldReuseCrossdart || !crossdart) {
+        crossdart = new CrossdartPullUnified(github);
+      }
+      applyPullUnifiedCrossdart(github, crossdartBaseUrl, crossdart);
     }
   }
 
