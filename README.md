@@ -9,7 +9,7 @@ Let's review the second case, since you can get some benefits from it for your p
 
 ## Demo
 
-[Here](https://raw.githubusercontent.com/astashov/crossdart/master/demo.gif) (22MB) 
+[Here](https://github.com/astashov/crossdart/raw/6f9a0e6d609c25c98f8ba0d6a05015de5a8693a4/demo.gif) (22MB) 
 
 ## Installation
 
