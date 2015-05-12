@@ -30,7 +30,7 @@ $ pub global run crossdart:crossdart --sdkpath /path/to/dart-sdk --projectpath /
 
 It will generate the crossdart.json file, which you will need to put somewhere, for example, to S3 (see below).
 
-Then, install Crossdart Chrome Extension from Chrome Web Store, and you are good to go.
+Then, install [Crossdart Chrome Extension](https://chrome.google.com/webstore/detail/crossdart-chrome-extensio/jmdjoliiaibifkklhipgmnciiealomhd) from Chrome Web Store, and you are good to go.
 
 Alternatively, you can add `crossdart` package as a dev dependency to your project:
 
@@ -125,7 +125,7 @@ How cool is that! :)
 
 ## Setting up the Crossdart Chrome extension:
 
-After installing Crossdart Chrome extension, you'll see a little "XD" icon in Chrome's URL bar on Github pages.
+After installing [Crossdart Chrome Extension](https://chrome.google.com/webstore/detail/crossdart-chrome-extensio/jmdjoliiaibifkklhipgmnciiealomhd), you'll see a little "XD" icon in Chrome's URL bar on Github pages.
 If you click to it, you'll see a little popup, where you can turn Crossdart on for the current project, and also
 specify the URL where it should get the metadata files from. You only should provide a base for this URL, the extension
 will later append git sha and 'crossdart.json' to it. I.e. if you specify URL in this field like:
