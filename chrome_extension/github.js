@@ -23,14 +23,19 @@
     return Path.isTree(Path.current());
   };
 
+  window.Github.pullType = function () {
+    var node = document.querySelector("meta[name='diff-view']");
+    if (node) {
+      return node.attributes.content.value;
+    }
+  };
+
   window.Github.isPullSplit = function () {
-    return Path.isPull(Path.current()) &&
-      document.querySelector("meta[name='diff-view']").attributes.content.value === "split";
+    return Path.isPull(Path.current()) && this.pullType() === "split";
   };
 
   window.Github.isPullUnified = function () {
-    return Path.isPull(Path.current()) &&
-      document.querySelector("meta[name='diff-view']").attributes.content.value === "unified";
+    return Path.isPull(Path.current()) && this.pullType() === "unified";
   };
 
   window.Github.api = function (path, callback, errorCallback) {
