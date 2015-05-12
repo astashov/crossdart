@@ -36,24 +36,28 @@ function getRealOffset(content, offset) {
 }
 
 function applyReferences(github, ref, content, references) {
-  var newLineContent = "";
-  var lastStop = 0;
-  for (var index in references) {
-    var reference = references[index];
-    var realOffset = getRealOffset(content, reference.offset);
-    newLineContent += content.substr(lastStop, realOffset - lastStop);
-    var href = new TreePath(github, ref, reference.remotePath).absolutePath();
-    newLineContent += "<a href='" + href + "' class='crossdart-link'>";
-    var end = reference.offset + reference.length;
-    realOffset = getRealOffset(content, reference.offset);
-    var realEnd = getRealOffset(content, end);
-    newLineContent += content.substr(realOffset, realEnd - realOffset);
-    newLineContent += "</a>";
-    lastStop = realEnd;
+  if (content.indexOf("crossdart-link") === -1) {
+    var newLineContent = "";
+    var lastStop = 0;
+    for (var index in references) {
+      var reference = references[index];
+      var realOffset = getRealOffset(content, reference.offset);
+      newLineContent += content.substr(lastStop, realOffset - lastStop);
+      var href = new TreePath(github, ref, reference.remotePath).absolutePath();
+      newLineContent += "<a href='" + href + "' class='crossdart-link'>";
+      var end = reference.offset + reference.length;
+      realOffset = getRealOffset(content, reference.offset);
+      var realEnd = getRealOffset(content, end);
+      newLineContent += content.substr(realOffset, realEnd - realOffset);
+      newLineContent += "</a>";
+      lastStop = realEnd;
+    }
+    var lastReference = references[references.length - 1];
+    var lastEnd = lastReference.offset + lastReference.length;
+    var lastRealEnd = getRealOffset(content, lastEnd);
+    newLineContent += content.substr(lastRealEnd);
+    return newLineContent;
+  } else {
+    return content;
   }
-  var lastReference = references[references.length - 1];
-  var lastEnd = lastReference.offset + lastReference.length;
-  var lastRealEnd = getRealOffset(content, lastEnd);
-  newLineContent += content.substr(lastRealEnd);
-  return newLineContent;
 }
