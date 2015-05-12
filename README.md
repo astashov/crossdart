@@ -123,6 +123,26 @@ And every time somebody creates a pull request for me on Github, it's code also 
 
 How cool is that! :)
 
+## Setting up the Crossdart Chrome extension:
+
+After installing Crossdart Chrome extension, you'll see a little "XD" icon in Chrome's URL bar on Github pages.
+If you click to it, you'll see a little popup, where you can turn Crossdart on for the current project, and also
+specify the URL where it should get the metadata files from. You only should provide a base for this URL, the extension
+will later append git sha and 'crossdart.json' to it. I.e. if you specify URL in this field like:
+
+```
+https://my-bucket.s3.amazonaws.com/crossdart/my-project
+```
+
+then the extension will try to find crossdart.json files by URLs, which will look like:
+
+```
+https://my-bucket.s3.amazonaws.com/crossdart/my-project/4a9f8b41d042183116bbfaba31bdea109cc3080d/crossdart.json
+```
+
+If your project is private, you also will need to create access token, and paste it into the field in the popup as well.
+You can do that there: https://github.com/settings/tokens/new.
+
 ## Contributing
 
 Please use Github's bug tracker for bugs. Pull Requests are welcome.
