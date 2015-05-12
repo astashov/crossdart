@@ -1,18 +1,23 @@
 <div class="popup">
   <link href="popup.css" media="screen" rel="stylesheet" />
+  <div class="crossdart-enabled">
+    <input type="checkbox" id="enabled" name="enabled" value="1" class="crossdart-enabled--checkbox" />
+    <label for="enabled">Enable Crossdart for this project</label>
+  </div>
   <div class="crossdart-url">
-    <div class="crossdart-url--info">Enter the URL where crossdart.json files are</div>
-    <input id="url" type="text" value=""></input>
+    <label for="url" class="crossdart-url--info">Enter the base of the URL where crossdart.json files are.</label>
+    <input id="url" type="text" value="" />
   </div>
   <div class="github-token">
-    <div class="github-token--info">
+    <label class="github-token--info" for="token">
       Accessing private repositories requires a GitHub access token. Follow
-      this link to create one and paste it below.
-    </div>
-    <input id="token" type="text" value=""></input>
+      <a href="https://github.com/settings/tokens/new">this link</a> to create one and paste it below.
+    </label>
+    <input id="token" type="text" value="" />
   </div>
   <div class="button-container">
     <input type="button" id="button" value="Apply" />
   </div>
+  <script src="errors.js"></script>
   <script src="popup.js"></script>
 </div>

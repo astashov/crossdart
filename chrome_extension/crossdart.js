@@ -4,10 +4,8 @@
       var crossdartUrl = Path.join([crossdartBaseUrl, ref, "crossdart.json"]);
       Request.get(crossdartUrl, function (json) {
         crossdart.applyJson(json);
-      }, function () {
-        console.log("the default Github's Crossdart file is missing");
-      });
-    });
+      }, Errors.showUrlError);
+    }, Errors.showTokenError);
   }
 
   function applyPullSplitCrossdart(github, crossdartBaseUrl, crossdart) {
@@ -20,9 +18,9 @@
         Request.get(crossdartUrlNew, function (newJson) {
           crossdart.applyJson(CROSSDART_PULL_OLD, oldJson, oldRef);
           crossdart.applyJson(CROSSDART_PULL_NEW, newJson, newRef);
-        });
-      });
-    });
+        }, Errors.showUrlError);
+      }, Errors.showUrlError);
+    }, Errors.showTokenError);
   }
 
   function applyPullUnifiedCrossdart(github, crossdartBaseUrl, crossdart) {
@@ -35,41 +33,49 @@
         Request.get(crossdartUrlNew, function (newJson) {
           crossdart.applyJson(CROSSDART_PULL_OLD, oldJson, oldRef);
           crossdart.applyJson(CROSSDART_PULL_NEW, newJson, newRef);
-        });
-      });
-    });
+        }, Errors.showUrlError);
+      }, Errors.showUrlError);
+    }, Errors.showTokenError);
   }
 
   var crossdart;
   function applyCrossdart(crossdartBaseUrl, shouldReuseCrossdart) {
-    var github = new Github();
-    if (Github.isTree()) {
-      if (!shouldReuseCrossdart || !crossdart) {
-        crossdart = new CrossdartTree(github);
+    if (!crossdartBaseUrl || crossdartBaseUrl.toString().trim() === "") {
+      Errors.showMissingJsonUrlError();
+    } else {
+      var github = new Github();
+      if (Github.isTree()) {
+        if (!shouldReuseCrossdart || !crossdart) {
+          crossdart = new CrossdartTree(github);
+        }
+        applyTreeCrossdart(github, crossdartBaseUrl, crossdart);
+      } else if (Github.isPullSplit()) {
+        if (!shouldReuseCrossdart || !crossdart) {
+          crossdart = new CrossdartPullSplit(github);
+        }
+        applyPullSplitCrossdart(github, crossdartBaseUrl, crossdart);
+      } else if (Github.isPullUnified()) {
+        if (!shouldReuseCrossdart || !crossdart) {
+          crossdart = new CrossdartPullUnified(github);
+        }
+        applyPullUnifiedCrossdart(github, crossdartBaseUrl, crossdart);
       }
-      applyTreeCrossdart(github, crossdartBaseUrl, crossdart);
-    } else if (Github.isPullSplit()) {
-      if (!shouldReuseCrossdart || !crossdart) {
-        crossdart = new CrossdartPullSplit(github);
-      }
-      applyPullSplitCrossdart(github, crossdartBaseUrl, crossdart);
-    } else if (Github.isPullUnified()) {
-      if (!shouldReuseCrossdart || !crossdart) {
-        crossdart = new CrossdartPullUnified(github);
-      }
-      applyPullUnifiedCrossdart(github, crossdartBaseUrl, crossdart);
     }
   }
 
   chrome.extension.sendMessage({crossdart: {action: 'initPopup'}});
 
   var jsonUrl;
+  var enabled;
   chrome.runtime.onMessage.addListener(function (request) {
     if (request.crossdart) {
       if (request.crossdart.action === 'popupInitialized' || request.crossdart.action === 'apply') {
         window.Github.token = request.crossdart.token;
         jsonUrl = request.crossdart.jsonUrl;
-        applyCrossdart(jsonUrl, request.crossdart.action === 'apply');
+        enabled = request.crossdart.enabled;
+        if (enabled) {
+          applyCrossdart(jsonUrl, request.crossdart.action === 'apply');
+        }
       }
     }
   });

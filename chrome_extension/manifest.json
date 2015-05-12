@@ -24,6 +24,7 @@
         "constants.js",
         "utils.js",
         "path.js",
+        "errors.js",
         "request.js",
         "github.js",
         "github/tree_path.js",

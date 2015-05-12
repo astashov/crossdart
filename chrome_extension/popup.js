@@ -2,9 +2,11 @@ var basePath;
 
 var urlField = document.querySelector("#url");
 var tokenField = document.querySelector("#token");
+var enabledField = document.querySelector("#enabled");
 
 urlField.addEventListener("change", saveChangesInUrl);
 tokenField.addEventListener("change", saveChangesInToken);
+enabledField.addEventListener("change", saveChangesInEnabled);
 
 var button = document.querySelector("#button");
 button.addEventListener("click", function () {
@@ -21,12 +23,20 @@ function setUrlFieldValue() {
   urlField.value = getUrlFromLocalStorage();
 }
 
+function setEnabledFieldValue() {
+  enabledField.checked = getEnabledFromLocalStorage();
+}
+
 function setTokenToLocalStorage(value) {
   localStorage.setItem(getTokenKey(), value);
 }
 
 function setUrlToLocalStorage(value) {
   localStorage.setItem(getUrlKey(), value);
+}
+
+function setEnabledToLocalStorage(value) {
+  localStorage.setItem(getEnabledKey(), value);
 }
 
 function getTokenKey() {
@@ -37,12 +47,20 @@ function getUrlKey() {
   return basePath + '/crossdartUrl';
 }
 
+function getEnabledKey() {
+  return basePath + '/crossdartEnabled';
+}
+
 function getTokenFromLocalStorage() {
   return localStorage.getItem(getTokenKey());
 }
 
 function getUrlFromLocalStorage() {
   return localStorage.getItem(getUrlKey());
+}
+
+function getEnabledFromLocalStorage() {
+  return (localStorage.getItem(getEnabledKey()).toString() === "true");
 }
 
 function saveChangesInUrl() {
@@ -57,10 +75,17 @@ function saveChangesInToken() {
   });
 }
 
+function saveChangesInEnabled() {
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    setEnabledToLocalStorage(enabledField.checked);
+  });
+}
+
 function sendApplyMessage(id) {
   var token = getTokenFromLocalStorage();
   var url = getUrlFromLocalStorage();
-  chrome.tabs.sendMessage(id, {crossdart: {action: "apply", jsonUrl: url, token: token}});
+  var enabled = getEnabledFromLocalStorage();
+  chrome.tabs.sendMessage(id, {crossdart: {action: "apply", jsonUrl: url, token: token, enabled: enabled}});
 }
 
 chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
@@ -68,4 +93,7 @@ chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
   basePath = pathname.split("/").slice(0, 2).join("/");
   setTokenFieldValue();
   setUrlFieldValue();
+  setEnabledFieldValue();
+  var urlInfo = document.querySelector(".crossdart-url--info");
+  urlInfo.innerHTML = urlInfo.innerHTML + " " + window.Errors.URL_HELP;
 });

@@ -11,7 +11,7 @@ Request = {
           callback(JSON.parse(httpRequest.responseText));
         } else {
           if (errorCallback) {
-            errorCallback();
+            errorCallback(url, httpRequest.status, response);
           } else {
             console.log("Unhandled response " + httpRequest.status + " - " + httpRequest.responseText);
           }
