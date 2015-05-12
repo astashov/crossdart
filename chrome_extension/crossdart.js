@@ -76,6 +76,8 @@
         if (enabled) {
           applyCrossdart(jsonUrl, request.crossdart.action === 'apply');
         }
+      } else if (request.crossdart.action === 'tokenLink') {
+        location.href = request.crossdart.url;
       }
     }
   });

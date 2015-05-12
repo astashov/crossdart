@@ -15,6 +15,14 @@ button.addEventListener("click", function () {
   });
 });
 
+var tokenLink = document.querySelector("#token-link");
+tokenLink.addEventListener("click", function () {
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    chrome.tabs.sendMessage(tabs[0].id, {crossdart: {action: "tokenLink", url: tokenLink.attributes.href.value}});
+  });
+  return false;
+});
+
 function setTokenFieldValue() {
   tokenField.value = getTokenFromLocalStorage();
 }
@@ -60,7 +68,8 @@ function getUrlFromLocalStorage() {
 }
 
 function getEnabledFromLocalStorage() {
-  return (localStorage.getItem(getEnabledKey()).toString() === "true");
+  var isEnabled = localStorage.getItem(getEnabledKey());
+  return isEnabled && isEnabled.toString() === "true";
 }
 
 function saveChangesInUrl() {
