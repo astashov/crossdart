@@ -55,10 +55,12 @@ Future<Null> runMigrations(Config config) async {
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `declaration_id` int(11) unsigned DEFAULT NULL,
       `type` smallint(4) NOT NULL,
+      `kind` smallint(4) DEFAULT NULL,
       `context_name` varchar(255) DEFAULT NULL,
       `name` varchar(255) DEFAULT NULL,
       `offset` int(11) unsigned DEFAULT NULL,
       `end` int(11) unsigned DEFAULT NULL,
+      `line_number` int(11) unsigned DEFAULT NULL,
       `path` varchar(255) NOT NULL,
       `package_id` int(11) unsigned NOT NULL,
       `created_at` DATETIME,
@@ -68,7 +70,8 @@ Future<Null> runMigrations(Config config) async {
       KEY `type` (`type`),
       KEY `package_id` (`package_id`),
       KEY `path` (`path`),
-      KEY `created_at` (`created_at`)
+      KEY `created_at` (`created_at`),
+      KEY `declaration_id` (`declaration_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8
   """, []);
 

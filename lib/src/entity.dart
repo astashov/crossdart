@@ -4,12 +4,18 @@ import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/cache.dart';
 import 'package:crossdart/src/util.dart';
 
+enum EntityKind {
+  CLASS, METHOD, LOCAL_VARIABLE, FUNCTION, PROPERTY_ACCESSOR, CONSTRUCTOR, FIELD, FUNCTION_TYPE_ALIAS,
+  TOP_LEVEL_VARIABLE
+}
+
 abstract class Entity {
   final Location location;
   final String name;
   final String contextName;
   final int offset;
   final int end;
+  final EntityKind kind;
 
   int _lineNumber;
   int get lineNumber {
@@ -35,7 +41,7 @@ abstract class Entity {
     }
   }
 
-  Entity(this.location, {this.name, this.contextName, this.offset, this.end});
+  Entity(this.location, {this.name, this.contextName, this.offset, this.end, this.kind});
 
   int get hashCode => hash([this.runtimeType, location, name, offset, end]);
 
@@ -57,8 +63,8 @@ abstract class Entity {
 }
 
 class Declaration extends Entity {
-  Declaration(Location location, {String name, String contextName, int offset, int end})
-      : super(location, name: name, contextName: contextName, offset: offset, end: end);
+  Declaration(Location location, {String name, String contextName, int offset, int end, EntityKind kind})
+      : super(location, name: name, contextName: contextName, offset: offset, end: end, kind: kind);
 }
 class Import extends Declaration {
   Import(Location location, {String name}) : super(location, name: name);

@@ -22,13 +22,25 @@ Map<Type, int> entityTypeIds = {
   Token: 4
 };
 
+Map<EntityKind, int> entityKindIds = {
+  EntityKind.CLASS: 1,
+  EntityKind.METHOD: 2,
+  EntityKind.LOCAL_VARIABLE: 3,
+  EntityKind.FUNCTION: 4,
+  EntityKind.PROPERTY_ACCESSOR: 5,
+  EntityKind.CONSTRUCTOR: 6,
+  EntityKind.FIELD: 7,
+  EntityKind.FUNCTION_TYPE_ALIAS: 8,
+  EntityKind.TOP_LEVEL_VARIABLE: 9
+};
+
 // TODO: Refactor to a class
 
 Future store(Environment environment, ParsedData parsedData) async {
   var config = environment.config;
   return dbPool(config).prepare("""
-    INSERT IGNORE INTO entities (declaration_id, type, name, context_name, offset, end, path, package_id, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT IGNORE INTO entities (declaration_id, type, kind, name, context_name, offset, end, line_number, path, package_id, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   """).then((query) async {
     var files = [];
 
@@ -97,10 +109,12 @@ List _buildValue(Config config, Entity entity, Location location, [int declarati
   return [
       declarationId,
       entityTypeIds[entity.runtimeType],
+      entityKindIds[entity.kind],
       entity.name,
       entity.contextName,
       entity.offset,
       entity.end,
+      entity.lineNumber,
       location.path,
       location.package.id,
       config.currentDate];

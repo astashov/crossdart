@@ -139,6 +139,8 @@ class ASTVisitor extends GeneralizingAstVisitor {
         if (element != null && element.library != null && element.node is Declaration && !node.inDeclarationContext()) {
           var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.bestElement.displayName, offset: node.offset, end: node.end);
           var declarationElement = (element.node as Declaration).element;
+          var kind = getEntityKind(declarationElement);
+
           String contextName;
           if (declarationElement is ClassMemberElement) {
             contextName = declarationElement.enclosingElement.name;
@@ -147,13 +149,38 @@ class ASTVisitor extends GeneralizingAstVisitor {
               name: declarationElement.displayName,
               contextName: contextName,
               offset: element.node.offset,
-              end: element.node.end);
+              end: element.node.end,
+              kind: kind);
 
           _addReferenceAndDeclaration(reference, declaration);
         }
       } catch(error, stackTrace) {
         _logger.severe("Error parsing a reference/declaration $node", error, stackTrace);
       }
+    }
+  }
+
+  e.EntityKind getEntityKind(Element declarationElement) {
+    if (declarationElement is ClassElement) {
+      return e.EntityKind.CLASS;
+    } else if (declarationElement is MethodElement) {
+      return e.EntityKind.METHOD;
+    } else if (declarationElement is LocalVariableElement) {
+      return e.EntityKind.LOCAL_VARIABLE;
+    } else if (declarationElement is FunctionElement) {
+      return e.EntityKind.FUNCTION;
+    } else if (declarationElement is PropertyAccessorElement) {
+      return e.EntityKind.PROPERTY_ACCESSOR;
+    } else if (declarationElement is ConstructorElement) {
+      return e.EntityKind.CONSTRUCTOR;
+    } else if (declarationElement is FieldElement) {
+      return e.EntityKind.FIELD;
+    } else if (declarationElement is FunctionTypeAliasElement) {
+      return e.EntityKind.FUNCTION_TYPE_ALIAS;
+    } else if (declarationElement is TopLevelVariableElement) {
+      return e.EntityKind.TOP_LEVEL_VARIABLE;
+    } else {
+      return null;
     }
   }
 
