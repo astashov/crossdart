@@ -141,6 +141,10 @@ class ASTVisitor extends GeneralizingAstVisitor {
           var declarationElement = (element.node as Declaration).element;
           var kind = getEntityKind(declarationElement);
 
+          if (kind == null) {
+            print("MISSING KIND! - ${declarationElement.runtimeType} - ${declarationElement.displayName}, ${element.node.offset}-${element.node.end}");
+          }
+
           String contextName;
           if (declarationElement is ClassMemberElement) {
             contextName = declarationElement.enclosingElement.name;
