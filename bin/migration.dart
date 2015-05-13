@@ -61,6 +61,7 @@ Future<Null> runMigrations(Config config) async {
       `offset` int(11) unsigned DEFAULT NULL,
       `end` int(11) unsigned DEFAULT NULL,
       `line_number` int(11) unsigned DEFAULT NULL,
+      `line_offset` int(11) unsigned DEFAULT NULL,
       `path` varchar(255) NOT NULL,
       `package_id` int(11) unsigned NOT NULL,
       `created_at` DATETIME,

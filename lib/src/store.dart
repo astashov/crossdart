@@ -39,8 +39,8 @@ Map<EntityKind, int> entityKindIds = {
 Future store(Environment environment, ParsedData parsedData) async {
   var config = environment.config;
   return dbPool(config).prepare("""
-    INSERT IGNORE INTO entities (declaration_id, type, kind, name, context_name, offset, end, line_number, path, package_id, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT IGNORE INTO entities (declaration_id, type, kind, name, context_name, offset, end, line_number, line_offset, path, package_id, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   """).then((query) async {
     var files = [];
 
@@ -115,6 +115,7 @@ List _buildValue(Config config, Entity entity, Location location, [int declarati
       entity.offset,
       entity.end,
       entity.lineNumber,
+      entity.lineOffset,
       location.path,
       location.package.id,
       config.currentDate];
