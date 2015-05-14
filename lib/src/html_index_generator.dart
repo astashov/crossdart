@@ -117,7 +117,7 @@ class HtmlIndexGenerator {
     return packages.map((package) {
       var content = "<div class='files-version' data-version='${package.version}'>";
       content += "<div class='files-version--description'>${package.description}</div>";
-      content += "<ul>";
+      content += "<ul class='files-version--files'>";
       content += package.packageInfo.generatedPaths(_config).map((filePath) {
         return "<li class='files-version-file'><a href='${filePath}.html'>${filePath}</a></li>";
       }).join("\n");

@@ -16,6 +16,7 @@ abstract class Entity {
   final int offset;
   final int end;
   final EntityKind kind;
+  final int id;
 
   int _lineNumber;
   int get lineNumber {
@@ -41,7 +42,7 @@ abstract class Entity {
     }
   }
 
-  Entity(this.location, {this.name, this.contextName, this.offset, this.end, this.kind});
+  Entity(this.location, {this.name, this.contextName, this.offset, this.end, this.kind, this.id});
 
   int get hashCode => hash([this.runtimeType, location, name, offset, end]);
 
@@ -63,15 +64,15 @@ abstract class Entity {
 }
 
 class Declaration extends Entity {
-  Declaration(Location location, {String name, String contextName, int offset, int end, EntityKind kind})
-      : super(location, name: name, contextName: contextName, offset: offset, end: end, kind: kind);
+  Declaration(Location location, {String name, String contextName, int offset, int end, EntityKind kind, int id})
+      : super(location, name: name, contextName: contextName, offset: offset, end: end, kind: kind, id: id);
 }
 class Import extends Declaration {
-  Import(Location location, {String name}) : super(location, name: name);
+  Import(Location location, {String name, int id}) : super(location, name: name, id: id);
 }
 class Token extends Entity {
-  Token(Location location, {String name, int offset, int end}) : super(location, name: name, offset: offset, end: end);
+  Token(Location location, {String name, int offset, int end, int id}) : super(location, name: name, offset: offset, end: end, id: id);
 }
 class Reference extends Token {
-  Reference(Location location, {String name, int offset, int end}) : super(location, name: name, offset: offset, end: end);
+  Reference(Location location, {String name, int offset, int end, int id}) : super(location, name: name, offset: offset, end: end, id: id);
 }

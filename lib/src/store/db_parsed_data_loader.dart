@@ -45,13 +45,13 @@ class DbParsedDataLoader {
         Package declarationPackage = packagesById[row.d_package_id];
 
         if (referencePackage != null && declarationPackage != null) {
-          var reference = new Reference(new Location(referencePackage, row.r_path), name: row.r_name, offset: row.r_offset, end: row.r_end);
+          var reference = new Reference(new Location(referencePackage, row.r_path), name: row.r_name, offset: row.r_offset, end: row.r_end, id: row.r_id);
           var location = new Location(declarationPackage, row.d_path);
           Declaration declaration;
           if (row.d_type == entityTypeIds[Declaration]) {
-            declaration = new Declaration(location, name: row.d_name, offset: row.d_offset, end: row.d_end);
+            declaration = new Declaration(location, name: row.d_name, offset: row.d_offset, end: row.d_end, id: row.d_id);
           } else if (row.d_type == entityTypeIds[Import]) {
-            declaration = new Import(location, name: row.d_name);
+            declaration = new Import(location, name: row.d_name, id: row.d_id);
           }
 
           _fillInParsedData(parsedData, reference, declaration);
@@ -66,7 +66,7 @@ class DbParsedDataLoader {
       rows.forEach((Row row) {
         Package tokenPackage = packagesById[row.e_package_id];
         if (tokenPackage != null) {
-          var token = new Token(new Location(tokenPackage, row.e_path), name: row.e_name, offset: row.e_offset, end: row.e_end);
+          var token = new Token(new Location(tokenPackage, row.e_path), name: row.e_name, offset: row.e_offset, end: row.e_end, id: row.e_id);
 
           parsedData.tokens.add(token);
           if (parsedData.files[token.location.file] == null) {

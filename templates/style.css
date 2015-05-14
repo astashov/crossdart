@@ -179,6 +179,11 @@ body {
 .package-page .files-version--description {
   margin: 1em;
   font-size: 18px;
+  max-width: 600px;
+}
+
+.package-page .files-version--files {
+  margin: 1em;
 }
 
 .package-page .files-version.is-visible {

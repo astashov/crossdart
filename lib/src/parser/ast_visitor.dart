@@ -140,9 +140,9 @@ class ASTVisitor extends GeneralizingAstVisitor {
           var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.bestElement.displayName, offset: node.offset, end: node.end);
           var declarationElement = (element.node as Declaration).element;
           var kind = getEntityKind(declarationElement);
-
+          var declarationToken = getDeclarationToken(element.node);
           if (kind == null) {
-            print("MISSING KIND! - ${declarationElement.runtimeType} - ${declarationElement.displayName}, ${element.node.offset}-${element.node.end}");
+            print("MISSING KIND! - ${declarationElement.runtimeType} - ${declarationElement.displayName}, ${declarationToken.offset}-${declarationToken.end}");
           }
 
           String contextName;
@@ -152,8 +152,8 @@ class ASTVisitor extends GeneralizingAstVisitor {
           var declaration = new e.Declaration(new Location.fromEnvironment(_environment, declarationElement.source.fullName),
               name: declarationElement.displayName,
               contextName: contextName,
-              offset: element.node.offset,
-              end: element.node.end,
+              offset: declarationToken.offset,
+              end: declarationToken.end,
               kind: kind);
 
           _addReferenceAndDeclaration(reference, declaration);
@@ -185,6 +185,21 @@ class ASTVisitor extends GeneralizingAstVisitor {
       return e.EntityKind.TOP_LEVEL_VARIABLE;
     } else {
       return null;
+    }
+  }
+
+  AstNode getDeclarationToken(dynamic node) {
+    if ((node is ClassDeclaration
+        || node is MethodDeclaration
+        || node is VariableDeclaration
+        || node is FunctionDeclaration
+        || node is ConstructorDeclaration
+        || node is FunctionTypeAlias) && node.name != null) {
+      return node.name;
+    } else {
+      print(node);
+      print(node.runtimeType);
+      return node;
     }
   }
 
