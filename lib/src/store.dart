@@ -11,7 +11,6 @@ import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:sqljocky/sqljocky.dart';
 import 'package:logging/logging.dart';
-import 'dart:profiler';
 
 var _logger = new Logger("store");
 
@@ -44,11 +43,7 @@ Future store(Environment environment, ParsedData parsedData) async {
   """).then((query) async {
     var files = [];
 
-    var customTag = new UserTag('StoringDb');
-    var previousTag = customTag.makeCurrent();
-
     _logger.info("Preparing files");
-
 
     var packages = parsedData.files.keys.map((k) => environment.packagesByFiles[k]).toSet();
     var existingPackageIds = (await (await dbPool(config).query("""
@@ -63,9 +58,8 @@ Future store(Environment environment, ParsedData parsedData) async {
     });
 
     _logger.info("Storing declarations");
-    var idsByDeclarationsList = await Future.wait(files.map((tuple) async {
-      var absolutePath = tuple[0];
-      var entities = tuple[1];
+    var idsByDeclarationsList = await Future.wait(parsedData.files.keys.map((absolutePath) async {
+      var entities = parsedData.files[absolutePath];
       var filteredEntities = entities.where((e) => e is Declaration);
       return await _storeDeclarations(environment, query, absolutePath, filteredEntities);
     }));
@@ -100,8 +94,6 @@ Future store(Environment environment, ParsedData parsedData) async {
     if (tokensValues.length > 0) {
       await query.executeMulti(tokensValues);
     }
-
-    previousTag.makeCurrent();
   });
 }
 
@@ -127,6 +119,16 @@ Future<Map<Declaration, int>> _storeDeclarations(Environment environment, Query 
     var value = _buildValue(environment.config, declaration, location);
     Results result = await query.execute(value);
     var id = result.insertId;
+    if (id == 0) {
+      id = declaration.id;
+    }
+    if (id == null) {
+      id = (await (await dbPool(environment.config).query("""
+        SELECT id FROM entities
+        WHERE type = ${entityTypeIds[Declaration]} AND offset = ${declaration.offset} AND end = ${declaration.end} AND
+              path = '${location.path}' AND package_id = ${location.package.id}
+      """)).toList()).first.id;
+    }
     return [declaration, id];
   }));
   return idAndDeclaration.fold({}, (memo, values) {

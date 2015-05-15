@@ -22,6 +22,7 @@ class Parser {
       var compilationUnit = new CompilationUnitResolver.build(environment.config, absolutePaths);
       _sendIsolateEvent(IsolateEvent.START_PARSING);
       _parseAbsolutePathsOf(compilationUnit, absolutePaths, parsedData);
+      //_parseAbsolutePath(compilationUnit, "/Users/anton/.pub-cache/hosted/pub.dartlang.org/dnd-0.3.0/lib/src/draggable.dart", parsedData);
       _sendIsolateEvent(IsolateEvent.FINISH_PARSING);
       return parsedData;
     });

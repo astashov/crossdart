@@ -136,27 +136,43 @@ class ASTVisitor extends GeneralizingAstVisitor {
     } else {
       try {
         Element element = node.bestElement;
-        if (element != null && element.library != null && element.node is Declaration && !node.inDeclarationContext()) {
-          var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.bestElement.displayName, offset: node.offset, end: node.end);
-          var declarationElement = (element.node as Declaration).element;
-          var kind = getEntityKind(declarationElement);
-          var declarationToken = getDeclarationToken(element.node);
-          if (kind == null) {
-            print("MISSING KIND! - ${declarationElement.runtimeType} - ${declarationElement.displayName}, ${declarationToken.offset}-${declarationToken.end}");
+
+        //print("Node ${node}, type: ${node.runtimeType}, bestElement - ${node.bestElement}, bestElementType - ${node.bestElement.runtimeType}, nodeType - ${node.bestElement.node.runtimeType}");
+
+        if (element != null && element.library != null) {
+          AstNode elementNode;
+          if (element.node == null && element is PropertyAccessorElement) {
+            elementNode = element.variable.node;
+          } else if (element.node == null && element is FieldFormalParameterElement) {
+            elementNode = element.field.node;
+          } else {
+            elementNode = element.node;
           }
 
-          String contextName;
-          if (declarationElement is ClassMemberElement) {
-            contextName = declarationElement.enclosingElement.name;
-          }
-          var declaration = new e.Declaration(new Location.fromEnvironment(_environment, declarationElement.source.fullName),
-              name: declarationElement.displayName,
-              contextName: contextName,
-              offset: declarationToken.offset,
-              end: declarationToken.end,
-              kind: kind);
+          if (elementNode is Declaration && !node.inDeclarationContext()) {
+            var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.bestElement.displayName, offset: node.offset, end: node.end);
+            var declarationElement = elementNode.element;
+            var kind = getEntityKind(declarationElement);
+            var declarationToken = getDeclarationToken(elementNode);
+            if (kind == null) {
+              print("MISSING KIND! - ${declarationElement.runtimeType} - ${declarationElement.displayName}, ${declarationToken.offset}-${declarationToken.end}");
+            }
 
-          _addReferenceAndDeclaration(reference, declaration);
+            String contextName;
+            if (declarationElement is ClassMemberElement) {
+              contextName = declarationElement.enclosingElement.name;
+            }
+
+            var declaration = new e.Declaration(new Location.fromEnvironment(_environment, declarationElement.source.fullName),
+                name: declarationElement.displayName,
+                contextName: contextName,
+                offset: declarationToken.offset,
+                end: declarationToken.end,
+                kind: kind);
+
+            //print("Saved");
+            _addReferenceAndDeclaration(reference, declaration);
+          }
         }
       } catch(error, stackTrace) {
         _logger.severe("Error parsing a reference/declaration $node", error, stackTrace);
@@ -196,6 +212,8 @@ class ASTVisitor extends GeneralizingAstVisitor {
         || node is ConstructorDeclaration
         || node is FunctionTypeAlias) && node.name != null) {
       return node.name;
+    } else if (node is ConstructorDeclaration && node.returnType != null) {
+      return node.returnType;
     } else {
       print(node);
       print(node.runtimeType);
