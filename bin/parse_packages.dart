@@ -17,7 +17,9 @@ import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/store.dart';
 import 'package:crossdart/src/parser.dart';
 import 'package:crossdart/src/installer/installer.dart';
+import 'package:crossdart/src/util/iterable.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:crossdart/src/isolate_events.dart';
 
 Logger _logger = new Logger("parse");
@@ -31,7 +33,6 @@ Future main(args) async {
 
   var config = new Config(
       sdkPath: new File(results[Config.SDK_PATH]).resolveSymbolicLinksSync(),
-      packagesPath: new File(results[Config.PACKAGES_PATH]).resolveSymbolicLinksSync(),
       installPath: new File(results[Config.INSTALL_PATH]).resolveSymbolicLinksSync(),
       isDbUsed: true,
       dbLogin: results[Config.DB_LOGIN],
@@ -68,11 +69,17 @@ Future runParser(Config config) async {
   });
 
   var index = 0;
-  for (PackageInfo packageInfo in packageInfos) {
-    _logger.info("Handling package ${packageInfo.name} (${packageInfo.version}) - ${index}/${packageInfos.length}");
-    Timer timer;
-    try {
-      await _runIsolate(_analyze, [config, packageInfo], (isolate, msg, completer) {
+  for (Iterable<PackageInfo> packageInfoTuple in inGroupsOf(packageInfos, 4)) {
+    var tupleIndex = 0;
+    var futures = packageInfoTuple.map((PackageInfo packageInfo) {
+      _logger.info("Handling package ${packageInfo.name} (${packageInfo.version}) - ${index}/${packageInfos.length}");
+      Timer timer;
+      var newInstallPath = config.installPath + "-$tupleIndex";
+      var newPackagesPath = p.join(newInstallPath, "packages");
+      var newConfig = config.copy(installPath: newInstallPath, packagesPath: newPackagesPath);
+      tupleIndex += 1;
+      index += 1;
+      return _runIsolate(_analyze, [newConfig, packageInfo], (isolate, msg, completer) {
         _logger.fine("Received a message - ${msg}");
         if (msg == IsolateEvent.FINISH) {
           if (timer != null) {
@@ -102,14 +109,15 @@ Future runParser(Config config) async {
           isolate.kill(Isolate.IMMEDIATE);
           completer.completeError("error");
         }
+      }).catchError((exception, stackTrace) {
+        return storeError(config, packageInfo, exception, stackTrace).then((_) {
+          if (exception != "timeout" && exception != "error") {
+            throw exception;
+          }
+        });
       });
-    } catch (exception, stackTrace) {
-      await storeError(config, packageInfo, exception, stackTrace);
-      if (exception != "timeout" && exception != "error") {
-        rethrow;
-      }
-    }
-    index += 1;
+    });
+    await Future.wait(futures);
   };
 }
 

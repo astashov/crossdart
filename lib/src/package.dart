@@ -185,10 +185,12 @@ Future<Sdk> buildSdkFromFileSystem(Config config, PackageInfo packageInfo) async
 
   var id = null;
   if (config.isDbUsed) {
+    var transaction = await dbPool(config).startTransaction(consistent: true);
     id = await getPackageId(config, packageInfo);
     if (id == null) {
       id = await storePackage(config, packageInfo, source, null);
     }
+    transaction.commit();
   }
   var paths = new Directory(lib).listSync(recursive: true).where((f) => f is File && f.path.endsWith(".dart")).map((file) {
     return file.path.replaceAll(lib, "").replaceFirst(new RegExp(r"^/"), "");
@@ -239,12 +241,14 @@ Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInf
   });
 
   var pubspec = getPubspec();
-  var id = null;
+  int id = null;
   if (config.isDbUsed) {
+    var transaction = await dbPool(config).startTransaction(consistent: true);
     id = await getPackageId(config, packageInfo);
     if (id == null) {
       id = await storePackage(config, packageInfo, source, pubspec["description"]);
     }
+    transaction.commit();
   }
 
   return new CustomPackage(config, id, packageInfo, source, pubspec["description"], paths);

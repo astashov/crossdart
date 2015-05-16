@@ -17,3 +17,20 @@ Map groupBy(Iterable collection, bool condition(i)) {
     return memo;
   });
 }
+
+Iterable<Iterable> inGroupsOf(Iterable collection, int number) {
+  if (collection.isEmpty) {
+    return [];
+  } else {
+    var result = [[]];
+    for (var item in collection) {
+      List lastColl = result.last;
+      if (lastColl.length >= number) {
+        lastColl = [];
+        result.add(lastColl);
+      }
+      lastColl.add(item);
+    }
+    return result;
+  }
+}

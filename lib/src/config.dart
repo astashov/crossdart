@@ -96,4 +96,32 @@ class Config {
     }
     return _currentDir;
   }
+
+  Config copy({
+      String sdkPath,
+      String installPath,
+      String outputPath,
+      String templatesPath,
+      String projectPath,
+      String packagesPath,
+      bool isDbUsed,
+      String dbLogin,
+      String dbPassword,
+      String dbHost,
+      String dbPort,
+      String dbName}) {
+    return new Config(
+        sdkPath: sdkPath != null ? sdkPath : this.sdkPath,
+        installPath: installPath != null ? installPath : this.installPath,
+        outputPath: outputPath != null ? outputPath : this.outputPath,
+        templatesPath: templatesPath != null ? templatesPath : this.templatesPath,
+        projectPath: projectPath != null ? projectPath : this.projectPath,
+        packagesPath: packagesPath != null ? packagesPath : this.packagesPath,
+        isDbUsed: isDbUsed != null ? isDbUsed : this.isDbUsed,
+        dbLogin: dbLogin != null ? dbLogin : this.dbLogin,
+        dbPassword: dbPassword != null ? dbPassword : this.dbPassword,
+        dbHost: dbHost != null ? dbHost : this.dbHost,
+        dbPort: dbPort != null ? dbPort : this.dbPort,
+        dbName: dbName != null ? dbName : this.dbName);
+  }
 }

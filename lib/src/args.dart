@@ -94,16 +94,11 @@ class ParsePackagesArgs extends Args {
   ParsePackagesArgs(List<String> args) : super(args) {
     addSdkArgsOptions();
     addDbArgsOptions();
-    parser.addOption(Config.PACKAGES_PATH,
-        help: "Path where the all the dependent packages will be placed at. Default is {installpath}/packages.");
     parser.addOption(Config.INSTALL_PATH, help: "Path where every package to analyze will be installed at. Required.");
   }
 
   Map<String, Object> _getResults() {
     var theResults = super._getResults();
-    if (theResults[Config.INSTALL_PATH] != null && theResults[Config.PACKAGES_PATH] == null) {
-      theResults[Config.PACKAGES_PATH] = p.join(theResults[Config.INSTALL_PATH], "packages");
-    }
     return theResults;
   }
 }
