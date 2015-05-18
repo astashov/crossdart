@@ -21,6 +21,7 @@ import 'package:crossdart/src/util/iterable.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:crossdart/src/isolate_events.dart';
+import 'package:quiver/iterables.dart';
 
 Logger _logger = new Logger("parse");
 
@@ -35,6 +36,7 @@ Future main(args) async {
       sdkPath: new File(results[Config.SDK_PATH]).resolveSymbolicLinksSync(),
       installPath: new File(results[Config.INSTALL_PATH]).resolveSymbolicLinksSync(),
       isDbUsed: true,
+      part: results[Config.PART],
       dbLogin: results[Config.DB_LOGIN],
       dbPassword: results[Config.DB_PASSWORD],
       dbHost: results[Config.DB_HOST],
@@ -68,8 +70,10 @@ Future runParser(Config config) async {
     packageInfos.remove(packageInfo);
   });
 
+  packageInfos = inGroups(packageInfos, config.totalParts).toList()[config.currentPart - 1];
+
   var index = 0;
-  for (Iterable<PackageInfo> packageInfoTuple in inGroupsOf(packageInfos, 4)) {
+  for (Iterable<PackageInfo> packageInfoTuple in zip(inGroups(packageInfos, 4))) {
     var tupleIndex = 0;
     var futures = packageInfoTuple.map((PackageInfo packageInfo) {
       _logger.info("Handling package ${packageInfo.name} (${packageInfo.version}) - ${index}/${packageInfos.length}");
@@ -79,7 +83,7 @@ Future runParser(Config config) async {
       var newConfig = config.copy(installPath: newInstallPath, packagesPath: newPackagesPath);
       tupleIndex += 1;
       index += 1;
-      return _runIsolate(_analyze, [newConfig, packageInfo], (isolate, msg, completer) {
+      return _runIsolate(_analyze, [newConfig, packageInfo, tupleIndex], (isolate, msg, completer) {
         _logger.fine("Received a message - ${msg}");
         if (msg == IsolateEvent.FINISH) {
           if (timer != null) {
@@ -150,16 +154,19 @@ void _runInIsolate(SendPort sender, void callback(data)) {
 }
 
 Future _analyze(SendPort sender) async {
-  _runInIsolate(sender, await (data) async {
-    logging.initialize();
+  _runInIsolate(sender, await (List data) async {
     Config config = data[0];
     PackageInfo packageInfo = data[1];
+    int index = data[2];
+    logging.initialize(index);
     try {
       sender.send(IsolateEvent.START);
       if (!(await (new DbPackageLoader(config).doesPackageExist(packageInfo)))) {
         new Installer(config, packageInfo).install();
         var environment = await buildEnvironment(config, packageInfo, sender);
+        var transaction = await dbPool(environment.config).startTransaction(consistent: true);
         await storeDependencies(environment, environment.package);
+        transaction.commit();
         var parsedData = await new Parser(environment).parsePackages();
         await store(environment, parsedData);
         deallocDbPool();

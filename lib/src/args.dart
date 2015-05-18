@@ -95,10 +95,14 @@ class ParsePackagesArgs extends Args {
     addSdkArgsOptions();
     addDbArgsOptions();
     parser.addOption(Config.INSTALL_PATH, help: "Path where every package to analyze will be installed at. Required.");
+    parser.addOption(Config.PART, help: "What part of total results will be handled. Format - n/m. E.g. 1/4 means it will handle the first quarter of all the packages. Default is 1/1.");
   }
 
   Map<String, Object> _getResults() {
     var theResults = super._getResults();
+    if (theResults[Config.PART] == null) {
+      theResults[Config.PART] = "1/1";
+    }
     return theResults;
   }
 }

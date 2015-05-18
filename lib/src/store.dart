@@ -161,7 +161,6 @@ Future storeError(Config config, PackageInfo packageInfo, Object error, StackTra
 }
 
 Future storeDependencies(Environment environment, Package package, [Set handledPackages]) async {
-  var transaction = await dbPool(environment.config).startTransaction(consistent: true);
   if (handledPackages == null) {
     handledPackages = new Set();
   }
@@ -172,7 +171,6 @@ Future storeDependencies(Environment environment, Package package, [Set handledP
       await _storeDependency(environment.config, package.id, dependency.id);
     }
   }
-  transaction.commit();
 }
 
 Future<int> storePackage(Config config, PackageInfo packageInfo, PackageSource source, String description) async {

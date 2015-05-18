@@ -75,6 +75,7 @@ pub get
     }
     if (result.stderr != "") {
       _logger.info("Error - ${result.stderr}");
+      throw "Install error - ${result.stderr}";
     }
   }
 }

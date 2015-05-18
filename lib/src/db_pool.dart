@@ -18,7 +18,7 @@ ConnectionPool dbPool(Config config) {
           user: login,
           password: (password == '' ? null : password),
           db: name,
-          max: 7);
+          max: 5);
     } else {
       throw "This application should not use the database";
     }

@@ -34,3 +34,24 @@ Iterable<Iterable> inGroupsOf(Iterable collection, int number) {
     return result;
   }
 }
+
+Iterable<Iterable> inGroups(Iterable collection, int number, [fillWith = null]) {
+  var coll = collection.toList();
+  var division = collection.length ~/ number;
+  var modulo = collection.length % number;
+
+  var groups = [];
+  var start = 0;
+
+  for (int index = 0; index < number; index += 1) {
+    var length = division + (modulo > 0 && modulo > index ? 1 : 0);
+    var lastGroup = coll.getRange(start, start + length);
+    groups.add(lastGroup);
+    if (fillWith != null && modulo > 0 && length == division) {
+      lastGroup.add(fillWith);
+    }
+    start += length;
+  }
+
+  return groups;
+}

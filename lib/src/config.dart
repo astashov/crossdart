@@ -21,6 +21,7 @@ class Config {
   final String dbHost;
   final String dbPort;
   final String dbName;
+  final String part;
 
   static const String SDK_PATH = "sdkpath";
   static const String INSTALL_PATH = "installpath";
@@ -33,6 +34,7 @@ class Config {
   static const String DB_HOST = "dbhost";
   static const String DB_PORT = "dbport";
   static const String DB_NAME = "dbname";
+  static const String PART = "part";
 
   Config({
     this.sdkPath,
@@ -46,7 +48,11 @@ class Config {
     this.dbPassword,
     this.dbHost,
     this.dbPort,
-    this.dbName});
+    this.dbName,
+    this.part});
+
+  int get currentPart => int.parse(part.split("/")[0]);
+  int get totalParts => int.parse(part.split("/")[1]);
 
   String __packagesRoot;
   String get _packagesRoot {

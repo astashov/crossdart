@@ -1,6 +1,7 @@
 library crossdart.package;
 
 import 'dart:io';
+import 'dart:math';
 import 'dart:async';
 import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/util/map.dart';
@@ -146,7 +147,7 @@ class CustomPackage extends Package {
         var dependencies = yaml["dependencies"];
         if (dependencies != null) {
           dependencies.forEach((name, version) {
-            var package = environment.customPackages.firstWhere((cp) => cp.packageInfo.name == name);
+            var package = environment.customPackages.firstWhere((cp) => cp.packageInfo.name == name, orElse: () => null);
             if (package != null) {
               _dependencies.add(package);
             }
@@ -189,6 +190,9 @@ Future<Sdk> buildSdkFromFileSystem(Config config, PackageInfo packageInfo) async
     id = await getPackageId(config, packageInfo);
     if (id == null) {
       id = await storePackage(config, packageInfo, source, null);
+    }
+    if (id == 0) {
+      id = await getPackageId(config, packageInfo);
     }
     transaction.commit();
   }
@@ -247,6 +251,9 @@ Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInf
     id = await getPackageId(config, packageInfo);
     if (id == null) {
       id = await storePackage(config, packageInfo, source, pubspec["description"]);
+    }
+    if (id == 0) {
+      id = await getPackageId(config, packageInfo);
     }
     transaction.commit();
   }
