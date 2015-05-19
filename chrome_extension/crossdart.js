@@ -40,25 +40,27 @@
 
   var crossdart;
   function applyCrossdart(crossdartBaseUrl, shouldReuseCrossdart) {
-    if (!crossdartBaseUrl || crossdartBaseUrl.toString().trim() === "") {
-      Errors.showMissingJsonUrlError();
-    } else {
-      var github = new Github();
-      if (Github.isTree()) {
-        if (!shouldReuseCrossdart || !crossdart) {
-          crossdart = new CrossdartTree(github);
+    if (enabled) {
+      if (!crossdartBaseUrl || crossdartBaseUrl.toString().trim() === "") {
+        Errors.showMissingJsonUrlError();
+      } else {
+        var github = new Github();
+        if (Github.isTree()) {
+          if (!shouldReuseCrossdart || !crossdart) {
+            crossdart = new CrossdartTree(github);
+          }
+          applyTreeCrossdart(github, crossdartBaseUrl, crossdart);
+        } else if (Github.isPullSplit()) {
+          if (!shouldReuseCrossdart || !crossdart) {
+            crossdart = new CrossdartPullSplit(github);
+          }
+          applyPullSplitCrossdart(github, crossdartBaseUrl, crossdart);
+        } else if (Github.isPullUnified()) {
+          if (!shouldReuseCrossdart || !crossdart) {
+            crossdart = new CrossdartPullUnified(github);
+          }
+          applyPullUnifiedCrossdart(github, crossdartBaseUrl, crossdart);
         }
-        applyTreeCrossdart(github, crossdartBaseUrl, crossdart);
-      } else if (Github.isPullSplit()) {
-        if (!shouldReuseCrossdart || !crossdart) {
-          crossdart = new CrossdartPullSplit(github);
-        }
-        applyPullSplitCrossdart(github, crossdartBaseUrl, crossdart);
-      } else if (Github.isPullUnified()) {
-        if (!shouldReuseCrossdart || !crossdart) {
-          crossdart = new CrossdartPullUnified(github);
-        }
-        applyPullUnifiedCrossdart(github, crossdartBaseUrl, crossdart);
       }
     }
   }
