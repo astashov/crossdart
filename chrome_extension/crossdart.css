@@ -8,3 +8,39 @@
   text-decoration: none;
   border-bottom: 1px solid #c4c4c4;
 }
+
+.crossdart-declarations-popup {
+  position: absolute;
+  display: none;
+}
+
+.crossdart-declarations-popup.is-visible {
+  display: block;
+}
+
+.crossdart-declaration {
+  border-bottom: 1px dashed silver;
+  cursor: help;
+}
+
+.crossdart-declaration--contents {
+  padding: 1em;
+  max-height: 20em;
+  margin-right: 0.5em;
+  overflow: auto;
+}
+
+.crossdart-declaration--contents--label {
+  padding-bottom: 0.5em;
+}
+
+.crossdart-declaration--contents ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crossdart-declaration--contents li {
+  margin: 0;
+  padding: 0;
+}

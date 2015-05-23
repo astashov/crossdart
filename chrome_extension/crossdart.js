@@ -104,4 +104,46 @@
     }
   });
 
+  var tooltip;
+  document.addEventListener("click", function (e) {
+    if (e.target.className == "crossdart-declaration") {
+      var content = declarationTooltipContent(e.target);
+      if (tooltip) {
+        tooltip.destroy();
+      }
+      tooltip = new Tooltip(e.target, {tooltipOffset: {x: 0, y: 8}});
+      tooltip.tooltip.addEventListener("mouseover", function (e) {
+        tooltip.show();
+      });
+      tooltip.tooltip.addEventListener("mouseout", function (e) {
+        tooltip.hide();
+      });
+      tooltip.setContent(content);
+      tooltip.show();
+    }
+  });
+
+  function declarationTooltipContent(element) {
+    var references = JSON.parse(element.attributes["data-references"].value);
+    var ref = element.attributes["data-ref"].value;
+    var div = document.createElement("div");
+    div.className = "crossdart-declaration--contents";
+    var label = document.createElement("div");
+    label.className = "crossdart-declaration--contents--label";
+    label.appendChild(document.createTextNode("Usages:"));
+    div.appendChild(label);
+    var ul = document.createElement("ul");
+    references.forEach(function (reference) {
+      var a = document.createElement("a");
+      var href = new TreePath(new Github(), ref, reference.remotePath).absolutePath();
+      a.setAttribute("href", href);
+      a.appendChild(document.createTextNode(reference.remotePath));
+      var li = document.createElement("li");
+      li.appendChild(a);
+      ul.appendChild(li);
+    });
+    div.appendChild(ul);
+    return div;
+  }
+
 }());

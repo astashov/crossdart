@@ -6,19 +6,37 @@
 
   window.CrossdartTree.prototype.applyJson = function (json) {
     var path = this.github.path.path;
-    var allReferences = json[path];
-    if (allReferences) {
-      var referencesByLines = groupBy(allReferences, function (r) { return parseInt(r.line, 10); });
-      for (var line in referencesByLines) {
+    var allEntities = json[path];
+    if (allEntities) {
+      var entitiesByLines = groupEntitiesByLinesAndTypes(allEntities);
+      for (var line in entitiesByLines) {
         if (this.handledLines.indexOf(line) === -1) {
-          var references = referencesByLines[line];
-          var newContent = applyReferences(this.github, this.github.path.ref, getLineContent(line), references);
+          var entities = entitiesByLines[line];
+          entities.sort(function (a, b) {
+            return a.offset - b.offset;
+          });
+          var newContent = applyEntities(this.github, this.github.path.ref, getLineContent(line), entities);
           setLineContent(line, newContent);
           this.handledLines.push(line);
         }
       }
     }
   };
+
+  function groupEntitiesByLinesAndTypes(allEntities) {
+    var result = {};
+    for (var type in allEntities) {
+      var entities = allEntities[type];
+      for (var i in entities) {
+        var entity = JSON.parse(JSON.stringify(entities[i]));
+        entity.type = type;
+        var line = parseInt(entity.line, 10);
+        result[line] = result[line] || [];
+        result[line].push(entity);
+      }
+    }
+    return result;
+  }
 
   function getLineElement(line) {
     return window.document.querySelector("#LC" + line);
