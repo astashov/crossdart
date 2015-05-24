@@ -6,13 +6,16 @@
 
   window.CrossdartTree.prototype.applyJson = function (json) {
     var path = this.github.path.path;
-    var allReferences = json[path];
-    if (allReferences) {
-      var referencesByLines = groupBy(allReferences, function (r) { return parseInt(r.line, 10); });
-      for (var line in referencesByLines) {
+    var allEntities = json[path];
+    if (allEntities) {
+      var entitiesByLines = groupEntitiesByLinesAndTypes(allEntities);
+      for (var line in entitiesByLines) {
         if (this.handledLines.indexOf(line) === -1) {
-          var references = referencesByLines[line];
-          var newContent = applyReferences(this.github, this.github.path.ref, getLineContent(line), references);
+          var entities = entitiesByLines[line];
+          entities.sort(function (a, b) {
+            return a.offset - b.offset;
+          });
+          var newContent = applyEntities(this.github, this.github.path.ref, getLineContent(line), entities);
           setLineContent(line, newContent);
           this.handledLines.push(line);
         }

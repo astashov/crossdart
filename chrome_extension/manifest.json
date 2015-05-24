@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Crossdart Chrome Extension",
-  "version": "0.1.1",
+  "version": "0.2.0",
 
   "description": "Uses Crossdart pub package to add hyperlinks to the source code on Github",
 
@@ -28,6 +28,7 @@
         "path.js",
         "errors.js",
         "request.js",
+        "tooltip.js",
         "github.js",
         "github/tree_path.js",
         "github/pull_path.js",
@@ -36,6 +37,6 @@
         "location_change_detector.js",
         "crossdart.js"
       ],
-      "css": ["crossdart.css"]
+      "css": ["crossdart.css", "tooltip.css"]
   }]
 }

@@ -35,25 +35,48 @@ function getRealOffset(content, offset) {
   return realOffset;
 }
 
-function applyReferences(github, ref, content, references) {
+function groupEntitiesByLinesAndTypes(allEntities) {
+  var result = {};
+  for (var type in allEntities) {
+    var entities = allEntities[type];
+    for (var i in entities) {
+      var entity = JSON.parse(JSON.stringify(entities[i]));
+      entity.type = type;
+      var line = parseInt(entity.line, 10);
+      result[line] = result[line] || [];
+      result[line].push(entity);
+    }
+  }
+  return result;
+}
+
+function applyEntities(github, ref, content, entities) {
   if (content.indexOf("crossdart-link") === -1) {
     var newLineContent = "";
     var lastStop = 0;
-    for (var index in references) {
-      var reference = references[index];
-      var realOffset = getRealOffset(content, reference.offset);
+    for (var index in entities) {
+      var entity = entities[index];
+      var realOffset = getRealOffset(content, entity.offset);
       newLineContent += content.substr(lastStop, realOffset - lastStop);
-      var href = new TreePath(github, ref, reference.remotePath).absolutePath();
-      newLineContent += "<a href='" + href + "' class='crossdart-link'>";
-      var end = reference.offset + reference.length;
-      realOffset = getRealOffset(content, reference.offset);
+      if (entity.type == "references") {
+        var href = new TreePath(github, ref, entity.remotePath).absolutePath();
+        newLineContent += "<a href='" + href + "' class='crossdart-link'>";
+      } else if (entity.type == "declarations") {
+        var references = JSON.stringify(entity.references);
+        newLineContent += "<span class='crossdart-declaration' data-references='" + references + "' data-ref='" + ref + "'>";
+      }
+      var end = entity.offset + entity.length;
       var realEnd = getRealOffset(content, end);
       newLineContent += content.substr(realOffset, realEnd - realOffset);
-      newLineContent += "</a>";
+      if (entity.type == "references") {
+        newLineContent += "</a>";
+      } else if (entity.type == "declarations") {
+        newLineContent += "</span>";
+      }
       lastStop = realEnd;
     }
-    var lastReference = references[references.length - 1];
-    var lastEnd = lastReference.offset + lastReference.length;
+    var lastEntity = entities[entities.length - 1];
+    var lastEnd = lastEntity.offset + lastEntity.length;
     var lastRealEnd = getRealOffset(content, lastEnd);
     newLineContent += content.substr(lastRealEnd);
     return newLineContent;

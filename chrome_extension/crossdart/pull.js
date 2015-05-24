@@ -14,14 +14,17 @@
           var fileElement = fileElements[index];
           var file = fileElement.querySelector(".file-header").attributes["data-path"].value;
           this.handledLinesByFiles[type][file] = this.handledLinesByFiles[type][file] || [];
-          var referencesByLines = groupBy(json[file] || [], function (r) { return parseInt(r.line, 10); });
-          for (var line in referencesByLines) {
+          var entitiesByLines = groupEntitiesByLinesAndTypes(json[file]);
+          for (var line in entitiesByLines) {
             if (this._doesLineElementExist(type, file, line) && this.handledLinesByFiles[type][file].indexOf(line) === -1) {
-              var references = referencesByLines[line];
+              var entities = entitiesByLines[line];
+              entities.sort(function (a, b) {
+                return a.offset - b.offset;
+              });
               var content = this._getLineContent(type, file, line);
               var prefix = content[0];
               content = content.substr(1);
-              var newContent = applyReferences(this.github, ref, content, references);
+              var newContent = applyEntities(this.github, ref, content, entities);
               this._setLineContent(type, file, line, prefix + newContent);
               this.handledLinesByFiles[type][file].push(line);
             }
