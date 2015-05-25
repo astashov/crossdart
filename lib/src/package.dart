@@ -49,6 +49,10 @@ abstract class Package {
     return p.join(lib, relativePath);
   }
 
+  String get pubUrl {
+    return "https://pub.dartlang.org/packages/${name}";
+  }
+
   String relativePath(String absolutePath) {
     return absolutePath.replaceFirst(lib, "").replaceFirst(new RegExp(r"^/"), "");
   }

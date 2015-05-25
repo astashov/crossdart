@@ -83,6 +83,7 @@ class HtmlPackageGenerator {
         <body class='source-code'>
           <nav class='nav'>
             <a href='/${package.name}#${package.version}' class='nav-back'>${package.name} (${package.version})</a>
+            <a class="link-to-pub" href="${package.pubUrl}">Link to Pub</a>
           </nav>
     """;
   }

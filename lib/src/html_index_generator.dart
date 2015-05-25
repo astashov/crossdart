@@ -83,7 +83,10 @@ class HtmlIndexGenerator {
             </head>
             <body class="package-page">
               <h1 class="header"><a href='/'>CrossDart</a> - package '<span class='package-name'>${packages.first.name}</span>'</h1>
-              <div class="versions">Versions: ${_versions(packages)}</div>
+              <div class="top">
+                <a class="link-to-pub" href="${packages.first.pubUrl}">Link to Pub</a>
+                <span class="versions">Versions: ${_versions(packages)}</span>
+              </div>
               <div class="files">${_packagesVersionsHtml(packages)}</div>
               <script src="/package.js"></script>
               ${ga.script}

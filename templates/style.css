@@ -23,6 +23,10 @@ body {
   text-decoration: underline;
 }
 
+.source-code .nav .link-to-pub {
+  margin-left: 0.5em;
+}
+
 .source-code .code {
   margin: 0;
 }
@@ -140,10 +144,15 @@ body {
   margin-bottom: 0;
 }
 
-.package-page .versions {
+.package-page .top {
   text-align: center;
   margin-top: 1em;
 }
+
+.package-page .link-to-pub {
+  margin-right: 0.5em;
+}
+
 
 .package-page .version {
   color: #039be5;
