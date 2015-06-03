@@ -1,7 +1,6 @@
 library crossdart.package;
 
 import 'dart:io';
-import 'dart:math';
 import 'dart:async';
 import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/util/map.dart';
@@ -17,19 +16,15 @@ import 'package:yaml/yaml.dart';
 
 //TODO: Add package type
 //enum PackageType { IO, HTML }
-enum PackageSource { GIT, HOSTED }
-Map<PackageSource, int> packageSourceIds = {PackageSource.GIT: 1, PackageSource.HOSTED: 2};
 
 abstract class Package {
-  final int id;
   final PackageInfo packageInfo;
   //final PackageType type;
-  final PackageSource source;
   final String description;
   final Config config;
   final Iterable<String> paths;
 
-  Package(this.config, this.id, this.packageInfo, this.source, this.description, this.paths);
+  Package(this.config, this.packageInfo, this.description, this.paths);
 
   static Package fromAbsolutePath(Environment environment, String filePath) {
     return environment.packagesByFiles[filePath];
@@ -37,6 +32,8 @@ abstract class Package {
 
   String get name => packageInfo.name;
   Version get version => packageInfo.version;
+  int get id => packageInfo.id;
+  PackageSource get source => packageInfo.source;
 
   String get lib;
   Iterable<Package> dependencies(Environment environment);
@@ -79,12 +76,10 @@ abstract class Package {
 class Sdk extends Package {
   Sdk(
       Config config,
-      int id,
       PackageInfo packageInfo,
-      PackageSource source,
       String description,
       Iterable<String> paths) :
-      super(config, id, packageInfo, source, description, paths);
+      super(config, packageInfo, description, paths);
 
   Iterable<Package> _dependencies;
   Iterable<Package> dependencies(Environment environment) {
@@ -95,19 +90,22 @@ class Sdk extends Package {
     return _dependencies;
   }
 
-  String get _root => config.sdkPath;
-  String get lib => p.join(_root, "lib");
+  String get lib {
+    if (packageInfo.version.toString() == config.sdk.sdkVersion) {
+      return p.join(config.sdkPath, "lib");
+    } else {
+      return p.join(config.sdkPackagesRoot, packageInfo.dirname, "lib");
+    }
+  }
 }
 
 class Project extends Package {
   Project(
       Config config,
-      int id,
       PackageInfo packageInfo,
-      PackageSource source,
       String description,
       Iterable<String> paths) :
-      super(config, id, packageInfo, source, description, paths);
+      super(config, packageInfo, description, paths);
 
   Iterable<Package> dependencies(Environment environment) {
     return environment.customPackages.where((cp) => ["barback", "stack_trace"].contains(cp.packageInfo.name));
@@ -121,12 +119,10 @@ class Project extends Package {
 class CustomPackage extends Package {
   CustomPackage(
       Config config,
-      int id,
       PackageInfo packageInfo,
-      PackageSource source,
       String description,
       Iterable<String> paths) :
-      super(config, id, packageInfo, source, description, paths);
+      super(config, packageInfo, description, paths);
 
   String get _packagesRoot {
     if (source == PackageSource.GIT) {
@@ -163,6 +159,13 @@ class CustomPackage extends Package {
   }
 }
 
+Future<Package> buildFromFileSystem(Config config, PackageInfo packageInfo) {
+  if (packageInfo.isSdk) {
+    return buildSdkFromFileSystem(config, packageInfo);
+  } else {
+    return buildCustomPackageFromFileSystem(config, packageInfo);
+  }
+}
 
 Future<Package> buildFromDatabase(Config config, PackageInfo packageInfo) async {
   var result = await (await dbPool(config).query("""
@@ -174,10 +177,10 @@ Future<Package> buildFromDatabase(Config config, PackageInfo packageInfo) async 
         SELECT DISTINCT path FROM entities WHERE package_id = ${row.id} AND type = ${entityTypeIds[Reference]}  
     """)).toList()).map((r) => r.path);
     var source = key(packageSourceIds, row.source_type);
-    if (packageInfo.name == "sdk") {
-      return new Sdk(config, row.id, packageInfo, source, null, paths);
+    if (packageInfo.isSdk) {
+      return new Sdk(config, packageInfo.update(id: row.id, source: key(packageSourceIds, row.source_type)), null, paths);
     } else {
-      return new CustomPackage(config, row.id, packageInfo, source, null, paths);
+      return new CustomPackage(config, packageInfo.update(id: row.id, source: source), null, paths);
     }
   } else {
     return null;
@@ -185,11 +188,16 @@ Future<Package> buildFromDatabase(Config config, PackageInfo packageInfo) async 
 }
 
 Future<Sdk> buildSdkFromFileSystem(Config config, PackageInfo packageInfo) async {
-  var lib = p.join(config.sdkPath, "lib");
-  var source = PackageSource.HOSTED;
+  String lib;
+  if (packageInfo.version == config.sdk.sdkVersion) {
+    lib = p.join(config.sdkPath, "lib");
+  } else {
+    lib = p.join(config.sdkPackagesRoot, packageInfo.dirname, "lib");
+  }
+  var source = PackageSource.SDK;
 
-  var id = null;
-  if (config.isDbUsed) {
+  var id = packageInfo.id;
+  if (config.isDbUsed && id == null) {
     var transaction = await dbPool(config).startTransaction(consistent: true);
     id = await getPackageId(config, packageInfo);
     if (id == null) {
@@ -204,7 +212,7 @@ Future<Sdk> buildSdkFromFileSystem(Config config, PackageInfo packageInfo) async
     return file.path.replaceAll(lib, "").replaceFirst(new RegExp(r"^/"), "");
   });
 
-  return new Sdk(config, id, packageInfo, source, null, paths);
+  return new Sdk(config, packageInfo.update(id: id, source: source), null, paths);
 }
 
 Project buildProjectFromFileSystem(Config config) {
@@ -214,19 +222,30 @@ Project buildProjectFromFileSystem(Config config) {
     return file.path.replaceAll(lib, "").replaceFirst(new RegExp(r"^/"), "");
   });
 
-  return new Project(config, null, new PackageInfo("project", new Version("")), null, null, paths);
+  return new Project(config, new PackageInfo("project", new Version("")), null, paths);
 }
 
 
 Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInfo packageInfo) async {
   Directory getDirectory() {
-    return new Directory(config.packagesPath).listSync().firstWhere((entity) {
-      return p.basename(entity.path) == packageInfo.name;
+    var directory = new Directory(config.hostedPackagesRoot).listSync().firstWhere((entity) {
+      return p.basename(entity.path) == "${packageInfo.name}-${packageInfo.version}";
     }, orElse: () => null);
+    if (directory == null) {
+       directory = new Directory(config.gitPackagesRoot).listSync().firstWhere((entity) {
+        return p.basename(entity.path) == "${packageInfo.name}-${packageInfo.version}";
+      }, orElse: () => null);
+    }
+    return directory;
   }
 
-  var lib = getDirectory().resolveSymbolicLinksSync();
-  var root = p.dirname(lib);
+  var root = getDirectory();
+  if (root == null) {
+    print(config.hostedPackagesRoot);
+    print(packageInfo);
+  }
+  root = root.resolveSymbolicLinksSync();
+  var lib = p.join(root, "lib");
 
   YamlNode getPubspec() {
     var pubspecPath = p.join(root, "pubspec.yaml");
@@ -249,8 +268,8 @@ Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInf
   });
 
   var pubspec = getPubspec();
-  int id = null;
-  if (config.isDbUsed) {
+  int id = packageInfo.id;
+  if (config.isDbUsed && id == null) {
     var transaction = await dbPool(config).startTransaction(consistent: true);
     id = await getPackageId(config, packageInfo);
     if (id == null) {
@@ -262,5 +281,5 @@ Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInf
     transaction.commit();
   }
 
-  return new CustomPackage(config, id, packageInfo, source, pubspec["description"], paths);
+  return new CustomPackage(config, packageInfo.update(id: id, source: source), pubspec["description"], paths);
 }

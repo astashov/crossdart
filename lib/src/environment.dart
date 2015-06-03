@@ -8,6 +8,9 @@ import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/version.dart';
 import 'package:path/path.dart' as path;
+import 'package:logging/logging.dart';
+
+Logger _logger = new Logger("environment");
 
 class Environment {
   final Package package;
@@ -24,9 +27,11 @@ class Environment {
   }
 }
 
-
 Future<Environment> buildEnvironment(Config config, [PackageInfo mainPackageInfo, SendPort sender]) async {
+  _logger.info("Building environment");
   var sdkPackageInfo = new PackageInfo("sdk", new Version(config.sdk.sdkVersion));
+  _copySdkToPackagesRoot(config);
+
   var sdk = await buildSdkFromFileSystem(config, sdkPackageInfo);
 
   var customPackages = [];
@@ -56,5 +61,12 @@ Future<Environment> buildEnvironment(Config config, [PackageInfo mainPackageInfo
     });
     return memo;
   });
+
+  _logger.info("Finished loading environment");
   return new Environment(config, package, sender, customPackages, sdk, packagesByFiles);
+}
+
+void _copySdkToPackagesRoot(Config config) {
+  new Directory(config.sdkPackagesRoot).createSync(recursive: true);
+  Process.runSync("cp", ["-r", config.sdkPath, path.join(config.sdkPackagesRoot, "sdk-${config.sdk.sdkVersion}")]);
 }

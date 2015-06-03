@@ -160,17 +160,12 @@ Future storeError(Config config, PackageInfo packageInfo, Object error, StackTra
       [packageInfo.name, packageInfo.version.toString(), "${error}\n${stackTrace}", config.currentDate]);
 }
 
-Future storeDependencies(Environment environment, Package package, [Set handledPackages]) async {
-  if (handledPackages == null) {
-    handledPackages = new Set();
-  }
-  if (!handledPackages.contains(package)) {
-    handledPackages.add(package);
-    for (Package dependency in package.dependencies(environment)) {
-      await storeDependencies(environment, dependency, handledPackages);
-      await _storeDependency(environment.config, package.id, dependency.id);
-    }
-  }
+Future storeDependencies(Environment environment, Package package) async {
+  _logger.info("Storing dependencies");
+  var transaction = await dbPool(environment.config).startTransaction(consistent: true);
+  await _storeDependencies(environment, package);
+  await transaction.commit();
+  _logger.info("Storing dependencies finished");
 }
 
 Future<int> storePackage(Config config, PackageInfo packageInfo, PackageSource source, String description) async {
@@ -179,6 +174,20 @@ Future<int> storePackage(Config config, PackageInfo packageInfo, PackageSource s
       [packageInfo.name, packageInfo.version.toString(), packageSourceIds[source], description, config.currentDate]);
   return result.insertId;
 }
+
+Future _storeDependencies(Environment environment, Package package, [Set handledPackages]) async {
+  if (handledPackages == null) {
+    handledPackages = new Set();
+  }
+  if (!handledPackages.contains(package)) {
+    handledPackages.add(package);
+    for (Package dependency in package.dependencies(environment)) {
+      await _storeDependencies(environment, dependency, handledPackages);
+      await _storeDependency(environment.config, package.id, dependency.id);
+    }
+  }
+}
+
 
 Future<Results> _storeDependency(Config config, int packageId, int dependencyId) {
   return dbPool(config).prepareExecute(

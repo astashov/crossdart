@@ -7,11 +7,16 @@ import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/util.dart';
 import 'package:path/path.dart' as p;
 
+enum PackageSource { GIT, HOSTED, SDK }
+final Map<PackageSource, int> packageSourceIds = {PackageSource.GIT: 1, PackageSource.HOSTED: 2, PackageSource.SDK: 3};
+
 class PackageInfo {
   final String name;
   final Version version;
+  final int id;
+  final PackageSource source;
 
-  PackageInfo(this.name, this.version);
+  PackageInfo(this.name, this.version, {this.id, this.source});
 
   int get hashCode => hash([name, version]);
 
@@ -27,12 +32,26 @@ class PackageInfo {
         .map((s) => s.path.replaceAll(config.outputPath, "").replaceAll(new RegExp(r".html$"), ""));
   }
 
+  String get dirname => "${name}-${version}";
+
   String toString() {
     return "<PackageInfo ${toMap()}>";
   }
 
+  bool get isSdk {
+    return name == "sdk";
+  }
+
+  PackageInfo update({String name, Version version, int id, PackageSource source}) {
+    return new PackageInfo(
+        name == null ? this.name : name,
+        version == null ? this.version : version,
+        id: id == null ? this.id : id,
+        source: source == null ? this.source : source);
+  }
+
   Map<String, String> toMap() {
-    return {"name": name, "version": version.toString()};
+    return {"name": name, "version": version.toString(), "id": id};
   }
 
   String toJson() {

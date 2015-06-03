@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/args.dart';
+import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/store/db_parsed_data_loader.dart';
@@ -14,6 +15,7 @@ import 'package:crossdart/src/logging.dart' as logging;
 import 'package:logging/logging.dart';
 import 'package:crossdart/src/html_package_generator.dart';
 import 'package:crossdart/src/html_index_generator.dart';
+import 'package:crossdart/src/util/iterable.dart';
 
 Logger _logger = new Logger("generate_html");
 
@@ -45,14 +47,38 @@ Future main(args) async {
 
 Future runHtmlGenerator(Config config) async {
   var packageLoader = new DbPackageLoader(config);
-  Iterable<Package> allPackages = await packageLoader.getAllPackages();
+  Iterable<PackageInfo> _allPackageInfos = (await packageLoader.getAllPackageInfos());
+  List<PackageInfo> allPackageInfos = _allPackageInfos.toList();
 
-  var parsedData = await (new DbParsedDataLoader(config).load(allPackages));
+  await buildSdkFromFileSystem(config, new PackageInfo.buildSdk(config));
+  List<Package> _packages = [];
 
-  new HtmlPackageGenerator(config, allPackages, parsedData).generate();
+  var index = 0;
+  for (var packageInfos in inGroupsOf(allPackageInfos, 100)) {
+    _logger.info("Loading packages with dependencies from db - $index");
+    Set<PackageInfo> thisPackageInfos = new Set();
+    for (var packageInfo in packageInfos) {
+      thisPackageInfos.addAll(await packageLoader.getPackageInfoDependencies(packageInfo));
+    }
+
+    _logger.info("Loading packages");
+    var packages = new Set();
+    for (var pi in thisPackageInfos) {
+      packages.add(await buildFromFileSystem(config, pi));
+    }
+
+    _logger.info("Loading parsed data");
+    var parsedData = await (new DbParsedDataLoader(config).load(packages));
+
+    _logger.info("Generating HTML pages");
+    new HtmlPackageGenerator(config, packages, parsedData).generate();
+
+    _packages.addAll(packages);
+    index += 1;
+  }
   var generatedPackages = config.generatedPackageInfos.map((packageInfos) {
     return packageInfos.fold([], (memo, packageInfo) {
-      var package = allPackages.firstWhere((p) => p.packageInfo == packageInfo, orElse: () => null);
+      var package = _packages.firstWhere((p) => p.packageInfo == packageInfo, orElse: () => null);
       if (package != null) {
         memo.add(package);
       }

@@ -25,6 +25,7 @@ class DbParsedDataLoader {
     try {
       var parsedData = new ParsedData();
       for (var package in packages) {
+        _logger.info("Loading parsed data from the database for the package ${package.packageInfo}");
         await _loadReferences(package, parsedData, packagesById);
         await _loadTokens(package, parsedData, packagesById);
       }
@@ -37,6 +38,7 @@ class DbParsedDataLoader {
   }
 
   Future _loadReferences(Package package, ParsedData parsedData, Map<int, Package> packagesById) async {
+    _logger.info("Loading previous references from the database");
     var referenceResults = (await (await _queryReferences(package)).toList());
 
     groupBy(referenceResults, (i) => i.r_path).forEach((String path, Iterable<Row> rows) {
@@ -61,6 +63,7 @@ class DbParsedDataLoader {
   }
 
   Future _loadTokens(Package package, ParsedData parsedData, Map<int, Package> packagesById) async {
+    _logger.info("Loading previous tokens from the database");
     var tokenResults = (await (await _queryTokens(package)).toList());
     groupBy(tokenResults, (i) => i.e_path).forEach((String path, Iterable<Row> rows) {
       rows.forEach((Row row) {

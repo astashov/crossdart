@@ -74,6 +74,10 @@ class Config {
     return _packagesRoot.replaceFirst("/hosted/pub.dartlang.org/", "/git/").replaceFirst(new RegExp(r"/$"), "");
   }
 
+  String get sdkPackagesRoot {
+    return gitPackagesRoot.replaceFirst("/git", "/sdk");
+  }
+
   DartSdk get sdk {
     JavaSystemIO.setProperty("com.google.dart.sdk", sdkPath);
     return DirectoryBasedDartSdk.defaultSdk;

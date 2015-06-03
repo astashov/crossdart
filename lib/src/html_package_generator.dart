@@ -20,19 +20,20 @@ class HtmlPackageGenerator {
   Iterable<Package> _packages;
   HtmlEscape sanitizer = const HtmlEscape();
   Config _config;
+  Map<String, Package> _packagesByFiles = {};
 
-  HtmlPackageGenerator(this._config, this._packages, this._parsedData);
-
-  void generate() {
-    var packagesByFiles = _packages.fold({}, (Map<String, Package> memo, Package package) {
+  HtmlPackageGenerator(this._config, Iterable<Package> packages, this._parsedData) :
+    _packages = packages,
+    _packagesByFiles = packages.fold({}, (Map<String, Package> memo, Package package) {
       package.absolutePaths.forEach((file) {
         memo[file] = package;
       });
       return memo;
     });
 
+  void generate() {
     this._parsedData.files.forEach((String absolutePath, Set<Entity> entities) {
-      Package package = packagesByFiles[absolutePath];
+      Package package = _packagesByFiles[absolutePath];
       var location = new Location(package, package.relativePath(absolutePath));
       entities = entities.where((e) => e.offset != null && e.end != null).toSet();
       if (!(new File(location.writePath(_config)).existsSync())) {

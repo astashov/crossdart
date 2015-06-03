@@ -157,3 +157,13 @@ class GeneratePackagesHtmlArgs extends Args {
               "Usually this is just 'template' dir in the crossdart repo. Required.");
   }
 }
+
+class ServerArgs extends Args {
+  List<String> get requiredKeys => [];
+  String get description => "server.dart runs a server, which can answer to questions about the code. " +
+      "E.g. it can return all the usages of a given declaration.";
+
+  ServerArgs(List<String> args) : super(args) {
+    addDbArgsOptions();
+  }
+}

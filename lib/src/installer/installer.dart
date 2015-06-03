@@ -34,11 +34,6 @@ class Installer {
     new Directory(_config.installPath).createSync(recursive: true);
   }
 
-  void _switchToOutputDirectory() {
-    _logger.info("Setting current directory to ${_config.installPath}");
-    Directory.current = _config.installPath;
-  }
-
   void _initializeProject() {
     _logger.info("Creating new project for package ${_packageInfo.name} ${_packageInfo.version} in ${_config.installPath}");
     var file = new File(p.join(_config.installPath, "pubspec.yaml"));

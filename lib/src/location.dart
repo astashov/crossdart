@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:yaml/yaml.dart';
 import 'package:crossdart/src/util.dart';
 import 'package:crossdart/src/package.dart';
+import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/environment.dart';
 import 'package:path/path.dart' as p;

@@ -36,12 +36,12 @@ class DbPackageLoader {
     return fold([], resultsGroupedById, (List<Package> memo, int id, Iterable<Row> rows) {
       var row = rows.first;
 
-      var packageInfo = new PackageInfo(row.name, new Version(row.version));
       var source = key(packageSourceIds, row.source_type);
+      var packageInfo = new PackageInfo(row.name, new Version(row.version), id: row.id, source: source);
       if (packageInfo.name == "sdk") {
-        memo.add(new Sdk(_config, row.id, packageInfo, source, row.description.toString(), rows.map((r) => r.path)));
+        memo.add(new Sdk(_config, packageInfo, row.description.toString(), rows.map((r) => r.path)));
       } else {
-        memo.add(new CustomPackage(_config, row.id, packageInfo, source, row.description.toString(), rows.map((r) => r.path)));
+        memo.add(new CustomPackage(_config, packageInfo, row.description.toString(), rows.map((r) => r.path)));
       }
       return memo;
     });
@@ -49,14 +49,24 @@ class DbPackageLoader {
 
   Future<Iterable<PackageInfo>> getAllPackageInfos() async {
     var results = await (await dbPool(_config).query("""
-        SELECT DISTINCT p.name, p.version FROM packages AS p
+        SELECT DISTINCT p.name, p.version, p.id, p.source_type FROM packages AS p
     """)).toList();
     return results.map((Row r) {
-      return new PackageInfo(r.name, new Version(r.version));
+      return new PackageInfo(r.name, new Version(r.version), id: r.id, source: key(packageSourceIds, r.source_type));
     });
   }
 
+  Future<Iterable<PackageInfo>> getPackageInfoDependencies(PackageInfo packageInfo) async {
+    _logger.info("Loading package with dependencies $packageInfo");
+    var dependencies = (await _getAllPackageInfoDependencies(packageInfo)).toList();
+    if (!dependencies.contains(new PackageInfo.buildSdk(_config))) {
+      dependencies.add(new PackageInfo.buildSdk(_config));
+    }
+    return dependencies;
+  }
+
   Future<Iterable<Package>> getPackageWithDependencies(PackageInfo initialPackageInfo) async {
+    _logger.info("Loading package with dependencies $initialPackageInfo");
     var initialPackage = await buildFromDatabase(_config, initialPackageInfo);
     var sdkPackage = await buildSdkFromFileSystem(_config, new PackageInfo.buildSdk(_config));
     var dependencies = (await _getAllDependencies(initialPackage)).toList();
@@ -73,16 +83,41 @@ class DbPackageLoader {
     if (!handledPackages.contains(package)) {
       handledPackages.add(package);
       var dependencies = await _getDependencies(package);
-      for (var pi in dependencies) {
-        await _getAllDependencies(pi, handledPackages);
+      for (var p in dependencies) {
+        await _getAllDependencies(p, handledPackages);
       }
     }
     return handledPackages;
   }
 
+  Future<Iterable<PackageInfo>> _getAllPackageInfoDependencies(PackageInfo packageInfo, [Set<PackageInfo> handledPackageInfos]) async {
+    if (handledPackageInfos == null) {
+      handledPackageInfos = new Set.from([]);
+    }
+    if (!handledPackageInfos.contains(packageInfo)) {
+      handledPackageInfos.add(packageInfo);
+      var dependencies = await _getPackageInfoDependencies(packageInfo);
+      for (var pi in dependencies) {
+        await _getAllPackageInfoDependencies(pi, handledPackageInfos);
+      }
+    }
+    return handledPackageInfos;
+  }
+
+  Future<Iterable<PackageInfo>> _getPackageInfoDependencies(PackageInfo packageInfo, [Set<PackageInfo> handledPackages]) async {
+    var results = await (await dbPool(_config).query("""
+        SELECT DISTINCT p2.name, p2.version, p2.id, p2.source_type FROM packages AS p1
+            INNER JOIN packages_dependencies AS pd ON p1.id = pd.package_id
+            INNER JOIN packages AS p2 ON p2.id = pd.dependency_id
+            WHERE p1.name = '${packageInfo.name}' AND p1.version = '${packageInfo.version}'
+    """)).toList();
+
+    return results.map((r) => new PackageInfo(r.name, new Version(r.version), id: r.id, source: key(packageSourceIds, r.source_type)));
+  }
+
   Future<Iterable<Package>> _getDependencies(Package package) async {
     var results = await (await dbPool(_config).query("""
-        SELECT DISTINCT p.name, p.version
+        SELECT DISTINCT p.name, p.version, p.id, p.source_type
             FROM entities AS r
             INNER JOIN entities AS d ON r.declaration_id = d.id
             INNER JOIN packages AS p ON d.package_id = p.id 
@@ -90,7 +125,8 @@ class DbPackageLoader {
     """)).toList();
 
     return Future.wait(results.map((r) async {
-      var packageInfo = new PackageInfo(r.name, new Version(r.version));
+      var packageInfo = new PackageInfo(
+          r.name, new Version(r.version), id: r.id, source: key(packageSourceIds, r.source_type));
       return await buildFromDatabase(_config, packageInfo);
     }));
   }

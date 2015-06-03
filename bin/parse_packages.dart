@@ -73,7 +73,7 @@ Future runParser(Config config) async {
   packageInfos = inGroups(packageInfos, config.totalParts).toList()[config.currentPart - 1];
 
   var index = 0;
-  for (Iterable<PackageInfo> packageInfoTuple in zip(inGroups(packageInfos, 4).where((i) => i.length > 0))) {
+  for (Iterable<PackageInfo> packageInfoTuple in zip(inGroups(packageInfos, 1).where((i) => i.length > 0))) {
     var tupleIndex = 0;
     var futures = packageInfoTuple.map((PackageInfo packageInfo) {
       _logger.info("Handling package ${packageInfo.name} (${packageInfo.version}) - ${index}/${packageInfos.length}");
@@ -164,9 +164,7 @@ Future _analyze(SendPort sender) async {
       if (!(await (new DbPackageLoader(config).doesPackageExist(packageInfo)))) {
         new Installer(config, packageInfo).install();
         var environment = await buildEnvironment(config, packageInfo, sender);
-        var transaction = await dbPool(environment.config).startTransaction(consistent: true);
         await storeDependencies(environment, environment.package);
-        transaction.commit();
         var parsedData = await new Parser(environment).parsePackages();
         await store(environment, parsedData);
         deallocDbPool();
