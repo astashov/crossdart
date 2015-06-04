@@ -48,7 +48,9 @@ Future main(args) async {
 Future runHtmlGenerator(Config config) async {
   var packageLoader = new DbPackageLoader(config);
   Iterable<PackageInfo> _allPackageInfos = (await packageLoader.getAllPackageInfos());
-  List<PackageInfo> allPackageInfos = _allPackageInfos.toList();
+  _logger.info("Total number of packages - ${_allPackageInfos.length}");
+  Set<PackageInfo> allPackageInfos = _allPackageInfos.toSet().difference(config.generatedPackageInfos.expand((i) => i).toSet());
+  _logger.info("Updated number of packages - ${allPackageInfos.length}");
 
   await buildSdkFromFileSystem(config, new PackageInfo.buildSdk(config));
   List<Package> _packages = [];
@@ -76,14 +78,9 @@ Future runHtmlGenerator(Config config) async {
     _packages.addAll(packages);
     index += 1;
   }
-  var generatedPackages = config.generatedPackageInfos.map((packageInfos) {
-    return packageInfos.fold([], (memo, packageInfo) {
-      var package = _packages.firstWhere((p) => p.packageInfo == packageInfo, orElse: () => null);
-      if (package != null) {
-        memo.add(package);
-      }
-      return memo;
-    });
+
+  var generatedPackages = config.generatedPackageInfos.expand((i) => i).map(await (packageInfo) async {
+    return (await buildFromFileSystem(config, packageInfo));
   });
   new HtmlIndexGenerator(config, generatedPackages)..generate()..generatePackagePages();
 }
