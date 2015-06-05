@@ -5,7 +5,9 @@ library generate_packages_html;
 import 'dart:io';
 import 'dart:async';
 import 'package:crossdart/src/db_pool.dart';
+import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/args.dart';
+import 'package:crossdart/src/html/url.dart';
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/config.dart';
@@ -13,6 +15,7 @@ import 'package:crossdart/src/store/db_parsed_data_loader.dart';
 import 'package:crossdart/src/store/db_package_loader.dart';
 import 'package:crossdart/src/logging.dart' as logging;
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:crossdart/src/html_package_generator.dart';
 import 'package:crossdart/src/html_index_generator.dart';
 import 'package:crossdart/src/util/iterable.dart';
@@ -25,6 +28,8 @@ Future main(args) async {
     return;
   }
   var results = generatePackagesHtml.results;
+
+  new Directory(results[Config.OUTPUT_PATH]).createSync(recursive: true);
 
   var config = new Config(
       sdkPath: new File(results[Config.SDK_PATH]).resolveSymbolicLinksSync(),
@@ -46,10 +51,16 @@ Future main(args) async {
 }
 
 Future runHtmlGenerator(Config config) async {
+  new Directory(p.join(config.outputPath, PATH_PREFIX)).createSync(recursive: true);
+
   var packageLoader = new DbPackageLoader(config);
   Iterable<PackageInfo> _allPackageInfos = (await packageLoader.getAllPackageInfos());
   _logger.info("Total number of packages - ${_allPackageInfos.length}");
-  Set<PackageInfo> allPackageInfos = _allPackageInfos.toSet().difference(config.generatedPackageInfos.expand((i) => i).toSet());
+  var generatedPackageInfosSet = config.generatedPackageInfos.expand((i) => i).toSet();
+  Set<PackageInfo> allPackageInfos = _allPackageInfos.where((pi) {
+    var generatedPackageInfo = pi.update(version: new Version(pi.version.toPath()));
+    return !generatedPackageInfosSet.contains(generatedPackageInfo);
+  });
   _logger.info("Updated number of packages - ${allPackageInfos.length}");
 
   await buildSdkFromFileSystem(config, new PackageInfo.buildSdk(config));
@@ -79,8 +90,14 @@ Future runHtmlGenerator(Config config) async {
     index += 1;
   }
 
-  var generatedPackages = config.generatedPackageInfos.expand((i) => i).map(await (packageInfo) async {
-    return (await buildFromFileSystem(config, packageInfo));
-  });
+  var generatedPackages = [];
+  for (var generatedPackageInfos in config.generatedPackageInfos) {
+    var pis = [];
+    for (var generatedPackageInfo in generatedPackageInfos) {
+      print(generatedPackageInfo);
+      pis.add(await buildFromFileSystem(config, generatedPackageInfo));
+    }
+    generatedPackages.add(pis);
+  }
   new HtmlIndexGenerator(config, generatedPackages)..generate()..generatePackagePages();
 }

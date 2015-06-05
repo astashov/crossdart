@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/version.dart';
+import 'package:crossdart/src/html/url.dart';
 import 'package:analyzer/src/generated/sdk.dart' show DartSdk;
 import 'package:analyzer/src/generated/java_io.dart';
 import 'package:analyzer/src/generated/sdk_io.dart' show DirectoryBasedDartSdk;
@@ -84,7 +85,7 @@ class Config {
   }
 
   Iterable<Iterable<PackageInfo>> get generatedPackageInfos {
-    return new Directory(outputPath).listSync().where((f) => f is Directory).map((Directory dir) {
+    return new Directory(path.join(outputPath, PATH_PREFIX)).listSync().where((f) => f is Directory).map((Directory dir) {
       var versions = dir.listSync().where((f) => f is Directory).map((d) => path.basename(d.path)).toList();
       versions.sort();
       return versions.map((version) => new PackageInfo(path.basename(dir.path), new Version(version)));

@@ -7,6 +7,7 @@ import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/environment.dart';
+import 'package:crossdart/src/html/url.dart';
 import 'package:path/path.dart' as p;
 
 class Location {
@@ -31,7 +32,7 @@ class Location {
   }
 
   String get htmlPath {
-    return "/" + p.join(package.name, _versionPart, "${path}.html");
+    return "/" + p.join(PATH_PREFIX, package.name, _versionPart, "${path}.html");
   }
 
   String remotePath(int lineNumber, [String pubspecLockPath]) {
@@ -69,7 +70,7 @@ class Location {
   }
 
   String writePath(Config config) {
-    var result = p.join(config.outputPath, package.name, _versionPart);
+    var result = p.join(config.outputPath, PATH_PREFIX, package.name, _versionPart);
     if (p.dirname(path) != ".") {
       result = p.join(result, p.dirname(path));
     }

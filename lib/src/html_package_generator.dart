@@ -9,6 +9,7 @@ import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/entity.dart';
 import 'package:crossdart/src/cache.dart';
+import 'package:crossdart/src/html/url.dart';
 import 'package:crossdart/src/google_analytics.dart' as ga;
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
@@ -83,7 +84,7 @@ class HtmlPackageGenerator {
         </head>
         <body class='source-code'>
           <nav class='nav'>
-            <a href='/${package.name}#${package.version}' class='nav-back'>${package.name} (${package.version})</a>
+            <a href='${packageIndexUrl(package.packageInfo)}' class='nav-back'>${package.name} (${package.version})</a>
             <a class="link-to-pub" href="${package.pubUrl}">Link to Pub</a>
           </nav>
     """;

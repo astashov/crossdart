@@ -229,11 +229,13 @@ Project buildProjectFromFileSystem(Config config) {
 Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInfo packageInfo) async {
   Directory getDirectory() {
     var directory = new Directory(config.hostedPackagesRoot).listSync().firstWhere((entity) {
-      return p.basename(entity.path) == "${packageInfo.name}-${packageInfo.version}";
+      return p.basename(entity.path).toLowerCase() == "${packageInfo.name}-${packageInfo.version}".toLowerCase()
+          || p.basename(entity.path).replaceAll("+", "-").toLowerCase() == "${packageInfo.name}-${packageInfo.version}".toLowerCase();
     }, orElse: () => null);
     if (directory == null) {
        directory = new Directory(config.gitPackagesRoot).listSync().firstWhere((entity) {
-        return p.basename(entity.path) == "${packageInfo.name}-${packageInfo.version}";
+        return p.basename(entity.path).toLowerCase() == "${packageInfo.name}-${packageInfo.version}".toLowerCase()
+           || p.basename(entity.path).replaceAll("+", "-").toLowerCase() == "${packageInfo.name}-${packageInfo.version}".toLowerCase();
       }, orElse: () => null);
     }
     return directory;

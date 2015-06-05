@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:intl/intl.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/package.dart';
+import 'package:crossdart/src/html/url.dart';
 import 'package:crossdart/src/google_analytics.dart' as ga;
 import 'package:path/path.dart';
 import 'package:logging/logging.dart';
@@ -94,7 +95,7 @@ class HtmlIndexGenerator {
           </html>
         """;
 
-        new File(join(_config.outputPath, packages.first.name, "index.html")).writeAsStringSync(content);
+        new File(join(_config.outputPath, PATH_PREFIX, packages.first.name, "index.html")).writeAsStringSync(content);
       }
     });
   }
@@ -109,7 +110,7 @@ class HtmlIndexGenerator {
     return _generatedPackages.map((packages) {
       if (packages.isNotEmpty) {
         var package = packages.first;
-        return "<a class='package' href='/${package.name}'>${package.name}</a>";
+        return "<a class='package' href='${packageIndexUrl(package.packageInfo, shouldAddVersion: false)}'>${package.name}</a>";
       } else {
         return "";
       }
