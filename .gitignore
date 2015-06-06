@@ -36,7 +36,7 @@ html-template/
 
 s3_deployer_config.rb
 
-html/
+/html
 
 # Ruby version for RVM or rbenv
 .ruby-version
