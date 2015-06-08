@@ -3,6 +3,7 @@ library crossdart.location;
 import 'dart:io';
 import 'package:yaml/yaml.dart';
 import 'package:crossdart/src/util.dart';
+import 'package:crossdart/src/html/url.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/config.dart';
@@ -43,7 +44,7 @@ class Location {
       }
       return result;
     } else if (package is Sdk || package.source == PackageSource.HOSTED) {
-      var result = p.join("http://crossdart.info", package.name, package.version.toPath(), "${path}.html");
+      var result = p.join("http://crossdart.info", PATH_PREFIX, package.name, package.version.toPath(), "${path}.html");
       if (lineNumber != null) {
         result += "#line-${lineNumber}";
       }
