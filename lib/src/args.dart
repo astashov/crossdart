@@ -167,3 +167,15 @@ class ServerArgs extends Args {
     addDbArgsOptions();
   }
 }
+
+class UpdatedFilesListArgs extends Args {
+  List<String> get requiredKeys => [Config.PACKAGES_PATH, Config.OUTPUT_PATH];
+  String get description => "updated_files_list.dart returns a list of the updated HTML files needed to upload to S3.";
+
+  UpdatedFilesListArgs(List<String> args) : super(args) {
+    addDbArgsOptions();
+
+    parser.addOption(Config.PACKAGES_PATH, help: "Path where the all the packages could be found. Required.");
+    parser.addOption(Config.OUTPUT_PATH, help: "Path where the HTML files are generated. Required");
+  }
+}

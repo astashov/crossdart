@@ -57,10 +57,19 @@ Future runHtmlGenerator(Config config) async {
   Iterable<PackageInfo> _allPackageInfos = (await packageLoader.getAllPackageInfos());
   _logger.info("Total number of packages - ${_allPackageInfos.length}");
   var generatedPackageInfosSet = config.generatedPackageInfos.expand((i) => i).toSet();
+
+  var erroredPackageInfos = await dbPool(config).query("""
+    SELECT package_name AS name, package_version AS version FROM errors
+  """);
+  erroredPackageInfos = (await erroredPackageInfos.toList()).map((p) {
+    return new PackageInfo(p.name, new Version(p.version));
+  });
+
   Set<PackageInfo> allPackageInfos = _allPackageInfos.where((pi) {
     var generatedPackageInfo = pi.update(version: new Version(pi.version.toPath()));
-    return !generatedPackageInfosSet.contains(generatedPackageInfo);
+    return !generatedPackageInfosSet.contains(generatedPackageInfo) && !erroredPackageInfos.contains(generatedPackageInfo);
   });
+
   _logger.info("Updated number of packages - ${allPackageInfos.length}");
 
   await buildSdkFromFileSystem(config, new PackageInfo.buildSdk(config));

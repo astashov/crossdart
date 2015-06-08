@@ -47,10 +47,13 @@ class DbPackageLoader {
     });
   }
 
-  Future<Iterable<PackageInfo>> getAllPackageInfos() async {
-    var results = await (await dbPool(_config).query("""
-        SELECT DISTINCT p.name, p.version, p.id, p.source_type FROM packages AS p
-    """)).toList();
+  Future<Iterable<PackageInfo>> getAllPackageInfos([DateTime dateTime]) async {
+    var query = "SELECT DISTINCT p.name, p.version, p.id, p.source_type FROM packages AS p";
+    if (dateTime != null) {
+      query += " WHERE p.created_at > ?";
+    }
+    var values = dateTime != null ? [dateTime] : [];
+    var results = await (await dbPool(_config).prepareExecute(query, values)).toList();
     return results.map((Row r) {
       return new PackageInfo(r.name, new Version(r.version), id: r.id, source: key(packageSourceIds, r.source_type));
     });
