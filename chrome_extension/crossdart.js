@@ -112,12 +112,13 @@
         tooltip.destroy();
       }
       tooltip = new Tooltip(e.target, {tooltipOffset: {x: 0, y: 8}});
-      tooltip.tooltip.addEventListener("mouseover", function (e) {
-        tooltip.show();
-      });
-      tooltip.tooltip.addEventListener("mouseout", function (e) {
+
+      var documentBodyListener = function (e) {
         tooltip.hide();
-      });
+        document.body.removeEventListener("click", documentBodyListener);
+      };
+      document.body.addEventListener("click", documentBodyListener);
+
       tooltip.setContent(content);
       tooltip.show();
     }

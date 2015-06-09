@@ -18,6 +18,10 @@ function Tooltip(link, options) {
   self.arrowContainer.appendChild(self.arrow);
   self.tooltip.appendChild(self.container);
 
+  self.tooltip.addEventListener("click", function (e) {
+    e.stopPropagation();
+  });
+
   this.show = function () {
     if (!isAttached()) {
       attach();
