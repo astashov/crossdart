@@ -1,5 +1,5 @@
 name: crossdart
-version: 0.1.0
+version: 0.1.1
 author: Anton Astashov <anton.astashov@gmail.com>
 description:
   Generates crossdart.info content.
@@ -19,7 +19,7 @@ dependencies:
   yaml: '>=2.1.2'
   sqljocky: '>=0.11.0'
   quiver: any
+  redstone: any
 
 dev_dependencies:
-  redstone: any
   unittest: any
