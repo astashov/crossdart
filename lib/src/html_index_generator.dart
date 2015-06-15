@@ -54,7 +54,7 @@ class HtmlIndexGenerator {
 
     new File(join(_config.templatesPath, "style.css")).copySync(join(_config.outputPath, "style.css"));
     ["index", "package"].forEach((name) {
-      Process.runSync("dart2js", ["-o", join(_config.outputPath, "$name.js"), join(_config.templatesPath, "$name.dart")]);
+      Process.runSync("cp", [join(_config.templatesPath, "$name.js"), join(_config.outputPath, "$name.js")]);
     });
   }
 
