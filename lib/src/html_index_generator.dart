@@ -105,7 +105,9 @@ class HtmlIndexGenerator {
   }
 
   String _versions(Iterable<Package> packages) {
-    return packages.map((package) {
+    var sortedPackages = packages.toList();
+    sortedPackages.sort((a, b) => b.version.compareTo(a.version));
+    return sortedPackages.map((package) {
       return "<span class='version' data-version='${package.version}'>${package.version}</span>";
     }).join("\n");
   }

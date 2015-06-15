@@ -147,6 +147,7 @@ body {
 .package-page .top {
   text-align: center;
   margin-top: 1em;
+  padding: 0 1em;
 }
 
 .package-page .link-to-pub {
