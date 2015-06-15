@@ -12,7 +12,7 @@
       for (var index in fileElements) {
         if (fileElements.hasOwnProperty(index) && index.match(/\d+/)) {
           var fileElement = fileElements[index];
-          var file = fileElement.querySelector(".file-header").attributes["data-path"].value;
+          var file = fileElement.querySelector("#files_bucket .file-header").attributes["data-path"].value;
           this.handledLinesByFiles[type][file] = this.handledLinesByFiles[type][file] || [];
           var entitiesByLines = groupEntitiesByLinesAndTypes(json[file]);
           for (var line in entitiesByLines) {
@@ -49,7 +49,7 @@
   window.CrossdartPullSplit = function (github) {
     CrossdartPull.apply(this, [github]);
     this._getLineElement = function (type, file, line) {
-      var fileHeader = document.querySelector(".file-header[data-path='" + file + "']");
+      var fileHeader = document.querySelector("#files_bucket .file-header[data-path='" + file + "']");
       var lineElements = fileHeader.parentElement.querySelectorAll("[data-line-number~='" + line + "'] + td");
       var lineElement = Array.prototype.filter.call(lineElements, function (i) {
         var index = Array.prototype.indexOf.call(i.parentNode.children, i);
@@ -69,7 +69,7 @@
     CrossdartPull.apply(this, [github]);
 
     this._getLineElement = function (type, file, line) {
-      var fileHeader = document.querySelector(".file-header[data-path='" + file + "']");
+      var fileHeader = document.querySelector("#files_bucket .file-header[data-path='" + file + "']");
       var elIndex = (type === CROSSDART_PULL_OLD ? 1 : 2);
       var lineNumberElement = fileHeader.parentElement.querySelector(
         "[data-line-number~='" + line + "']:nth-child(" + elIndex + ")"
