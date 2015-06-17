@@ -11,7 +11,7 @@ import 'package:crossdart/src/entity.dart';
 import 'package:crossdart/src/cache.dart';
 import 'package:crossdart/src/html/url.dart';
 import 'package:crossdart/src/google_analytics.dart' as ga;
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 import 'package:logging/logging.dart';
 
 var _logger = new Logger("html_package_generator");
@@ -38,7 +38,7 @@ class HtmlPackageGenerator {
       var location = new Location(package, package.relativePath(absolutePath));
       entities = entities.where((e) => e.offset != null && e.end != null).toSet();
       if (!(new File(location.writePath(_config)).existsSync())) {
-        var directory = new Directory(path.dirname(location.writePath(_config)));
+        var directory = new Directory(p.dirname(location.writePath(_config)));
         directory.createSync(recursive: true);
         var file = new File(location.writePath(_config)).openSync(mode: FileMode.WRITE);
         _writeContent(absolutePath, entities, file, package);
@@ -87,11 +87,22 @@ class HtmlPackageGenerator {
             <a href='${packageIndexUrl(package.packageInfo)}' class='nav-back'>${package.name} (${package.version})</a>
             <a class="link-to-pub" href="${package.pubUrl}">Link to Pub</a>
           </nav>
+          <div class="content">
+            <nav class="filetree">
+              <div class="filetree--fuzzy-search">
+                <input class="filetree--fuzzy-search--input" type="text" id="fuzzy-search"
+                  value="" placeholder="Search by filename" />
+              </div>
+              ${_buildFileTree(package, location.path)}
+              <div class="filetree--drag-handle"></div>
+            </nav>
     """;
   }
 
   String _footerContent() {
     return """
+        </div>
+        <script src="/code.js"></script>
         ${ga.script}
       </body>
       </html>
@@ -161,4 +172,68 @@ class HtmlPackageGenerator {
     file.writeStringSync("</pre>");
     file.writeStringSync(_footerContent());
   }
+
+  String _buildFileTree(Package package, String currentPath) {
+    return """<ul class="filetree--root">
+      ${_buildFileTreeContents(package, _getFileTreeMap(package), currentPath.split("/"))}
+    </ul>""";
+  }
+
+  String _buildFileTreeContents(Package package, Iterable<Object> fileTreeMap, Iterable<String> currentPathParts) {
+    var sortedFileTreeMap = fileTreeMap.toList();
+    sortedFileTreeMap.sort((a, b) {
+      if (a is Map && b is! Map) {
+        return -1;
+      } else if (a is! Map && b is! Map) {
+        return a.compareTo(b);
+      } else if (a is Map && b is Map) {
+        return a.keys.first.compareTo(b.keys.first);
+      } else {
+        return 1;
+      }
+    });
+    return sortedFileTreeMap.map((node) {
+      if (node is Map) {
+        var key = node.keys.first;
+        var isOpen = currentPathParts.isNotEmpty && currentPathParts.first == key;
+        return """<li class="filetree--item filetree--item__directory${isOpen ? ' is-open' : ''}">
+          <span class="filetree--item--info"><span class="filetree--item--fold-icon"></span><span class="filetree--item--title">${key}</span></span>
+          <ul class="filetree--children">
+            ${_buildFileTreeContents(package, node[key], isOpen ? currentPathParts.skip(1) : [])}
+          </ul>
+        </li>""";
+      } else {
+        var isCurrent = currentPathParts.isNotEmpty && currentPathParts.first == p.basename(node);
+        var location = new Location(package, node);
+        var name = isCurrent
+            ? p.basename(node)
+            : "<a href='${location.htmlPath}'>${p.basename(node)}</a>";
+        return """<li class="filetree--item filetree--item__file${isCurrent ? ' is-current' : ''}">
+          <span class="filetree--item--info"><span class="filetree--item--title">${name}</span></span>
+        </li>""";
+      }
+    }).join("\n");
+  }
+
+  Iterable<Object> _getFileTreeMap(Package package) {
+    return package.paths.fold([], (memo, path) {
+      var parts = path.split("/");
+      var cursor = memo;
+      for (var i = 0; i < parts.length; i += 1) {
+        var part = parts[i];
+        if (i == parts.length - 1) {
+          cursor.add(path);
+        } else {
+          var existingMap = cursor.firstWhere((i) => i is Map && i.containsKey(part), orElse: () => null);
+          if (existingMap == null) {
+            existingMap = {part: []};
+            cursor.add(existingMap);
+          }
+          cursor = existingMap[part];
+        }
+      }
+      return memo;
+    });
+  }
+
 }

@@ -26,3 +26,19 @@ key(Map map, value) {
   });
   return key;
 }
+
+/// Merges the keys and values in [other] with [map]. If [depth] is specified, then
+/// merging will happen recursively for nested maps until [depth] is reached. If
+/// [deep] is `true`, then merging will recurse infinitely.
+Map merge(Map map, Map other, {int depth: 0, bool deep: false}) {
+  depth = deep ? double.MAX_FINITE.toInt() : depth;
+
+  var result = new Map.from(map);
+  other.forEach((key, value) {
+    if (depth > 0 && map[key] is Map && value is Map) {
+      value = merge(map[key], value, depth: depth - 1);
+    }
+    result[key] = value;
+  });
+  return result;
+}
