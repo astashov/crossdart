@@ -16,32 +16,13 @@ String _getUrl(int page) => "https://pub.dartlang.org/packages.json?page=${page}
 
 // TODO: Refactor to a class
 
-Future<Iterable<PackageInfo>> getUpdatedPackages(Config config) async {
-  Iterable<PackageInfo> generatedPackages = _getGeneratedPackages(config);
-  //Iterable<PackageInfo> allPackages = _getPackagesFromFile(config);
-  Iterable<PackageInfo> allPackages = await _getPackagesFromPub(config);
+Future<Iterable<PackageInfo>> getAllPackages(Config config) async {
+  Iterable<PackageInfo> allPackages = _getPackagesFromFile(config);
+  //Iterable<PackageInfo> allPackages = await _getPackagesFromPub(config);
 
-  Map<String, PackageInfo> generatedPackagesByName = generatedPackages.fold({}, (memo, packageInfo) {
-    memo[packageInfo.name] = packageInfo;
-    return memo;
-  });
+  _logger.info("The number of retrieved packages - ${allPackages.length}");
 
-  var updatedPackages = allPackages.where((packageInfo) {
-    var generatedPackage = generatedPackagesByName[packageInfo.name];
-    return generatedPackage == null || packageInfo.version.toPath() != generatedPackage.version.toPath();
-  });
-
-  _logger.info("The number of updated packages - ${updatedPackages.length}");
-
-  return updatedPackages;
-}
-
-Iterable<PackageInfo> _getGeneratedPackages(Config config) {
-  return new Directory(config.currentDir).listSync().where((f) => f is Directory).map((Directory dir) {
-    var versions = dir.listSync().map((d) => basename(d.path)).toList();
-    versions.sort();
-    return new PackageInfo(basename(dir.path), new Version(versions.last));
-  });
+  return allPackages;
 }
 
 Iterable<PackageInfo> _getPackagesFromFile(Config config) {

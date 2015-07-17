@@ -56,7 +56,7 @@ Future runParser(Config config) async {
 //      new PackageInfo("dnd", new Version("0.2.1")),
 //      //new PackageInfo("pool", new Version("1.0.1"))
 //      ];
-  List<PackageInfo> packageInfos = (await getUpdatedPackages(config)).toList();
+  List<PackageInfo> packageInfos = (await getAllPackages(config)).toList();
   var erroredPackageInfos = await dbPool(config).query("""
     SELECT package_name AS name, package_version AS version FROM errors
   """);
@@ -90,7 +90,7 @@ Future runParser(Config config) async {
             timer.cancel();
             timer = null;
           }
-          isolate.kill(Isolate.IMMEDIATE);
+          isolate.kill(priority: Isolate.IMMEDIATE);
           completer.complete(msg);
         } else if (msg == IsolateEvent.START_FILE_PARSING) {
           _logger.fine("Setting a timer");
@@ -99,7 +99,7 @@ Future runParser(Config config) async {
           }
           timer = new Timer(new Duration(seconds: 90), () {
             _logger.warning("Timeout while waiting for parsing a file, skipping this package");
-            isolate.kill(Isolate.IMMEDIATE);
+            isolate.kill(priority: Isolate.IMMEDIATE);
             completer.completeError("timeout");
           });
         } else if (msg == IsolateEvent.FINISH_FILE_PARSING && timer != null) {
@@ -110,7 +110,7 @@ Future runParser(Config config) async {
             timer.cancel();
             timer = null;
           }
-          isolate.kill(Isolate.IMMEDIATE);
+          isolate.kill(priority: Isolate.IMMEDIATE);
           completer.completeError("error");
         }
       }).catchError((exception, stackTrace) {
