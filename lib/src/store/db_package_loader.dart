@@ -59,6 +59,15 @@ class DbPackageLoader {
     });
   }
 
+  Future<Iterable<PackageInfo>> getErroredPackageInfos() async {
+    var erroredPackageInfos = await dbPool(_config).query("""
+      SELECT package_name AS name, package_version AS version FROM errors
+    """);
+    return (await erroredPackageInfos.toList()).map((p) {
+      return new PackageInfo(p.name, new Version(p.version));
+    });
+  }
+
   Future<Iterable<PackageInfo>> getPackageInfoDependencies(PackageInfo packageInfo) async {
     _logger.info("Loading package with dependencies $packageInfo");
     var dependencies = (await _getAllPackageInfoDependencies(packageInfo)).toList();

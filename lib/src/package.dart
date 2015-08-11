@@ -11,6 +11,7 @@ import 'package:crossdart/src/entity.dart';
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/util.dart';
 import 'package:crossdart/src/store.dart';
+import 'package:sqljocky/sqljocky.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -29,6 +30,9 @@ abstract class Package {
   static Package fromAbsolutePath(Environment environment, String filePath) {
     return environment.packagesByFiles[filePath];
   }
+
+  Package update({Config config, PackageInfo packageInfo, String description, Iterable<String> paths});
+  Future<Package> updateId([QueriableConnection conn]);
 
   String get name => packageInfo.name;
   Version get version => packageInfo.version;
@@ -97,6 +101,17 @@ class Sdk extends Package {
       return p.join(config.sdkPackagesRoot, packageInfo.dirname, "lib");
     }
   }
+
+  Sdk update({Config config, PackageInfo packageInfo, String description, Iterable<String> paths}) {
+    return new Sdk(
+        config != null ? config : this.config,
+        packageInfo != null ? packageInfo : this.packageInfo,
+        description != null ? description : this.description,
+        paths != null ? paths : this.paths);
+  }
+  Future<Sdk> updateId([QueriableConnection conn]) async {
+    return update(packageInfo: packageInfo.update(id: await getPackageId(config, packageInfo, conn)));
+  }
 }
 
 class Project extends Package {
@@ -113,6 +128,17 @@ class Project extends Package {
 
   String get _root => config.projectPath;
   String get lib => p.join(_root, "lib");
+
+  Project update({Config config, PackageInfo packageInfo, String description, Iterable<String> paths}) {
+    return new Project(
+        config != null ? config : this.config,
+        packageInfo != null ? packageInfo : this.packageInfo,
+        description != null ? description : this.description,
+        paths != null ? paths : this.paths);
+  }
+  Future<Project> updateId([QueriableConnection conn]) async {
+    return update(packageInfo: packageInfo.update(id: await getPackageId(config, packageInfo, conn)));
+  }
 }
 
 
@@ -157,6 +183,17 @@ class CustomPackage extends Package {
     }
     return _dependencies;
   }
+
+  CustomPackage update({Config config, PackageInfo packageInfo, String description, Iterable<String> paths}) {
+    return new CustomPackage(
+        config != null ? config : this.config,
+        packageInfo != null ? packageInfo : this.packageInfo,
+        description != null ? description : this.description,
+        paths != null ? paths : this.paths);
+  }
+  Future<CustomPackage> updateId([QueriableConnection conn]) async {
+    return update(packageInfo: packageInfo.update(id: await getPackageId(config, packageInfo, conn)));
+  }
 }
 
 Future<Package> buildFromFileSystem(Config config, PackageInfo packageInfo) {
@@ -188,25 +225,12 @@ Future<Package> buildFromDatabase(Config config, PackageInfo packageInfo) async 
 }
 
 Future<Sdk> buildSdkFromFileSystem(Config config, PackageInfo packageInfo) async {
-  String lib;
-  if (packageInfo.version == config.sdk.sdkVersion) {
-    lib = p.join(config.sdkPath, "lib");
-  } else {
-    lib = p.join(config.sdkPackagesRoot, packageInfo.dirname, "lib");
-  }
+  String lib = p.join(packageInfo.getDirectoryInPubCache(config), "lib");
   var source = PackageSource.SDK;
 
   var id = packageInfo.id;
   if (config.isDbUsed && id == null) {
-    var transaction = await dbPool(config).startTransaction(consistent: true);
     id = await getPackageId(config, packageInfo);
-    if (id == null) {
-      id = await storePackage(config, packageInfo, source, null);
-    }
-    if (id == 0) {
-      id = await getPackageId(config, packageInfo);
-    }
-    transaction.commit();
   }
   var paths = new Directory(lib).listSync(recursive: true).where((f) => f is File && f.path.endsWith(".dart")).map((file) {
     return file.path.replaceAll(lib, "").replaceFirst(new RegExp(r"^/"), "");
@@ -227,26 +251,11 @@ Project buildProjectFromFileSystem(Config config) {
 
 
 Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInfo packageInfo) async {
-  Directory getDirectory() {
-    var directory = new Directory(config.hostedPackagesRoot).listSync().firstWhere((entity) {
-      return p.basename(entity.path).toLowerCase() == "${packageInfo.name}-${packageInfo.version}".toLowerCase()
-          || p.basename(entity.path).replaceAll("+", "-").toLowerCase() == "${packageInfo.name}-${packageInfo.version}".toLowerCase();
-    }, orElse: () => null);
-    if (directory == null) {
-       directory = new Directory(config.gitPackagesRoot).listSync().firstWhere((entity) {
-        return p.basename(entity.path).toLowerCase() == "${packageInfo.name}-${packageInfo.version}".toLowerCase()
-           || p.basename(entity.path).replaceAll("+", "-").toLowerCase() == "${packageInfo.name}-${packageInfo.version}".toLowerCase();
-      }, orElse: () => null);
-    }
-    return directory;
-  }
-
-  var root = getDirectory();
+  var root = packageInfo.getDirectoryInPubCache(config);
   if (root == null) {
     print(config.hostedPackagesRoot);
     print(packageInfo);
   }
-  root = root.resolveSymbolicLinksSync();
   var lib = p.join(root, "lib");
 
   YamlNode getPubspec() {
@@ -265,22 +274,20 @@ Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInf
   } else {
     source = PackageSource.HOSTED;
   }
-  var paths = new Directory(lib).listSync(recursive: true).where((f) => f is File && f.path.endsWith(".dart")).map((file) {
-    return file.path.replaceAll(lib, "").replaceFirst(new RegExp(r"^/"), "");
-  });
+  final libDirectory = new Directory(lib);
+  Iterable<String> paths;
+  if (libDirectory.existsSync()) {
+    paths = new Directory(lib).listSync(recursive: true).where((f) => f is File && f.path.endsWith(".dart")).map((file) {
+      return file.path.replaceAll(lib, "").replaceFirst(new RegExp(r"^/"), "");
+    });
+  } else {
+    paths = [];
+  }
 
   var pubspec = getPubspec();
   int id = packageInfo.id;
   if (config.isDbUsed && id == null) {
-    var transaction = await dbPool(config).startTransaction(consistent: true);
     id = await getPackageId(config, packageInfo);
-    if (id == null) {
-      id = await storePackage(config, packageInfo, source, pubspec["description"]);
-    }
-    if (id == 0) {
-      id = await getPackageId(config, packageInfo);
-    }
-    transaction.commit();
   }
 
   return new CustomPackage(config, packageInfo.update(id: id, source: source), pubspec["description"], paths);

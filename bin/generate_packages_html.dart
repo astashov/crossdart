@@ -19,6 +19,7 @@ import 'package:path/path.dart' as p;
 import 'package:crossdart/src/html_package_generator.dart';
 import 'package:crossdart/src/html_index_generator.dart';
 import 'package:crossdart/src/util/iterable.dart';
+import 'package:crossdart/src/pub_cache_package_loader.dart';
 
 Logger _logger = new Logger("generate_html");
 
@@ -33,7 +34,7 @@ Future main(args) async {
 
   var config = new Config(
       sdkPath: new File(results[Config.SDK_PATH]).resolveSymbolicLinksSync(),
-      packagesPath: new File(results[Config.PACKAGES_PATH]).resolveSymbolicLinksSync(),
+      pubCachePath: new File(results[Config.PUB_CACHE_PATH]).resolveSymbolicLinksSync(),
       outputPath: new File(results[Config.OUTPUT_PATH]).resolveSymbolicLinksSync(),
       templatesPath: new File(results[Config.TEMPLATES_PATH]).resolveSymbolicLinksSync(),
       isDbUsed: true,
@@ -53,21 +54,16 @@ Future main(args) async {
 Future runHtmlGenerator(Config config) async {
   new Directory(p.join(config.outputPath, PATH_PREFIX)).createSync(recursive: true);
 
-  var packageLoader = new DbPackageLoader(config);
-  Iterable<PackageInfo> _allPackageInfos = (await packageLoader.getAllPackageInfos());
-  _logger.info("Total number of packages - ${_allPackageInfos.length}");
+  var pubCachePackageLoader = new PubCachePackageLoader(config);
+  var dbPackageLoader = new DbPackageLoader(config);
+  Iterable<PackageInfo> _allPackageInfos = (await pubCachePackageLoader.getAllPackageInfos());
+  _logger.info(".pub-cache number of packages - ${_allPackageInfos.length}");
   var generatedPackageInfosSet = config.generatedPackageInfos.expand((i) => i).toSet();
+  _logger.info("generated number of packages - ${generatedPackageInfosSet.length}");
 
-  var erroredPackageInfos = await dbPool(config).query("""
-    SELECT package_name AS name, package_version AS version FROM errors
-  """);
-  erroredPackageInfos = (await erroredPackageInfos.toList()).map((p) {
-    return new PackageInfo(p.name, new Version(p.version));
-  });
-
-  Set<PackageInfo> allPackageInfos = _allPackageInfos.where((pi) {
+  final Set<PackageInfo> allPackageInfos = _allPackageInfos.where((pi) {
     var generatedPackageInfo = pi.update(version: new Version(pi.version.toPath()));
-    return !generatedPackageInfosSet.contains(generatedPackageInfo) && !erroredPackageInfos.contains(generatedPackageInfo);
+    return !generatedPackageInfosSet.contains(generatedPackageInfo);
   });
 
   _logger.info("Updated number of packages - ${allPackageInfos.length}");
@@ -80,7 +76,7 @@ Future runHtmlGenerator(Config config) async {
     _logger.info("Loading packages with dependencies from db - $index");
     Set<PackageInfo> thisPackageInfos = new Set();
     for (var packageInfo in packageInfos) {
-      thisPackageInfos.addAll(await packageLoader.getPackageInfoDependencies(packageInfo));
+      thisPackageInfos.addAll(await dbPackageLoader.getPackageInfoDependencies(packageInfo));
     }
 
     _logger.info("Loading packages");

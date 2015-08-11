@@ -23,7 +23,7 @@ Future main(args) async {
 
   var config = new Config(
       sdkPath: new File(results[Config.SDK_PATH]).resolveSymbolicLinksSync(),
-      packagesPath: new File(results[Config.PACKAGES_PATH]).resolveSymbolicLinksSync(),
+      pubCachePath: new File(results[Config.PUB_CACHE_PATH]).resolveSymbolicLinksSync(),
       outputPath: new File(results[Config.OUTPUT_PATH]).resolveSymbolicLinksSync(),
       projectPath: new File(results[Config.PROJECT_PATH]).resolveSymbolicLinksSync(),
       isDbUsed: false);

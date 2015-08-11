@@ -36,65 +36,81 @@ Map<EntityKind, int> entityKindIds = {
 // TODO: Refactor to a class
 
 Future store(Environment environment, ParsedData parsedData) async {
+  _logger.info("Starting transaction to store the package, dependencies, and all the entities...");
+
   var config = environment.config;
-  return dbPool(config).prepare("""
+  await dbPool(environment.config).query("SET SESSION innodb_lock_wait_timeout=2000");
+  final transaction = await dbPool(environment.config).startTransaction(consistent: false);
+  await transaction.query("SET SESSION innodb_lock_wait_timeout=2000");
+
+  for (final package in environment.packages) {
+    await storePackage(config, package.packageInfo, package.source, package.description, transaction);
+  }
+  final environmentWithIds = await environment.rebuildWithPackageIds(transaction);
+  await storeDependencies(environmentWithIds, environmentWithIds.package, transaction);
+
+  final insertQuery = await transaction.prepare("""
     INSERT IGNORE INTO entities (declaration_id, type, kind, name, context_name, offset, end, line_number, line_offset, path, package_id, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  """).then((query) async {
-    var files = [];
+  """);
+  var files = [];
 
-    _logger.info("Preparing files");
+  _logger.info("Preparing files");
 
-    var packages = parsedData.files.keys.map((k) => environment.packagesByFiles[k]).toSet();
-    var existingPackageIds = (await (await dbPool(config).query("""
-      SELECT DISTINCT package_id FROM entities WHERE package_id IN (${packages.map((p) => p.id).toList().join(",")})
-    """)).toList()).map((r) => r.package_id).toSet();
+  final packages = parsedData.files.keys.map((k) => environmentWithIds.packagesByFiles[k]).toSet();
 
-    parsedData.files.forEach((absolutePath, entities) {
-      var location = new Location.fromEnvironment(environment, absolutePath);
-      if (!existingPackageIds.contains(location.package.id)) {
-        files.add([absolutePath, entities]);
-      }
-    });
+  final query = """
+    SELECT DISTINCT package_id FROM entities WHERE package_id IN (${packages.map((p) => p.id).toList().join(",")})
+  """;
+  var existingPackageIds = (await (await transaction.query(query)).toList()).map((r) => r.package_id).toSet();
 
-    _logger.info("Storing declarations");
-    var idsByDeclarationsList = await Future.wait(parsedData.files.keys.map((absolutePath) async {
-      var entities = parsedData.files[absolutePath];
-      var filteredEntities = entities.where((e) => e is Declaration);
-      return await _storeDeclarations(environment, query, absolutePath, filteredEntities);
-    }));
-
-    _logger.info("Making idsByDeclaration map");
-    var idsByDeclarations = idsByDeclarationsList.fold({}, (memo, map) {
-      memo.addAll(map);
-      return memo;
-    });
-
-    _logger.info("Storing references");
-    var referencesValues = files.map((tuple) {
-      var absolutePath = tuple[0];
-      var entities = tuple[1];
-      var filteredEntities = entities.where((e) => e is Reference);
-
-      return _getReferencesValues(environment, parsedData, absolutePath, filteredEntities, idsByDeclarations);
-    }).expand((i) => i).toList();
-    _logger.info("Executing query to store references");
-    if (referencesValues.length > 0) {
-      await query.executeMulti(referencesValues);
-    }
-
-    _logger.info("Storing tokens");
-    var tokensValues = files.map((tuple) {
-      var absolutePath = tuple[0];
-      var entities = tuple[1];
-      var filteredEntities = entities.where((e) => e.runtimeType == Token);
-      return _getTokensValues(environment, parsedData, absolutePath, filteredEntities);
-    }).expand((i) => i).toList();
-    _logger.info("Executing query to store tokens");
-    if (tokensValues.length > 0) {
-      await query.executeMulti(tokensValues);
+  parsedData.files.forEach((absolutePath, entities) {
+    var location = new Location.fromEnvironment(environmentWithIds, absolutePath);
+    if (!existingPackageIds.contains(location.package.id)) {
+      files.add([absolutePath, entities]);
     }
   });
+
+  _logger.info("Storing declarations");
+  var idsByDeclarationsList = [];
+  for (final absolutePath in parsedData.files.keys) {
+    var entities = parsedData.files[absolutePath];
+    var filteredEntities = entities.where((e) => e is Declaration);
+    idsByDeclarationsList.add(await _storeDeclarations(environmentWithIds, insertQuery, absolutePath, filteredEntities, transaction));
+  }
+
+  _logger.info("Making idsByDeclaration map");
+  var idsByDeclarations = idsByDeclarationsList.fold({}, (memo, map) {
+    memo.addAll(map);
+    return memo;
+  });
+
+  _logger.info("Storing references");
+  var referencesValues = files.map((tuple) {
+    var absolutePath = tuple[0];
+    var entities = tuple[1];
+    var filteredEntities = entities.where((e) => e is Reference);
+
+    return _getReferencesValues(environmentWithIds, parsedData, absolutePath, filteredEntities, idsByDeclarations);
+  }).expand((i) => i).toList();
+  _logger.info("Executing query to store references");
+  if (referencesValues.length > 0) {
+    await insertQuery.executeMulti(referencesValues);
+  }
+
+  _logger.info("Storing tokens");
+  var tokensValues = files.map((tuple) {
+    var absolutePath = tuple[0];
+    var entities = tuple[1];
+    var filteredEntities = entities.where((e) => e.runtimeType == Token);
+    return _getTokensValues(environmentWithIds, parsedData, absolutePath, filteredEntities);
+  }).expand((i) => i).toList();
+  _logger.info("Executing query to store tokens");
+  if (tokensValues.length > 0) {
+    await insertQuery.executeMulti(tokensValues);
+  }
+  _logger.info("Committing transaction");
+  transaction.commit();
 }
 
 List _buildValue(Config config, Entity entity, Location location, [int declarationId]) {
@@ -113,9 +129,10 @@ List _buildValue(Config config, Entity entity, Location location, [int declarati
       config.currentDate];
 }
 
-Future<Map<Declaration, int>> _storeDeclarations(Environment environment, Query query, String absolutePath, Iterable<Declaration> declarations) async {
+Future<Map<Declaration, int>> _storeDeclarations(Environment environment, Query query, String absolutePath, Iterable<Declaration> declarations, QueriableConnection conn) async {
   var location = new Location.fromEnvironment(environment, absolutePath);
-  var idAndDeclaration = await Future.wait(declarations.map((declaration) async {
+  var idAndDeclaration = [];
+  for (final declaration in declarations) {
     var value = _buildValue(environment.config, declaration, location);
     Results result = await query.execute(value);
     var id = result.insertId;
@@ -123,14 +140,14 @@ Future<Map<Declaration, int>> _storeDeclarations(Environment environment, Query 
       id = declaration.id;
     }
     if (id == null) {
-      id = (await (await dbPool(environment.config).query("""
+      id = (await (await conn.query("""
         SELECT id FROM entities
         WHERE type = ${entityTypeIds[Declaration]} AND offset = ${declaration.offset} AND end = ${declaration.end} AND
               path = '${location.path}' AND package_id = ${location.package.id}
       """)).toList()).first.id;
     }
-    return [declaration, id];
-  }));
+    idAndDeclaration.add([declaration, id]);
+  }
   return idAndDeclaration.fold({}, (memo, values) {
     memo[values[0]] = values[1];
     return memo;
@@ -160,44 +177,51 @@ Future storeError(Config config, PackageInfo packageInfo, Object error, StackTra
       [packageInfo.name, packageInfo.version.toString(), "${error}\n${stackTrace}", config.currentDate]);
 }
 
-Future storeDependencies(Environment environment, Package package) async {
+Future storeDependencies(Environment environment, Package package, [QueriableConnection conn]) async {
+  if (conn == null) {
+    conn = dbPool(environment.config);
+  }
   _logger.info("Storing dependencies");
-  var transaction = await dbPool(environment.config).startTransaction(consistent: true);
-  await _storeDependencies(environment, package);
-  await transaction.commit();
+  await _storeDependencies(environment, package, conn);
   _logger.info("Storing dependencies finished");
 }
 
-Future<int> storePackage(Config config, PackageInfo packageInfo, PackageSource source, String description) async {
-  var result = await dbPool(config).prepareExecute(
+Future<int> storePackage(Config config, PackageInfo packageInfo, PackageSource source, String description, [QueriableConnection conn]) async {
+  if (conn == null) {
+    conn = dbPool(config);
+  }
+  var result = await conn.prepareExecute(
       "INSERT IGNORE INTO packages (name, version, source_type, description, created_at) VALUES (?, ?, ?, ?, ?)",
       [packageInfo.name, packageInfo.version.toString(), packageSourceIds[source], description, config.currentDate]);
   return result.insertId;
 }
 
-Future _storeDependencies(Environment environment, Package package, [Set handledPackages]) async {
+Future _storeDependencies(Environment environment, Package package, QueriableConnection conn, [Set handledPackages]) async {
   if (handledPackages == null) {
     handledPackages = new Set();
   }
   if (!handledPackages.contains(package)) {
     handledPackages.add(package);
     for (Package dependency in package.dependencies(environment)) {
-      await _storeDependencies(environment, dependency, handledPackages);
-      await _storeDependency(environment.config, package.id, dependency.id);
+      await _storeDependencies(environment, dependency, conn, handledPackages);
+      await _storeDependency(environment.config, package.id, dependency.id, conn);
     }
   }
 }
 
 
-Future<Results> _storeDependency(Config config, int packageId, int dependencyId) {
-  return dbPool(config).prepareExecute(
+Future<Results> _storeDependency(Config config, int packageId, int dependencyId, QueriableConnection conn) {
+  return conn.prepareExecute(
       "INSERT IGNORE INTO packages_dependencies (package_id, dependency_id) VALUES (?, ?)",
       [packageId, dependencyId]);
 }
 
 
-Future<int> getPackageId(Config config, PackageInfo packageInfo) async {
-  var results = (await (await dbPool(config).query("""
+Future<int> getPackageId(Config config, PackageInfo packageInfo, [QueriableConnection conn]) async {
+  if (conn == null) {
+    conn = dbPool(config);
+  }
+  var results = (await (await conn.query("""
     SELECT id FROM packages
     WHERE name = '${packageInfo.name}' AND version = '${packageInfo.version}'
   """)).toList());

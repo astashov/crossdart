@@ -27,21 +27,25 @@ class ASTVisitor extends GeneralizingAstVisitor {
   ParsedData _parsedData;
   ParsedData get parsedData => _parsedData;
 
+  @override
   visitNode(AstNode node) {
     super.visitNode(node);
     //print("Node ${node}, type: ${node.runtimeType}, beginToken: ${node.beginToken}, endToken: ${node.endToken}");
   }
 
+  @override
   visitDirective(Directive node) {
     super.visitDirective(node);
     _addToken(KEYWORD, node.keyword);
   }
 
+  @override
   visitComment(Comment node) {
     super.visitComment(node);
     _addToken(node.runtimeType.toString().toLowerCase(), node.beginToken, node.endToken);
   }
 
+  @override
   visitClassDeclaration(ClassDeclaration node) {
     super.visitClassDeclaration(node);
     if (node.abstractKeyword != null) {
@@ -50,11 +54,13 @@ class ASTVisitor extends GeneralizingAstVisitor {
     _addToken(KEYWORD, node.classKeyword);
   }
 
+  @override
   visitExtendsClause(ExtendsClause node) {
     super.visitExtendsClause(node);
-    _addToken(KEYWORD, node.keyword);
+    _addToken(KEYWORD, node.extendsKeyword);
   }
 
+  @override
   visitMethodDeclaration(MethodDeclaration node) {
     super.visitMethodDeclaration(node);
     [node.externalKeyword, node.modifierKeyword, node.operatorKeyword, node.propertyKeyword].forEach((keyword) {
@@ -66,11 +72,13 @@ class ASTVisitor extends GeneralizingAstVisitor {
     _addToken(DECLARATION, node.name.token);
   }
 
-  visitPartOfDirecive(PartOfDirective node) {
+  @override
+  visitPartOfDirective(PartOfDirective node) {
     super.visitPartOfDirective(node);
-    _addToken(KEYWORD, node.partToken, node.ofToken);
+    _addToken(KEYWORD, node.partKeyword, node.ofKeyword);
   }
 
+  @override
   visitConstructorDeclaration(ConstructorDeclaration node) {
     super.visitConstructorDeclaration(node);
     [node.externalKeyword, node.constKeyword, node.factoryKeyword].forEach((keyword) {
@@ -83,26 +91,31 @@ class ASTVisitor extends GeneralizingAstVisitor {
     }
   }
 
+  @override
   visitSuperExpression(SuperExpression node) {
     super.visitSuperExpression(node);
     _addToken(KEYWORD, node.beginToken);
   }
 
+  @override
   visitReturnStatement(ReturnStatement node) {
     super.visitReturnStatement(node);
-    _addToken(KEYWORD, node.keyword);
+    _addToken(KEYWORD, node.returnKeyword);
   }
 
+  @override
   visitInstanceCreationExpression(InstanceCreationExpression node) {
     super.visitInstanceCreationExpression(node);
     _addToken(KEYWORD, node.keyword);
   }
 
+  @override
   visitAnnotation(Annotation node) {
     super.visitAnnotation(node);
     _addToken(ANNOTATION, node.beginToken, node.endToken);
   }
 
+  @override
   visitSimpleStringLiteral(SimpleStringLiteral node) {
     super.visitSimpleStringLiteral(node);
     _addToken(STRING, node.literal);
@@ -110,11 +123,11 @@ class ASTVisitor extends GeneralizingAstVisitor {
       var parent = node.parent;
       if (parent is PartDirective) {
         var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.toString(), offset: node.offset, end: node.end);
-        var declaration = new e.Import(new Location.fromEnvironment(_environment, parent.element.source.fullName));
+        var declaration = new e.Import(new Location.fromEnvironment(_environment, (parent as PartDirective).element.source.fullName));
         _addReferenceAndDeclaration(reference, declaration);
       } else if (parent is ImportDirective) {// && parent.element != null) {
         var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.toString(), offset: node.offset, end: node.end);
-        var declaration = new e.Import(new Location.fromEnvironment(_environment, parent.element.importedLibrary.definingCompilationUnit.source.fullName));
+        var declaration = new e.Import(new Location.fromEnvironment(_environment, (parent as ImportDirective).element.importedLibrary.definingCompilationUnit.source.fullName));
         _addReferenceAndDeclaration(reference, declaration);
       }
     } catch(error, stackTrace) {
@@ -122,6 +135,7 @@ class ASTVisitor extends GeneralizingAstVisitor {
     }
   }
 
+  @override
   visitSimpleIdentifier(SimpleIdentifier node) {
     super.visitSimpleIdentifier(node);
     if (node.parent != null && node.parent.parent is PartOfDirective) {
@@ -152,8 +166,8 @@ class ASTVisitor extends GeneralizingAstVisitor {
           if (elementNode is Declaration && !node.inDeclarationContext()) {
             var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.bestElement.displayName, offset: node.offset, end: node.end);
             var declarationElement = elementNode.element;
-            var kind = getEntityKind(declarationElement);
-            var declarationToken = getDeclarationToken(elementNode);
+            var kind = _getEntityKind(declarationElement);
+            var declarationToken = _getDeclarationToken(elementNode);
             if (kind == null) {
               print("MISSING KIND! - ${declarationElement.runtimeType} - ${declarationElement.displayName}, ${declarationToken.offset}-${declarationToken.end}");
             }
@@ -180,7 +194,7 @@ class ASTVisitor extends GeneralizingAstVisitor {
     }
   }
 
-  e.EntityKind getEntityKind(Element declarationElement) {
+  e.EntityKind _getEntityKind(Element declarationElement) {
     if (declarationElement is ClassElement) {
       return e.EntityKind.CLASS;
     } else if (declarationElement is MethodElement) {
@@ -204,12 +218,14 @@ class ASTVisitor extends GeneralizingAstVisitor {
     }
   }
 
-  AstNode getDeclarationToken(dynamic node) {
+  AstNode _getDeclarationToken(dynamic node) {
     if ((node is ClassDeclaration
         || node is MethodDeclaration
         || node is VariableDeclaration
         || node is FunctionDeclaration
         || node is ConstructorDeclaration
+        || node is EnumDeclaration
+        || node is EnumConstantDeclaration
         || node is FunctionTypeAlias) && node.name != null) {
       return node.name;
     } else if (node is ConstructorDeclaration && node.returnType != null) {

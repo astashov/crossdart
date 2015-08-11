@@ -33,8 +33,11 @@ class HtmlPackageGenerator {
     });
 
   void generate() {
-    this._parsedData.files.forEach((String absolutePath, Set<Entity> entities) {
-      Package package = _packagesByFiles[absolutePath];
+    _packagesByFiles.forEach((absolutePath, package) {
+      Set<Entity> entities = this._parsedData.files[absolutePath];
+      if (entities == null) {
+        entities = new Set();
+      }
       var location = new Location(package, package.relativePath(absolutePath));
       entities = entities.where((e) => e.offset != null && e.end != null).toSet();
       if (!(new File(location.writePath(_config)).existsSync())) {

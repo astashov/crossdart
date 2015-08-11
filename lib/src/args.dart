@@ -3,6 +3,7 @@ library crossdart.args;
 import 'package:args/args.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:path/path.dart' as p;
+import 'dart:io';
 
 abstract class Args {
   final List<String> _args;
@@ -85,7 +86,7 @@ class MigrationArgs extends Args {
 }
 
 class ParsePackagesArgs extends Args {
-  List<String> get requiredKeys => [Config.SDK_PATH, Config.INSTALL_PATH];
+  List<String> get requiredKeys => [Config.SDK_PATH, Config.INSTALL_PATH, Config.PUB_CACHE_PATH];
   String get description {
     return "parse_packages.dart analyzes all the packages from the pub " +
         "and stores the analyze information in the database.";
@@ -95,6 +96,7 @@ class ParsePackagesArgs extends Args {
     addSdkArgsOptions();
     addDbArgsOptions();
     parser.addOption(Config.INSTALL_PATH, help: "Path where every package to analyze will be installed at. Required.");
+    parser.addOption(Config.PUB_CACHE_PATH, help: "Path where the all the dependent packages are placed at. Required.");
     parser.addOption(Config.PART, help: "What part of total results will be handled. Format - n/m. E.g. 1/4 means it will handle the first quarter of all the packages. Default is 1/1.");
   }
 
@@ -104,6 +106,20 @@ class ParsePackagesArgs extends Args {
       theResults[Config.PART] = "1/1";
     }
     return theResults;
+  }
+}
+
+class InstallPackagesArgs extends Args {
+  List<String> get requiredKeys => [Config.SDK_PATH, Config.INSTALL_PATH, Config.PUB_CACHE_PATH];
+  String get description {
+    return "install_packages.dart installs all the analyzed packages.";
+  }
+
+  InstallPackagesArgs(List<String> args) : super(args) {
+    addSdkArgsOptions();
+    addDbArgsOptions();
+    parser.addOption(Config.INSTALL_PATH, help: "Path where every package to analyze will be installed at. Required.");
+    parser.addOption(Config.PUB_CACHE_PATH, help: "Path where the all the dependent packages are placed at. Required.");
   }
 }
 
@@ -119,17 +135,14 @@ class CrossdartArgs extends Args {
     addDbArgsOptions();
     parser.addOption(Config.OUTPUT_PATH,
         help: "Path where the crossdart.json will be generated at. Default is {projectpath}");
-    parser.addOption(Config.PACKAGES_PATH,
-        help: "Path where the all the dependent packages will be placed at. Default is {projectpath}/packages.");
     parser.addOption(Config.PROJECT_PATH, help: "Path where the project is located at. Required.");
   }
 
   Map<String, Object> _getResults() {
     var theResults = super._getResults();
     if (theResults[Config.PROJECT_PATH] != null) {
-      if (theResults[Config.PACKAGES_PATH] == null) {
-        theResults[Config.PACKAGES_PATH] = p.join(theResults[Config.PROJECT_PATH], "packages");
-      }
+      var resolvedSymlink = new Directory(p.join(theResults[Config.PROJECT_PATH], "packages")).listSync().first.resolveSymbolicLinksSync();
+      theResults[Config.PUB_CACHE_PATH] = p.dirname(p.dirname(resolvedSymlink));
       if (theResults[Config.OUTPUT_PATH] == null) {
         theResults[Config.OUTPUT_PATH] = theResults[Config.PROJECT_PATH];
       }
@@ -139,7 +152,7 @@ class CrossdartArgs extends Args {
 }
 
 class GeneratePackagesHtmlArgs extends Args {
-  List<String> get requiredKeys => [Config.SDK_PATH, Config.OUTPUT_PATH, Config.PACKAGES_PATH, Config.TEMPLATES_PATH];
+  List<String> get requiredKeys => [Config.SDK_PATH, Config.OUTPUT_PATH, Config.PUB_CACHE_PATH, Config.TEMPLATES_PATH];
   String get description {
     return "generate_packages_html.dart reads the analysis data from the database, " +
         "and generates HTML files with the hyperlinked source code.";
@@ -150,7 +163,7 @@ class GeneratePackagesHtmlArgs extends Args {
     addDbArgsOptions();
     parser.addOption(Config.OUTPUT_PATH,
         help: "Path where the HTML files will be generated at. Required");
-    parser.addOption(Config.PACKAGES_PATH,
+    parser.addOption(Config.PUB_CACHE_PATH,
         help: "Path where the all the packages with the source placed are. Required.");
     parser.addOption(Config.TEMPLATES_PATH,
         help: "Path where the all the auxiliary JS/CSS files are. " +
@@ -169,13 +182,13 @@ class ServerArgs extends Args {
 }
 
 class UpdatedFilesListArgs extends Args {
-  List<String> get requiredKeys => [Config.PACKAGES_PATH, Config.OUTPUT_PATH];
+  List<String> get requiredKeys => [Config.PUB_CACHE_PATH, Config.OUTPUT_PATH];
   String get description => "updated_files_list.dart returns a list of the updated HTML files needed to upload to S3.";
 
   UpdatedFilesListArgs(List<String> args) : super(args) {
     addDbArgsOptions();
 
-    parser.addOption(Config.PACKAGES_PATH, help: "Path where the all the packages could be found. Required.");
+    parser.addOption(Config.PUB_CACHE_PATH, help: "Path where the all the packages could be found. Required.");
     parser.addOption(Config.OUTPUT_PATH, help: "Path where the HTML files are generated. Required");
   }
 }

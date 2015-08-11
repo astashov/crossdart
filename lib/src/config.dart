@@ -15,7 +15,7 @@ class Config {
   final String outputPath;
   final String templatesPath;
   final String projectPath;
-  final String packagesPath;
+  final String pubCachePath;
   final bool isDbUsed;
   final String dbLogin;
   final String dbPassword;
@@ -29,7 +29,7 @@ class Config {
   static const String OUTPUT_PATH = "outputpath";
   static const String TEMPLATES_PATH = "templatespath";
   static const String PROJECT_PATH = "projectpath";
-  static const String PACKAGES_PATH = "packagespath";
+  static const String PUB_CACHE_PATH = "pubcachepath";
   static const String DB_LOGIN = "dblogin";
   static const String DB_PASSWORD = "dbpassword";
   static const String DB_HOST = "dbhost";
@@ -43,7 +43,7 @@ class Config {
     this.outputPath,
     this.templatesPath,
     this.projectPath,
-    this.packagesPath,
+    this.pubCachePath,
     this.isDbUsed,
     this.dbLogin,
     this.dbPassword,
@@ -55,28 +55,26 @@ class Config {
   int get currentPart => int.parse(part.split("/")[0]);
   int get totalParts => int.parse(part.split("/")[1]);
 
-  String __packagesRoot;
-  String get _packagesRoot {
-    if (__packagesRoot == null) {
-      var lib = (new Directory(packagesPath).listSync().first).resolveSymbolicLinksSync();
-      __packagesRoot = path.dirname(path.dirname(lib));
-      if (!__packagesRoot.endsWith("/")) {
-        __packagesRoot += "/";
-      }
+  String get packagesPath {
+    if (projectPath != null) {
+      return path.join(projectPath, "packages");
+    } else if (installPath != null) {
+      return path.join(installPath, "packages");
+    } else {
+      throw "Cannot generate packagesPath, neither projectPath nor installPath are provided";
     }
-    return __packagesRoot;
   }
 
   String get hostedPackagesRoot {
-    return _packagesRoot.replaceFirst("/git/", "/hosted/pub.dartlang.org/").replaceFirst(new RegExp(r"/$"), "");
+    return path.join(pubCachePath, "hosted", "pub.dartlang.org");
   }
 
   String get gitPackagesRoot {
-    return _packagesRoot.replaceFirst("/hosted/pub.dartlang.org/", "/git/").replaceFirst(new RegExp(r"/$"), "");
+    return path.join(pubCachePath, "git");
   }
 
   String get sdkPackagesRoot {
-    return gitPackagesRoot.replaceFirst("/git", "/sdk");
+    return path.join(pubCachePath, "sdk");
   }
 
   DartSdk get sdk {
@@ -114,7 +112,7 @@ class Config {
       String outputPath,
       String templatesPath,
       String projectPath,
-      String packagesPath,
+      String pubCachePath,
       bool isDbUsed,
       String dbLogin,
       String dbPassword,
@@ -127,7 +125,7 @@ class Config {
         outputPath: outputPath != null ? outputPath : this.outputPath,
         templatesPath: templatesPath != null ? templatesPath : this.templatesPath,
         projectPath: projectPath != null ? projectPath : this.projectPath,
-        packagesPath: packagesPath != null ? packagesPath : this.packagesPath,
+        pubCachePath: pubCachePath != null ? pubCachePath : this.pubCachePath,
         isDbUsed: isDbUsed != null ? isDbUsed : this.isDbUsed,
         dbLogin: dbLogin != null ? dbLogin : this.dbLogin,
         dbPassword: dbPassword != null ? dbPassword : this.dbPassword,

@@ -7,6 +7,7 @@ import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/version.dart';
+import 'package:sqljocky/sqljocky.dart';
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
 
@@ -24,6 +25,23 @@ class Environment {
 
   Iterable<Package> get packages {
     return new Set()..add(sdk)..addAll(customPackages)..add(package);
+  }
+
+  Future<Environment> rebuildWithPackageIds([QueriableConnection conn]) async {
+    final packageWithId = await package.updateId(conn);
+    final sdkWithId = await sdk.updateId(conn);
+    var customPackagesWithIds = [];
+    for (final customPackage in customPackages) {
+      customPackagesWithIds.add(await customPackage.updateId(conn));
+    }
+    final packagesWithIds = new Set()..add(sdkWithId)..addAll(customPackagesWithIds)..add(packageWithId);
+    final packagesByFilesWithIds = packagesWithIds.fold({}, (Map<String, Package> memo, Package package) {
+      package.absolutePaths.forEach((file) {
+        memo[file] = package;
+      });
+      return memo;
+    });
+    return new Environment(config, packageWithId, sender, customPackagesWithIds, sdkWithId, packagesByFilesWithIds);
   }
 }
 

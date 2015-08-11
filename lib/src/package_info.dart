@@ -51,6 +51,29 @@ class PackageInfo {
         source: source == null ? this.source : source);
   }
 
+  String getDirectoryInPubCache(Config config) {
+    if (isSdk) {
+      if (version == config.sdk.sdkVersion) {
+        return config.sdkPath;
+      } else {
+        return p.join(config.sdkPackagesRoot, dirname);
+      }
+    } else {
+      Directory directory = new Directory(config.hostedPackagesRoot).listSync().firstWhere((entity) {
+        return p.basename(entity.path).toLowerCase() == "${name}-${version}".toLowerCase()
+            || p.basename(entity.path).replaceAll("+", "-").toLowerCase() == "${name}-${version}".toLowerCase();
+      }, orElse: () => null);
+      if (directory == null) {
+         directory = new Directory(config.gitPackagesRoot).listSync().firstWhere((entity) {
+          return p.basename(entity.path).toLowerCase() == "${name}-${version}".toLowerCase()
+             || p.basename(entity.path).replaceAll("+", "-").toLowerCase() == "${name}-${version}".toLowerCase();
+        }, orElse: () => null);
+      }
+      return directory == null ? null : directory.resolveSymbolicLinksSync();
+    }
+  }
+
+
   Map<String, String> toMap() {
     return {"name": name, "version": version.toString(), "id": id};
   }

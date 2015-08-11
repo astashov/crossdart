@@ -26,7 +26,7 @@ Future<Null> main(args) async {
       dbHost: results[Config.DB_HOST],
       dbPort: results[Config.DB_PORT],
       dbName: results[Config.DB_NAME],
-      packagesPath: new File(results[Config.PACKAGES_PATH]).resolveSymbolicLinksSync(),
+      pubCachePath: new File(results[Config.PUB_CACHE_PATH]).resolveSymbolicLinksSync(),
       outputPath: new File(results[Config.OUTPUT_PATH]).resolveSymbolicLinksSync(),
       isDbUsed: true);
 
