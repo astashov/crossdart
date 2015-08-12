@@ -23,7 +23,7 @@ class CompilationUnitResolver {
   factory CompilationUnitResolver.build(Config config, Iterable<String> absolutePaths) {
     var resolvers = [
         new DartUriResolver(config.sdk),
-        new PackageUriResolver([new JavaFile(config.pubCachePath)]),
+        new PackageUriResolver([new JavaFile(config.packagesPath)]),
         new FileUriResolver()];
 
     var analysisContext = AnalysisEngine.instance.createAnalysisContext();
