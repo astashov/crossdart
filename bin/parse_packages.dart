@@ -99,7 +99,7 @@ Future runParser(Config config) async {
             timer[0].cancel();
             timer.removeLast();
           }
-          timer.add(new Timer(new Duration(seconds: 2), () {
+          timer.add(new Timer(new Duration(seconds: 240), () {
             _logger.warning("Timeout while waiting for parsing a file, skipping this package");
             isolate.kill(priority: Isolate.IMMEDIATE);
             completer.completeError("timeout");
