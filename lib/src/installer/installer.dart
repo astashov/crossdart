@@ -8,6 +8,11 @@ import 'package:path/path.dart' as p;
 
 var _logger = new Logger("installer");
 
+class InstallerError implements Exception {
+  final String message;
+  InstallerError(this.message);
+}
+
 class Installer {
   PackageInfo _packageInfo;
   Config _config;
@@ -70,7 +75,7 @@ pub get
     }
     if (result.stderr != "") {
       _logger.info("Error - ${result.stderr}");
-      throw "Install error - ${result.stderr}";
+      throw new InstallerError("Install error - ${result.stderr}");
     }
   }
 }

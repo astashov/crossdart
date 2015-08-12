@@ -161,6 +161,7 @@ class GeneratePackagesHtmlArgs extends Args {
   GeneratePackagesHtmlArgs(List<String> args) : super(args) {
     addSdkArgsOptions();
     addDbArgsOptions();
+    parser.addOption(Config.INSTALL_PATH, help: "Path where missing packages will be installed. Required.");
     parser.addOption(Config.OUTPUT_PATH,
         help: "Path where the HTML files will be generated at. Required");
     parser.addOption(Config.PUB_CACHE_PATH,

@@ -14,6 +14,7 @@ import 'package:crossdart/src/store.dart';
 import 'package:sqljocky/sqljocky.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
+import 'package:crossdart/src/installer/installer.dart';
 
 //TODO: Add package type
 //enum PackageType { IO, HTML }
@@ -253,8 +254,12 @@ Project buildProjectFromFileSystem(Config config) {
 Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInfo packageInfo) async {
   var root = packageInfo.getDirectoryInPubCache(config);
   if (root == null) {
-    print(config.hostedPackagesRoot);
-    print(packageInfo);
+    try {
+      new Installer(config, packageInfo).install();
+    } on InstallerError catch (_, __) {
+      return null;
+    }
+    root = packageInfo.getDirectoryInPubCache(config);
   }
   var lib = p.join(root, "lib");
 

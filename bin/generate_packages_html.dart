@@ -35,6 +35,7 @@ Future main(args) async {
   var config = new Config(
       sdkPath: new File(results[Config.SDK_PATH]).resolveSymbolicLinksSync(),
       pubCachePath: new File(results[Config.PUB_CACHE_PATH]).resolveSymbolicLinksSync(),
+      installPath: new File(results[Config.INSTALL_PATH]).resolveSymbolicLinksSync(),
       outputPath: new File(results[Config.OUTPUT_PATH]).resolveSymbolicLinksSync(),
       templatesPath: new File(results[Config.TEMPLATES_PATH]).resolveSymbolicLinksSync(),
       isDbUsed: true,
@@ -82,7 +83,10 @@ Future runHtmlGenerator(Config config) async {
     _logger.info("Loading packages");
     var packages = new Set();
     for (var pi in thisPackageInfos) {
-      packages.add(await buildFromFileSystem(config, pi));
+      Package package = await buildFromFileSystem(config, pi);
+      if (package != null) {
+        packages.add(package);
+      }
     }
 
     _logger.info("Loading parsed data");
