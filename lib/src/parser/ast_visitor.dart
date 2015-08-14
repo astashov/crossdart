@@ -125,7 +125,7 @@ class ASTVisitor extends GeneralizingAstVisitor {
         var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.toString(), offset: node.offset, end: node.end);
         var declaration = new e.Import(new Location.fromEnvironment(_environment, (parent as PartDirective).element.source.fullName));
         _addReferenceAndDeclaration(reference, declaration);
-      } else if (parent is ImportDirective) {// && parent.element != null) {
+      } else if (parent is ImportDirective && (parent as ImportDirective).element != null) {
         var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.toString(), offset: node.offset, end: node.end);
         var declaration = new e.Import(new Location.fromEnvironment(_environment, (parent as ImportDirective).element.importedLibrary.definingCompilationUnit.source.fullName));
         _addReferenceAndDeclaration(reference, declaration);
@@ -226,12 +226,13 @@ class ASTVisitor extends GeneralizingAstVisitor {
         || node is ConstructorDeclaration
         || node is EnumDeclaration
         || node is EnumConstantDeclaration
-        || node is FunctionTypeAlias) && node.name != null) {
+        || node is FunctionTypeAlias
+        || node is ClassTypeAlias) && node.name != null) {
       return node.name;
     } else if (node is ConstructorDeclaration && node.returnType != null) {
       return node.returnType;
     } else {
-      print(node);
+      print("Unknown declaration token - $node");
       print(node.runtimeType);
       return node;
     }
