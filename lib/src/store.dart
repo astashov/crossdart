@@ -1,5 +1,6 @@
 library crossdart.store;
 
+import 'dart:io';
 import 'dart:async';
 import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/parsed_data.dart';
@@ -79,11 +80,12 @@ Future store(Environment environment, ParsedData parsedData) async {
     idsByDeclarationsList.add(await _storeDeclarations(environmentWithIds, insertQuery, absolutePath, filteredEntities, transaction));
   }
 
-  _logger.info("Making idsByDeclaration map");
+  _logger.info("\nMaking idsByDeclaration map");
   var idsByDeclarations = idsByDeclarationsList.fold({}, (memo, map) {
     memo.addAll(map);
     return memo;
   });
+  _logger.info("Number of declarations - ${idsByDeclarations.length}");
 
   _logger.info("Storing references");
   var referencesValues = files.map((tuple) {
@@ -93,7 +95,7 @@ Future store(Environment environment, ParsedData parsedData) async {
 
     return _getReferencesValues(environmentWithIds, parsedData, absolutePath, filteredEntities, idsByDeclarations);
   }).expand((i) => i).toList();
-  _logger.info("Executing query to store references");
+  _logger.info("Executing query to store references - ${referencesValues.length}");
   if (referencesValues.length > 0) {
     await insertQuery.executeMulti(referencesValues);
   }
@@ -105,7 +107,7 @@ Future store(Environment environment, ParsedData parsedData) async {
     var filteredEntities = entities.where((e) => e.runtimeType == Token);
     return _getTokensValues(environmentWithIds, parsedData, absolutePath, filteredEntities);
   }).expand((i) => i).toList();
-  _logger.info("Executing query to store tokens");
+  _logger.info("Executing query to store tokens - ${tokensValues.length}");
   if (tokensValues.length > 0) {
     await insertQuery.executeMulti(tokensValues);
   }
@@ -137,6 +139,7 @@ Future<Map<Declaration, int>> _storeDeclarations(Environment environment, Query 
     if (declaration.id == null) {
       var value = _buildValue(environment.config, declaration, location);
       Results result = await query.execute(value);
+      stdout.write(".");
       id = result.insertId;
       if (id == 0) {
         id = declaration.id;
