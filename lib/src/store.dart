@@ -133,18 +133,23 @@ Future<Map<Declaration, int>> _storeDeclarations(Environment environment, Query 
   var location = new Location.fromEnvironment(environment, absolutePath);
   var idAndDeclaration = [];
   for (final declaration in declarations) {
-    var value = _buildValue(environment.config, declaration, location);
-    Results result = await query.execute(value);
-    var id = result.insertId;
-    if (id == 0) {
+    int id;
+    if (declaration.id == null) {
+      var value = _buildValue(environment.config, declaration, location);
+      Results result = await query.execute(value);
+      id = result.insertId;
+      if (id == 0) {
+        id = declaration.id;
+      }
+      if (id == null) {
+        id = (await (await conn.query("""
+          SELECT id FROM entities
+          WHERE type = ${entityTypeIds[Declaration]} AND offset = ${declaration.offset} AND end = ${declaration.end} AND
+                path = '${location.path}' AND package_id = ${location.package.id}
+        """)).toList()).first.id;
+      }
+    } else {
       id = declaration.id;
-    }
-    if (id == null) {
-      id = (await (await conn.query("""
-        SELECT id FROM entities
-        WHERE type = ${entityTypeIds[Declaration]} AND offset = ${declaration.offset} AND end = ${declaration.end} AND
-              path = '${location.path}' AND package_id = ${location.package.id}
-      """)).toList()).first.id;
     }
     idAndDeclaration.add([declaration, id]);
   }

@@ -67,7 +67,7 @@ Future runParser(Config config) async {
   packageInfos = inGroups(packageInfos, config.totalParts).toList()[config.currentPart - 1].toList();
 
   await parallelRunner(
-      zip(inGroups(packageInfos, 4).where((i) => i.length > 0)),
+      zip(inGroups(packageInfos, 1).where((i) => i.length > 0)),
       _analyze,
       (int index, int tupleIndex, PackageInfo packageInfo) {
         _logger.info("Handling package ${packageInfo.name} (${packageInfo.version}) - ${index}/${packageInfos.length}");
