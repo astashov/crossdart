@@ -55,7 +55,7 @@ Future<Results> retriable(Config config, int retries, QueriableConnection conn, 
     if (retries > 0) {
       _dbPool == null;
       return new Future.delayed(new Duration(seconds: 5), () {
-        return retriable(config, body, retries: retries - 1, conn: conn);
+        return retriable(config, retries - 1, conn, body);
       });
     } else {
       rethrow;
