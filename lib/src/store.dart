@@ -198,10 +198,9 @@ Future<int> storePackage(Config config, PackageInfo packageInfo, PackageSource s
   if (conn == null) {
     conn = dbPool(config);
   }
-  var result = await prepareExecute(config,
+  var result = await conn.prepareExecute(
       "INSERT IGNORE INTO packages (name, version, source_type, description, created_at) VALUES (?, ?, ?, ?, ?)",
-      [packageInfo.name, packageInfo.version.toString(), packageSourceIds[source], description, config.currentDate],
-      conn: conn);
+      [packageInfo.name, packageInfo.version.toString(), packageSourceIds[source], description, config.currentDate]);
   return result.insertId;
 }
 
