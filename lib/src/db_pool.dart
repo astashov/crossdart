@@ -31,31 +31,28 @@ ConnectionPool dbPool(Config config) {
   return _dbPool;
 }
 
-Future<Results> query(Config config, String sql, {int retries: 3, QueriableConnection conn: null}) async {
-  return retriable(config, 3, conn, (c) => c.query(sql));
+Future<Results> query(Config config, String sql, {int retries: 3}) async {
+  return retriable(config, 3, (c) => c.query(sql));
 }
 
-Future<Results> prepare(Config config, String sql, {int retries: 3, QueriableConnection conn: null}) async {
-  return retriable(config, 3, conn, (c) => c.prepare(sql));
+Future<Results> prepare(Config config, String sql, {int retries: 3}) async {
+  return retriable(config, 3, (c) => c.prepare(sql));
 }
 
-Future<Results> prepareExecute(Config config, String sql, List parameters, {int retries: 3, QueriableConnection conn: null}) async {
-  return retriable(config, 3, conn, (c) => c.prepareExecute(sql, parameters));
+Future<Results> prepareExecute(Config config, String sql, List parameters, {int retries: 3}) async {
+  return retriable(config, 3, (c) => c.prepareExecute(sql, parameters));
 }
 
 
-Future<Results> retriable(Config config, int retries, QueriableConnection conn, Future<Results> body(QueriableConnection conn)) async {
-  if (conn == null) {
-    conn = dbPool(config);
-  }
+Future<Results> retriable(Config config, int retries, Future<Results> body(QueriableConnection conn)) async {
   try {
-    return await body(conn);
-  } on SocketException catch(exception, stackTrace) {
+    return await body(dbPool(config));
+  } on SocketException catch(exception, _) {
     _logger.warning("Got exception - $exception, retries left - $retries, retrying...");
     if (retries > 0) {
-      _dbPool == null;
+      _dbPool = null;
       return new Future.delayed(new Duration(seconds: 5), () {
-        return retriable(config, retries - 1, conn, body);
+        return retriable(config, retries - 1, body);
       });
     } else {
       rethrow;
