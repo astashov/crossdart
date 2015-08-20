@@ -180,7 +180,7 @@ List<List> _getTokensValues(Environment environment, ParsedData parsedData, Stri
 
 
 Future storeError(Config config, PackageInfo packageInfo, Object error, StackTrace stackTrace) async {
-  return dbPool(config).prepareExecute(
+  return prepareExecute(config,
       "INSERT IGNORE INTO errors (package_name, package_version, error, created_at) VALUES (?, ?, ?, ?)",
       [packageInfo.name, packageInfo.version.toString(), "${error}\n${stackTrace}", config.currentDate]);
 }
@@ -198,9 +198,10 @@ Future<int> storePackage(Config config, PackageInfo packageInfo, PackageSource s
   if (conn == null) {
     conn = dbPool(config);
   }
-  var result = await conn.prepareExecute(
+  var result = await prepareExecute(config,
       "INSERT IGNORE INTO packages (name, version, source_type, description, created_at) VALUES (?, ?, ?, ?, ?)",
-      [packageInfo.name, packageInfo.version.toString(), packageSourceIds[source], description, config.currentDate]);
+      [packageInfo.name, packageInfo.version.toString(), packageSourceIds[source], description, config.currentDate],
+      conn: conn);
   return result.insertId;
 }
 
