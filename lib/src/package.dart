@@ -15,6 +15,9 @@ import 'package:sqljocky/sqljocky.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 import 'package:crossdart/src/installer/installer.dart';
+import 'package:logging/logging.dart';
+
+Logger _logger = new Logger("package");
 
 //TODO: Add package type
 //enum PackageType { IO, HTML }
@@ -254,11 +257,7 @@ Project buildProjectFromFileSystem(Config config) {
 Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInfo packageInfo) async {
   var root = packageInfo.getDirectoryInPubCache(config);
   if (root == null) {
-    try {
-      new Installer(config, packageInfo).install();
-    } on InstallerError catch (_, __) {
-      return null;
-    }
+    new Installer(config, packageInfo).install();
     root = packageInfo.getDirectoryInPubCache(config);
   }
   var lib = p.join(root, "lib");

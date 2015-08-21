@@ -14,6 +14,7 @@ import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/store/db_parsed_data_loader.dart';
 import 'package:crossdart/src/store/db_package_loader.dart';
 import 'package:crossdart/src/logging.dart' as logging;
+import 'package:crossdart/src/installer/installer.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:crossdart/src/html_package_generator.dart';
@@ -83,7 +84,12 @@ Future runHtmlGenerator(Config config) async {
     _logger.info("Loading packages");
     var packages = new Set();
     for (var pi in thisPackageInfos) {
-      Package package = await buildFromFileSystem(config, pi);
+      Package package;
+      try {
+        package = await buildFromFileSystem(config, pi);
+      } on InstallerError catch (_, __) {
+        package = null;
+      }
       if (package != null) {
         packages.add(package);
       }
@@ -104,7 +110,15 @@ Future runHtmlGenerator(Config config) async {
     var pis = [];
     for (var generatedPackageInfo in generatedPackageInfos) {
       print(generatedPackageInfo);
-      pis.add(await buildFromFileSystem(config, generatedPackageInfo));
+      Package package;
+      try {
+        package = await buildFromFileSystem(config, generatedPackageInfo);
+      } on InstallerError catch (_, __) {
+        package = null;
+      }
+      if (package != null) {
+        pis.add(package);
+      }
     }
     generatedPackages.add(pis);
   }

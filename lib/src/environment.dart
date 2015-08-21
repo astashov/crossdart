@@ -7,6 +7,8 @@ import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/version.dart';
+import 'package:crossdart/src/installer/installer.dart';
+import 'package:crossdart/src/version.dart';
 import 'package:sqljocky/sqljocky.dart';
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
@@ -59,7 +61,10 @@ Future<Environment> buildEnvironment(Config config, [PackageInfo mainPackageInfo
       var name = path.basename(dir.path);
       var version = path.basename(path.dirname(resolvedDir)).replaceFirst("${name}-", "");
       var packageInfo = new PackageInfo(name, new Version(version));
-      customPackages.add(await buildCustomPackageFromFileSystem(config, packageInfo));
+      try {
+        var package = await buildCustomPackageFromFileSystem(config, packageInfo);
+        customPackages.add(package);
+      } on InstallerError catch (_, __) {}
     }
   }
 
