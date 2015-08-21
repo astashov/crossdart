@@ -47,8 +47,7 @@ name: crossdart_example
 description: CrossDart example
 dependencies:
   ${_packageInfo.name}: ${_packageInfo.version}
-  barback: any
-  stack_trace: any""");
+  ${_packageInfo.name != "barback" ? "barback: any\n" : ''}${_packageInfo.name != "stack_trace" ? "stack_trace: any\n" : ''}""");
   }
 
   void _runPub() {
