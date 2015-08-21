@@ -142,7 +142,8 @@ class CrossdartArgs extends Args {
     var theResults = super._getResults();
     if (theResults[Config.PROJECT_PATH] != null) {
       var resolvedSymlink = new Directory(p.join(theResults[Config.PROJECT_PATH], "packages")).listSync().first.resolveSymbolicLinksSync();
-      theResults[Config.PUB_CACHE_PATH] = p.dirname(p.dirname(resolvedSymlink));
+      theResults[Config.PUB_CACHE_PATH] = p.dirname(p.dirname(p.dirname(p.dirname(resolvedSymlink))));
+
       if (theResults[Config.OUTPUT_PATH] == null) {
         theResults[Config.OUTPUT_PATH] = theResults[Config.PROJECT_PATH];
       }

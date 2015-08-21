@@ -236,7 +236,7 @@ Future<Sdk> buildSdkFromFileSystem(Config config, PackageInfo packageInfo) async
   if (config.isDbUsed && id == null) {
     id = await getPackageId(config, packageInfo);
   }
-  var paths = new Directory(lib).listSync(recursive: true).where((f) => f is File && f.path.endsWith(".dart")).map((file) {
+  var paths = new Directory(lib).listSync(recursive: true).where(_isDartFile).map((file) {
     return file.path.replaceAll(lib, "").replaceFirst(new RegExp(r"^/"), "");
   });
 
@@ -246,13 +246,16 @@ Future<Sdk> buildSdkFromFileSystem(Config config, PackageInfo packageInfo) async
 Project buildProjectFromFileSystem(Config config) {
   var lib = p.join(config.projectPath, "lib");
 
-  var paths = new Directory(lib).listSync(recursive: true).where((f) => f is File && f.path.endsWith(".dart")).map((file) {
+  var paths = new Directory(lib).listSync(recursive: true).where(_isDartFile).map((file) {
     return file.path.replaceAll(lib, "").replaceFirst(new RegExp(r"^/"), "");
   });
 
   return new Project(config, new PackageInfo("project", new Version("")), null, paths);
 }
 
+bool _isDartFile(FileSystemEntity f) {
+  return f is File && !p.basename(f.path).startsWith("._") && f.path.endsWith(".dart");
+}
 
 Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInfo packageInfo) async {
   var root = packageInfo.getDirectoryInPubCache(config);
@@ -281,7 +284,7 @@ Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInf
   final libDirectory = new Directory(lib);
   Iterable<String> paths;
   if (libDirectory.existsSync()) {
-    paths = new Directory(lib).listSync(recursive: true).where((f) => f is File && f.path.endsWith(".dart")).map((file) {
+    paths = new Directory(lib).listSync(recursive: true).where(_isDartFile).map((file) {
       return file.path.replaceAll(lib, "").replaceFirst(new RegExp(r"^/"), "");
     });
   } else {
