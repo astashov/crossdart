@@ -21,7 +21,7 @@ class PubCachePackageLoader {
     final Iterable<PackageInfo> packageInfosFromDb = await new DbPackageLoader(_config).getAllPackageInfos();
     final hostedPackageInfos = new Directory(_config.hostedPackagesRoot).listSync().map((packageDir) {
       final pubSpec = new File(p.join(packageDir.path, "pubspec.yaml"));
-      if (pubSpec.existsSync()) {
+      if (_isLibExistsAndNotEmpty(packageDir) && pubSpec.existsSync()) {
         final yaml = loadYaml(pubSpec.readAsStringSync());
         final name = yaml["name"];
         final match = new RegExp("^" + name + r"-(.+)$").firstMatch(p.basename(packageDir.path));
@@ -35,7 +35,7 @@ class PubCachePackageLoader {
 
     final gitPackageInfos = new Directory(_config.gitPackagesRoot).listSync().map((packageDir) {
       final match = new RegExp(r"^(.+)-([a-z0-9]+)$").firstMatch(p.basename(packageDir.path));
-      if (match != null) {
+      if (_isLibExistsAndNotEmpty(packageDir) && match != null) {
         final name = match[1];
         final version = new Version(match[2]);
         final id = _getIdForPackage(packageInfosFromDb, name, version);
@@ -61,6 +61,14 @@ class PubCachePackageLoader {
       return pi.name == name && pi.version == version;
     }, orElse: () => null);
     return packageInfoFromDb != null ? packageInfoFromDb.id : null;
+  }
+
+  bool _isLibExistsAndNotEmpty(FileSystemEntity packageDir) {
+    final directory = new Directory(p.join(packageDir.path, "lib"));
+    return directory.existsSync() && directory.listSync(recursive: true).where((FileSystemEntity f) {
+      var path = p.basename(f.path);
+      return !path.startsWith("._") && path.endsWith(".dart");
+    }).isNotEmpty;
   }
 
 }

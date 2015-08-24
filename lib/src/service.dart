@@ -17,8 +17,8 @@ String _getUrl(int page) => "https://pub.dartlang.org/packages.json?page=${page}
 // TODO: Refactor to a class
 
 Future<Iterable<PackageInfo>> getAllPackages(Config config) async {
-  Iterable<PackageInfo> allPackages = _getPackagesFromFile(config);
-  //Iterable<PackageInfo> allPackages = await _getPackagesFromPub(config);
+  //Iterable<PackageInfo> allPackages = _getPackagesFromFile(config);
+  Iterable<PackageInfo> allPackages = await _getPackagesFromPub(config);
 
   _logger.info("The number of retrieved packages - ${allPackages.length}");
 

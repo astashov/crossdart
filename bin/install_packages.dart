@@ -52,7 +52,7 @@ Future runInstaller(Config config) async {
   }).toList();
 
   await parallelRunner(
-      inGroupsOf(packageInfos, 4).where((i) => i.length > 0),
+      inGroupsOf(packageInfos, 2).where((i) => i.length > 0),
       _install,
       (int index, int tupleIndex, PackageInfo packageInfo) {
         _logger.info("Handling package ${packageInfo.name} (${packageInfo.version}) - ${index}/${packageInfos.length}");

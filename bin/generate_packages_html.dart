@@ -109,7 +109,6 @@ Future runHtmlGenerator(Config config) async {
   for (var generatedPackageInfos in config.generatedPackageInfos) {
     var pis = [];
     for (var generatedPackageInfo in generatedPackageInfos) {
-      print(generatedPackageInfo);
       Package package;
       try {
         package = await buildFromFileSystem(config, generatedPackageInfo);
