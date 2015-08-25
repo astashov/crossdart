@@ -184,7 +184,7 @@ class ServerArgs extends Args {
 }
 
 class UpdatedFilesListArgs extends Args {
-  List<String> get requiredKeys => [Config.PUB_CACHE_PATH, Config.OUTPUT_PATH];
+  List<String> get requiredKeys => [Config.PUB_CACHE_PATH, Config.OUTPUT_PATH, Config.INSTALL_PATH];
   String get description => "updated_files_list.dart returns a list of the updated HTML files needed to upload to S3.";
 
   UpdatedFilesListArgs(List<String> args) : super(args) {
@@ -192,5 +192,6 @@ class UpdatedFilesListArgs extends Args {
 
     parser.addOption(Config.PUB_CACHE_PATH, help: "Path where the all the packages could be found. Required.");
     parser.addOption(Config.OUTPUT_PATH, help: "Path where the HTML files are generated. Required");
+    parser.addOption(Config.INSTALL_PATH, help: "Path where ther packages will be installed if necessary. Required.");
   }
 }

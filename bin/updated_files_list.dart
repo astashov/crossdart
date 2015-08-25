@@ -28,9 +28,10 @@ Future<Null> main(args) async {
       dbName: results[Config.DB_NAME],
       pubCachePath: new File(results[Config.PUB_CACHE_PATH]).resolveSymbolicLinksSync(),
       outputPath: new File(results[Config.OUTPUT_PATH]).resolveSymbolicLinksSync(),
+      installPath: new File(results[Config.INSTALL_PATH]).resolveSymbolicLinksSync(),
       isDbUsed: true);
 
-  var timestamp = int.parse((await http.get("http://crossdart.info/timestamp")).body);
+  var timestamp = int.parse((await http.get("http://www.crossdart.info/timestamp")).body);
 
   var packageLoader = new DbPackageLoader(config);
   var datetime = new DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
