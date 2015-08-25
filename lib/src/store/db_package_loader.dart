@@ -21,14 +21,14 @@ class DbPackageLoader {
   DbPackageLoader(this._config);
 
   Future<bool> doesPackageExist(PackageInfo packageInfo) async {
-    var results = await (await dbPool(_config).query("""
+    var results = await (await query(_config, """
         SELECT * FROM packages AS p WHERE p.name = '${packageInfo.name}' AND p.version = '${packageInfo.version}' 
     """)).toList();
     return results.isNotEmpty;
   }
 
   Future<Iterable<Package>> getAllPackages() async {
-    var results = await (await dbPool(_config).query("""
+    var results = await (await query(_config, """
         SELECT DISTINCT p.id, p.name, p.version, p.source_type, p.description, e.path FROM packages AS p
         INNER JOIN entities AS e ON p.id = e.package_id 
     """)).toList();
@@ -53,14 +53,14 @@ class DbPackageLoader {
       query += " WHERE p.created_at > ?";
     }
     var values = dateTime != null ? [dateTime] : [];
-    var results = await (await dbPool(_config).prepareExecute(query, values)).toList();
+    var results = await (await prepareExecute(_config, query, values)).toList();
     return results.map((Row r) {
       return new PackageInfo(r.name, new Version(r.version), id: r.id, source: key(packageSourceIds, r.source_type));
     });
   }
 
   Future<Iterable<PackageInfo>> getErroredPackageInfos() async {
-    var erroredPackageInfos = await dbPool(_config).query("""
+    var erroredPackageInfos = await query(_config, """
       SELECT package_name AS name, package_version AS version FROM errors
     """);
     return (await erroredPackageInfos.toList()).map((p) {
@@ -117,7 +117,7 @@ class DbPackageLoader {
   }
 
   Future<Iterable<PackageInfo>> _getPackageInfoDependencies(PackageInfo packageInfo, [Set<PackageInfo> handledPackages]) async {
-    var results = await (await dbPool(_config).query("""
+    var results = await (await query(_config, """
         SELECT DISTINCT p2.name, p2.version, p2.id, p2.source_type FROM packages AS p1
             INNER JOIN packages_dependencies AS pd ON p1.id = pd.package_id
             INNER JOIN packages AS p2 ON p2.id = pd.dependency_id
@@ -128,7 +128,7 @@ class DbPackageLoader {
   }
 
   Future<Iterable<Package>> _getDependencies(Package package) async {
-    var results = await (await dbPool(_config).query("""
+    var results = await (await query(_config, """
         SELECT DISTINCT p.name, p.version, p.id, p.source_type
             FROM entities AS r
             INNER JOIN entities AS d ON r.declaration_id = d.id
