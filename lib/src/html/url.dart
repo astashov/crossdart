@@ -6,9 +6,9 @@ import 'package:path/path.dart';
 const String PATH_PREFIX = "p";
 
 String packageIndexUrl(PackageInfo packageInfo, {bool shouldAddVersion: true}) {
-  String name = packageInfo.name;
+  var url = "/" + join(PATH_PREFIX, packageInfo.name, "index.html");
   if (shouldAddVersion) {
-    name += "#${packageInfo.version}";
+    url += "#${packageInfo.version}";
   }
-  return "/" + join(PATH_PREFIX, name);
+  return url;
 }
