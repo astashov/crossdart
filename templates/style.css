@@ -376,3 +376,35 @@ body {
 .package-page .package-name {
   color: #7D0F54;
 }
+
+.page-404 {
+  padding: 3em;
+}
+
+.page-404 .content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.page-404 #packages,
+.page-404 #errored-packages {
+  display: none;
+}
+
+.page-404 .header {
+  color: silver;
+  text-align: center;
+  margin: 0;
+  padding: 0 0 0.3em;
+}
+
+.page-404 .text {
+  font-size: 3em;
+  text-align: center;
+}
+
+.page-404 .tips {
+  padding-top: 1em;
+  font-size: 1.2em;
+  line-height: 1.8em;
+}

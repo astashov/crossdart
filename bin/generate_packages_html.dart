@@ -21,6 +21,7 @@ import 'package:crossdart/src/html_package_generator.dart';
 import 'package:crossdart/src/html_index_generator.dart';
 import 'package:crossdart/src/util/iterable.dart';
 import 'package:crossdart/src/pub_cache_package_loader.dart';
+import 'package:crossdart/src/generator/generator_404.dart';
 
 Logger _logger = new Logger("generate_html");
 
@@ -121,5 +122,7 @@ Future runHtmlGenerator(Config config) async {
     }
     generatedPackages.add(pis);
   }
+  await new Generator404(config).generate();
   new HtmlIndexGenerator(config, generatedPackages)..generate()..generatePackagePages();
+
 }
