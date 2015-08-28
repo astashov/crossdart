@@ -43,7 +43,7 @@
                 var latestUrl = "/p/" + packageUrl.name + "/" + versions[versions.length - 1] + "/" + packageUrl.path;
                 message = "It seems like you are trying to open a Dart file in the package " + packageIndexLink +
                     " version <b>" + packageUrl.version + "</b>, but there is no such version for that package. ";
-                if (erroredVersions.indexOf(packageUrl.version) !== -1) {
+                if (erroredVersions && erroredVersions.indexOf(packageUrl.version) !== -1) {
                     message += "We tried to generate Crossdart files for that package version, but there was an error. ";
                 }
                 message += "You can see the list " +
