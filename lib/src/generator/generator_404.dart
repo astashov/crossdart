@@ -29,7 +29,7 @@ class Generator404 {
 
   <body class="page-404">
     <div class="content">
-      <h3 class="header">Crossdart</h1>
+      <h3 class="header"><a href='/'>Crossdart</a></h1>
       <div class="text">Page not found</div>
       <div class="tips"></div>
     </div>
