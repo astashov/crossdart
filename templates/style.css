@@ -42,6 +42,10 @@ body {
   margin-left: 0.5em;
 }
 
+.source-code .nav--filetree-toggle {
+  display: none;
+}
+
 .source-code .content {
   width: 100%;
   position: absolute;
@@ -70,6 +74,11 @@ body {
 
 .source-code .filetree--fuzzy-search {
   padding: 8px 12px;
+}
+
+.source-code .filetree--toggle {
+  float: right;
+  display: block;
 }
 
 .source-code .filetree--fuzzy-search--input {
@@ -407,4 +416,41 @@ body {
   padding-top: 1em;
   font-size: 1.2em;
   line-height: 1.8em;
+}
+
+@media screen and (max-width: 750px) {
+  .source-code .nav {
+    padding-left: 1em;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .source-code .nav--filetree-toggle {
+    display: block;
+    float: right;
+    padding-right: 1em;
+    color: #039BE5;
+    font-family: Roboto, sans-serif;
+  }
+
+  .source-code .filetree {
+    display: none;
+  }
+
+  .source-code .is-filetree-visible .filetree {
+    display: block;
+  }
+
+  .source-code .code {
+    left: 0;
+    font-family: 'Open Sans Condensed', monospace;
+    font-size: 0.6em;
+  }
+
+  .source-code .is-filetree-visible .code {
+    left: 250px;
+  }
+
+  .source-code .code .line {
+    width: 1em;
+  }
 }

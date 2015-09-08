@@ -84,11 +84,13 @@ class HtmlPackageGenerator {
         <head>
           <title>'${package.name}' - ${location.path} | CrossDart - cross-referenced Dart's pub packages</title>
           <link rel="stylesheet" href="/style.css" type="text/css">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
         </head>
         <body class='source-code'>
           <nav class='nav'>
             <a href='${packageIndexUrl(package.packageInfo)}' class='nav-back'>${package.name} (${package.version})</a>
             <a class="link-to-pub" href="${package.pubUrl}">Link to Pub</a>
+            <span class="nav--filetree-toggle">Filetree</span>
           </nav>
           <div class="content">
             <nav class="filetree">

@@ -1,4 +1,14 @@
 (function () {
+  if (window.matchMedia('screen and (max-width: 750px)').matches) {
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = 'https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300';
+    document.head.appendChild(link);
+  }
+}());
+
+(function () {
   var foldables = document.querySelectorAll(".filetree--item--fold-icon,.filetree--item__directory > .filetree--item--info > .filetree--item--title");
   var IS_OPEN = "is-open";
 
@@ -38,6 +48,18 @@
       code.style.left = (originalWidth + difference) + "px";
     }
   });
+}());
+
+(function () {
+  var button = document.querySelector(".nav--filetree-toggle");
+  if (button) {
+    button.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var content = document.querySelector(".content");
+      content.classList.toggle("is-filetree-visible");
+    });
+  }
 }());
 
 (function () {
