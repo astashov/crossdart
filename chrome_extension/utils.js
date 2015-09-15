@@ -50,7 +50,7 @@ function groupEntitiesByLinesAndTypes(allEntities) {
   return result;
 }
 
-function applyEntities(github, ref, content, entities) {
+function applyEntities(github, ref, content, entities, hrefCallback) {
   if (content.indexOf("crossdart-link") === -1) {
     var newLineContent = "";
     var lastStop = 0;
@@ -59,8 +59,10 @@ function applyEntities(github, ref, content, entities) {
       var realOffset = getRealOffset(content, entity.offset);
       newLineContent += content.substr(lastStop, realOffset - lastStop);
       if (entity.type == "references") {
-        var href = new TreePath(github, ref, entity.remotePath).absolutePath();
-        newLineContent += "<a href='" + href + "' class='crossdart-link'>";
+        var href = hrefCallback(entity);
+        var isInternal = href.match(/^#/) || href.match(new RegExp(location.pathname));
+        var cssClass = "crossdart-link" + (!isInternal ? ' crossdart-link__external' : '');
+        newLineContent += "<a href='" + href + "' class='" + cssClass + "'>";
       } else if (entity.type == "declarations") {
         var references = JSON.stringify(entity.references);
         newLineContent += "<span class='crossdart-declaration' data-references='" + references + "' data-ref='" + ref + "'>";

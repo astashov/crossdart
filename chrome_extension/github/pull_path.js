@@ -18,5 +18,13 @@
     }
   };
 
+  window.PullPath.prototype.absolutePath = function () {
+    if (this.path.match(/^http/)) {
+      return this.path;
+    } else {
+      return Path.join([Github.HOST, this.github.basePath, "blob", this.ref, this.path]);
+    }
+  };
+
 }());
 

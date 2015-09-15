@@ -15,7 +15,10 @@
           entities.sort(function (a, b) {
             return a.offset - b.offset;
           });
-          var newContent = applyEntities(this.github, this.github.path.ref, getLineContent(line), entities);
+          var that = this;
+          var newContent = applyEntities(this.github, this.github.path.ref, getLineContent(line), entities, function (entity) {
+            return new TreePath(that.github, that.github.path.ref, entity.remotePath).absolutePath();
+          });
           setLineContent(line, newContent);
           this.handledLines.push(line);
         }
