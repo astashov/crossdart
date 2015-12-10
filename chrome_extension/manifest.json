@@ -3,7 +3,7 @@
   "name": "Crossdart Chrome Extension",
   "version": "0.2.3",
 
-  "description": "Uses Crossdart pub package to add hyperlinks to the source code on Github",
+  "description": "Uses Crossdart pub package to add hyperlinks to the source code on GitHub",
 
   "author": "Anton Astashov",
   "background": {
