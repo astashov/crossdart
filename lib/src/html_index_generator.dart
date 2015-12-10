@@ -32,9 +32,9 @@ class HtmlIndexGenerator {
           <h2 class="subheader">Cross-referenced Dart's pub packages</h2>
           <div class="info">
             <div class="info--last-update">Last update: ${_currentDate}</div>
-            <div class="info--github"><a href="https://github.com/astashov/crossdart">Github</a></div>
+            <div class="info--github"><a href="https://github.com/astashov/crossdart">GitHub</a></div>
             <div class="info--chrome">
-              <a href="https://chrome.google.com/webstore/detail/crossdart-chrome-extensio/jmdjoliiaibifkklhipgmnciiealomhd">Chrome Github Extension</a>
+              <a href="https://chrome.google.com/webstore/detail/crossdart-chrome-extensio/jmdjoliiaibifkklhipgmnciiealomhd">Chrome GitHub Extension</a>
               (<a href="http://crossdart.info/demo.html">Demo</a>)
             </div>
           </div>
