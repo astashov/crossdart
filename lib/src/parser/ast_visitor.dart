@@ -155,12 +155,12 @@ class ASTVisitor extends GeneralizingAstVisitor {
 
         if (element != null && element.library != null) {
           AstNode elementNode;
-          if (element.node == null && element is PropertyAccessorElement) {
-            elementNode = element.variable.node;
-          } else if (element.node == null && element is FieldFormalParameterElement) {
-            elementNode = element.field.node;
+          if (element.computeNode() == null && element is PropertyAccessorElement) {
+            elementNode = element.variable.computeNode();
+          } else if (element.computeNode() == null && element is FieldFormalParameterElement) {
+            elementNode = element.field.computeNode();
           } else {
-            elementNode = element.node;
+            elementNode = element.computeNode();
           }
 
           if (elementNode is Declaration && !node.inDeclarationContext()) {

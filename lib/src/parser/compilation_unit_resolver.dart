@@ -6,6 +6,8 @@ import 'package:analyzer/src/generated/element.dart';
 import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/java_io.dart';
 import 'package:analyzer/src/generated/source.dart';
+import 'package:analyzer/source/package_map_provider.dart';
+import 'package:analyzer/source/package_map_resolver.dart';
 import 'package:analyzer/src/generated/source_io.dart';
 
 import 'package:crossdart/src/config.dart';
@@ -35,13 +37,13 @@ class CompilationUnitResolver {
 
     var changeSet = new ChangeSet();
     absolutePaths.forEach((String f) {
-      Source s = new FileBasedSource.con1(new JavaFile(f));
+      Source s = new FileBasedSource(new JavaFile(f));
       changeSet.addedSource(s);
     });
     analysisContext.applyChanges(changeSet);
 
     var librariesByParts = absolutePaths.fold({}, (Map<String, LibraryElement> memo, String f) {
-      Source s = new FileBasedSource.con1(new JavaFile(f));
+      Source s = new FileBasedSource(new JavaFile(f));
       var libElement = analysisContext.computeLibraryElement(s);
       if (libElement != null) {
         libElement.parts.map((p) => p.toString()).forEach((part) {
@@ -55,7 +57,7 @@ class CompilationUnitResolver {
   }
 
   CompilationUnit compilationUnit(String absolutePath) {
-    Source source = new FileBasedSource.con1(new JavaFile(absolutePath));
+    Source source = new FileBasedSource(new JavaFile(absolutePath));
     var library = _librariesByParts[absolutePath];
     if (library == null) {
       library = _analysisContext.computeLibraryElement(source);

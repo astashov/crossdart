@@ -422,6 +422,11 @@ body {
   .source-code .nav {
     padding-left: 1em;
     -webkit-text-size-adjust: 100%;
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    background: white;
   }
 
   .source-code .nav--filetree-toggle {
@@ -434,6 +439,17 @@ body {
 
   .source-code .filetree {
     display: none;
+    overflow: auto;
+    position: fixed;
+  }
+
+  .source-code .code {
+    position: static;
+  }
+
+  .source-code .content {
+    padding-top: 26px;
+    position: static;
   }
 
   .source-code .is-filetree-visible .filetree {

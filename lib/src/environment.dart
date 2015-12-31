@@ -8,7 +8,6 @@ import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/installer/installer.dart';
-import 'package:crossdart/src/version.dart';
 import 'package:sqljocky/sqljocky.dart';
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';

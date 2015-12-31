@@ -62,7 +62,7 @@ Future<Results> retriable(Config config, int retries, Future<Results> body(Queri
 
 void deallocDbPool() {
   if (_dbPool != null) {
-    _dbPool.close();
+    _dbPool.closeConnectionsWhenNotInUse();
   }
   _dbPool = null;
 }
