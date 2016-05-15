@@ -133,7 +133,7 @@ class DbPackageLoader {
             FROM entities AS r
             INNER JOIN entities AS d ON r.declaration_id = d.id
             INNER JOIN packages AS p ON d.package_id = p.id 
-            WHERE r.type = ${entityTypeIds[Reference]} AND r.package_id = ${package.id}
+            WHERE r.type = 'Reference' AND r.package_id = ${package.id}
     """)).toList();
 
     return Future.wait(results.map((r) async {

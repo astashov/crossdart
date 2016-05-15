@@ -21,11 +21,10 @@ Future main(args) async {
   }
   var results = crossdartArgs.results;
 
-  var config = new Config(
-      sdkPath: new File(results[Config.SDK_PATH]).resolveSymbolicLinksSync(),
-      pubCachePath: new File(results[Config.PUB_CACHE_PATH]).resolveSymbolicLinksSync(),
-      outputPath: new File(results[Config.OUTPUT_PATH]).resolveSymbolicLinksSync(),
+  var config = new Config.buildFromFiles(
+      dirroot: results[Config.DIR_ROOT],
       projectPath: new File(results[Config.PROJECT_PATH]).resolveSymbolicLinksSync(),
+      outputPath: new File(results[Config.OUTPUT_PATH]).resolveSymbolicLinksSync(),
       isDbUsed: false);
   logging.initialize();
 

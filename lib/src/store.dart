@@ -15,25 +15,6 @@ import 'package:logging/logging.dart';
 
 var _logger = new Logger("store");
 
-Map<Type, int> entityTypeIds = {
-  Reference: 1,
-  Declaration: 2,
-  Import: 3,
-  Token: 4
-};
-
-Map<EntityKind, int> entityKindIds = {
-  EntityKind.CLASS: 1,
-  EntityKind.METHOD: 2,
-  EntityKind.LOCAL_VARIABLE: 3,
-  EntityKind.FUNCTION: 4,
-  EntityKind.PROPERTY_ACCESSOR: 5,
-  EntityKind.CONSTRUCTOR: 6,
-  EntityKind.FIELD: 7,
-  EntityKind.FUNCTION_TYPE_ALIAS: 8,
-  EntityKind.TOP_LEVEL_VARIABLE: 9
-};
-
 // TODO: Refactor to a class
 
 Future store(Environment environment, ParsedData parsedData) async {
@@ -112,14 +93,15 @@ Future store(Environment environment, ParsedData parsedData) async {
     await insertQuery.executeMulti(tokensValues);
   }
   _logger.info("Committing transaction");
-  transaction.commit();
+  await transaction.commit();
+  _logger.info("Committed");
 }
 
 List _buildValue(Config config, Entity entity, Location location, [int declarationId]) {
   return [
       declarationId,
-      entityTypeIds[entity.runtimeType],
-      entityKindIds[entity.kind],
+      entity.runtimeType,
+      entity.kind.toString(),
       entity.name,
       entity.contextName,
       entity.offset,
@@ -147,7 +129,7 @@ Future<Map<Declaration, int>> _storeDeclarations(Environment environment, Query 
       if (id == null) {
         id = (await (await conn.query("""
           SELECT id FROM entities
-          WHERE type = ${entityTypeIds[Declaration]} AND offset = ${declaration.offset} AND end = ${declaration.end} AND
+          WHERE type = 'Declaration' AND offset = ${declaration.offset} AND end = ${declaration.end} AND
                 path = '${location.path}' AND package_id = ${location.package.id}
         """)).toList()).first.id;
       }

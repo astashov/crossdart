@@ -9,6 +9,7 @@ import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:path/path.dart';
+import 'package:crossdart/src/util/retry.dart';
 
 var _logger = new Logger("service");
 
@@ -43,7 +44,7 @@ Future<Iterable<PackageInfo>> _getPackagesFromPub(Config config) async {
     json = await http.get(_getUrl(page)).then((r) => JSON.decode(r.body));
     page += 1;
     var pageOfPackages = await Future.wait(json["packages"].map((packageUrl) {
-      return http.get(packageUrl).then((r) => JSON.decode(r.body));
+      return retry(() => http.get(packageUrl)).then((r) => JSON.decode(r.body));
     }));
     pageOfPackages.forEach((packageMap) {
       packageMap["versions"].forEach((version) {

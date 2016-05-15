@@ -27,16 +27,7 @@ Future main(args) async {
   }
   var results = installPackagesArgs.results;
 
-  var config = new Config(
-      sdkPath: new File(results[Config.SDK_PATH]).resolveSymbolicLinksSync(),
-      installPath: new File(results[Config.INSTALL_PATH]).resolveSymbolicLinksSync(),
-      pubCachePath: new File(results[Config.PUB_CACHE_PATH]).resolveSymbolicLinksSync(),
-      isDbUsed: true,
-      dbLogin: results[Config.DB_LOGIN],
-      dbPassword: results[Config.DB_PASSWORD],
-      dbHost: results[Config.DB_HOST],
-      dbPort: results[Config.DB_PORT],
-      dbName: results[Config.DB_NAME]);
+  var config = new Config.buildFromFiles(dirroot: results[Config.DIR_ROOT], isDbUsed: true);
 
   logging.initialize();
   await runInstaller(config);

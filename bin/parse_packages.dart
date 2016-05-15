@@ -21,6 +21,7 @@ import 'package:logging/logging.dart';
 import 'package:crossdart/src/isolate_events.dart';
 import 'package:quiver/iterables.dart';
 import 'package:crossdart/src/util/isolate.dart';
+import 'package:crossdart/src/version.dart';
 
 Logger _logger = new Logger("parse");
 
@@ -31,17 +32,7 @@ Future main(args) async {
   }
   var results = parsePackagesArgs.results;
 
-  var config = new Config(
-      sdkPath: new File(results[Config.SDK_PATH]).resolveSymbolicLinksSync(),
-      installPath: new File(results[Config.INSTALL_PATH]).resolveSymbolicLinksSync(),
-      pubCachePath: new File(results[Config.PUB_CACHE_PATH]).resolveSymbolicLinksSync(),
-      isDbUsed: true,
-      part: results[Config.PART],
-      dbLogin: results[Config.DB_LOGIN],
-      dbPassword: results[Config.DB_PASSWORD],
-      dbHost: results[Config.DB_HOST],
-      dbPort: results[Config.DB_PORT],
-      dbName: results[Config.DB_NAME]);
+  var config = new Config.buildFromFiles(dirroot: results[Config.DIR_ROOT], isDbUsed: true, part: results[Config.PART]);
 
   logging.initialize();
   await runParser(config);
@@ -50,13 +41,13 @@ Future main(args) async {
 }
 
 Future runParser(Config config) async {
-//  var packageInfos = [
-//      //new PackageInfo(config, "stagexl", new Version("0.9.2+1"))
-//      //new PackageInfo(config, "dagre", new Version("0.0.2"))
-//      new PackageInfo("dnd", new Version("0.2.1")),
-//      //new PackageInfo("pool", new Version("1.0.1"))
-//      ];
-  List<PackageInfo> packageInfos = (await getAllPackages(config)).toList();
+  var packageInfos = [
+      //new PackageInfo(config, "stagexl", new Version("0.9.2+1"))
+      //new PackageInfo(config, "dagre", new Version("0.0.2"))
+      new PackageInfo("dnd", new Version("0.3.0")),
+      //new PackageInfo("pool", new Version("1.0.1"))
+      ];
+  //List<PackageInfo> packageInfos = (await getAllPackages(config)).take(1).toList();
   (await new DbPackageLoader(config).getErroredPackageInfos()).forEach((packageInfo) {
     packageInfos.remove(packageInfo);
   });

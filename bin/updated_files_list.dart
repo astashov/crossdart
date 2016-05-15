@@ -20,16 +20,7 @@ Future<Null> main(args) async {
   }
 
   var results = updatedFilesListArgs.results;
-  var config = new Config(
-      dbLogin: results[Config.DB_LOGIN],
-      dbPassword: results[Config.DB_PASSWORD],
-      dbHost: results[Config.DB_HOST],
-      dbPort: results[Config.DB_PORT],
-      dbName: results[Config.DB_NAME],
-      pubCachePath: new File(results[Config.PUB_CACHE_PATH]).resolveSymbolicLinksSync(),
-      outputPath: new File(results[Config.OUTPUT_PATH]).resolveSymbolicLinksSync(),
-      installPath: new File(results[Config.INSTALL_PATH]).resolveSymbolicLinksSync(),
-      isDbUsed: true);
+  var config = new Config.buildFromFiles(dirroot: results[Config.DIR_ROOT], isDbUsed: true);
 
   var timestamp = int.parse((await http.get("http://www.crossdart.info/timestamp")).body);
 

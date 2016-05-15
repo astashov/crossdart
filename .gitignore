@@ -6,6 +6,7 @@ dist/
 
 # Dart files and folders
 packages
+.packages
 *.dart.js
 *.js.deps
 *.js.map

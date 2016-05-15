@@ -18,13 +18,7 @@ main(args) async {
   }
 
   var results = migrationArgs.results;
-  var config = new Config(
-      dbLogin: results[Config.DB_LOGIN],
-      dbPassword: results[Config.DB_PASSWORD],
-      dbHost: results[Config.DB_HOST],
-      dbPort: results[Config.DB_PORT],
-      dbName: results[Config.DB_NAME],
-      isDbUsed: true);
+  var config = new Config.buildFromFiles(dirroot: results[Config.DIR_ROOT], isDbUsed: true);
 
   await runMigrations(config);
 }
@@ -38,12 +32,12 @@ Future<Null> runMigrations(Config config) async {
   await dbPool(config).prepareExecute("""
     CREATE TABLE `packages` (
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-      `name` varchar(255) NOT NULL,
-      `version` varchar(255) NOT NULL,
-      `source_type` tinyint NOT NULL,
-      `description` text,
-      `readme` text,
-      `created_at` DATETIME,
+      `name` varchar(100) NOT NULL,
+      `version` varchar(80) NOT NULL,
+      `source_type` enum('GIT', 'HOSTED', 'SDK') NOT NULL,
+      `description` text DEFAULT NULL,
+      `readme` text DEFAULT NULL,
+      `created_at` DATETIME NOT NULL,
       PRIMARY KEY (`id`),
       UNIQUE KEY `uniq` (`name`,`version`),
       KEY `created_at` (`created_at`)
@@ -54,24 +48,20 @@ Future<Null> runMigrations(Config config) async {
     CREATE TABLE `entities` (
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `declaration_id` int(11) unsigned DEFAULT NULL,
-      `type` smallint(4) NOT NULL,
-      `kind` smallint(4) DEFAULT NULL,
-      `context_name` varchar(255) DEFAULT NULL,
-      `name` varchar(255) DEFAULT NULL,
+      `type` ENUM('Reference', 'Declaration', 'Import', 'Token') NOT NULL,
+      `kind` ENUM('CLASS', 'METHOD', 'LOCAL_VARIABLE', 'FUNCTION', 'PROPERTY_ACCESSOR', 'CONSTRUCTOR', 'FIELD', 'FUNCTION_TYPE_ALIAS', 'TOP_LEVEL_VARIABLE') DEFAULT NULL,
+      `context_name` varchar(200) DEFAULT NULL,
+      `name` varchar(200) DEFAULT NULL,
       `offset` int(11) unsigned DEFAULT NULL,
       `end` int(11) unsigned DEFAULT NULL,
       `line_number` int(11) unsigned DEFAULT NULL,
       `line_offset` int(11) unsigned DEFAULT NULL,
       `path` varchar(255) NOT NULL,
       `package_id` int(11) unsigned NOT NULL,
-      `created_at` DATETIME,
+      `created_at` DATETIME NOT NULL,
       FOREIGN KEY foreign_package_id (`package_id`) REFERENCES `packages` (`id`) ON DELETE CASCADE,
       PRIMARY KEY (`id`),
-      UNIQUE KEY `uniq` (`type`,`package_id`,`path`,`offset`,`end`),
-      KEY `type_package_id` (`type`,`package_id`),
-      KEY `type` (`type`),
-      KEY `package_id` (`package_id`),
-      KEY `path` (`path`),
+      UNIQUE KEY `uniq` (`package_id`,`type`,`path`,`offset`,`end`),
       KEY `created_at` (`created_at`),
       KEY `declaration_id` (`declaration_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8
@@ -80,10 +70,10 @@ Future<Null> runMigrations(Config config) async {
   await dbPool(config).prepareExecute("""
     CREATE TABLE `errors` (
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-      `package_name` varchar(255) NOT NULL,
-      `package_version` varchar(255) NOT NULL,
+      `package_name` varchar(100) NOT NULL,
+      `package_version` varchar(80) NOT NULL,
       `error` text NOT NULL,
-      `created_at` DATETIME,
+      `created_at` DATETIME NOT NULL,
       PRIMARY KEY (`id`),
       UNIQUE KEY `uniq` (`package_name`, `package_version`),
       KEY `created_at` (`created_at`)

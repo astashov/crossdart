@@ -50,9 +50,9 @@ class DbParsedDataLoader {
           var reference = new Reference(new Location(referencePackage, row.r_path), name: row.r_name, offset: row.r_offset, end: row.r_end, id: row.r_id);
           var location = new Location(declarationPackage, row.d_path);
           Declaration declaration;
-          if (row.d_type == entityTypeIds[Declaration]) {
+          if (row.d_type == "Declaration") {
             declaration = new Declaration(location, name: row.d_name, offset: row.d_offset, end: row.d_end, id: row.d_id);
-          } else if (row.d_type == entityTypeIds[Import]) {
+          } else if (row.d_type == "Import") {
             declaration = new Import(location, name: row.d_name, id: row.d_id);
           }
 
@@ -106,7 +106,7 @@ class DbParsedDataLoader {
              d.id AS 'd_id', d.type AS 'd_type', d.name AS 'd_name', d.offset AS 'd_offset', d.end AS 'd_end', d.path AS 'd_path', d.package_id AS 'd_package_id'
       FROM entities AS r
       INNER JOIN entities AS d ON r.declaration_id = d.id
-      WHERE r.type = ${entityTypeIds[Reference]} AND r.package_id = ${package.id}
+      WHERE r.type = 'Reference' AND r.package_id = ${package.id}
     """);
   }
 
@@ -114,7 +114,7 @@ class DbParsedDataLoader {
     return dbPool(_config).query("""
       SELECT e.id AS 'e_id', e.name AS 'e_name', e.offset AS 'e_offset', e.end AS 'e_end', e.path AS 'e_path', e.package_id AS 'e_package_id'
       FROM entities AS e
-      WHERE e.type = ${entityTypeIds[Token]} AND e.package_id = ${package.id}
+      WHERE e.type = 'Token' AND e.package_id = ${package.id}
     """);
   }
 }

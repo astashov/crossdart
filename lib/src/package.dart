@@ -215,7 +215,7 @@ Future<Package> buildFromDatabase(Config config, PackageInfo packageInfo) async 
   var row = result.isNotEmpty ? result.first : null;
   if (row != null) {
     var paths = (await (await dbPool(config).query("""
-        SELECT DISTINCT path FROM entities WHERE package_id = ${row.id} AND type = ${entityTypeIds[Reference]}  
+        SELECT DISTINCT path FROM entities WHERE package_id = ${row.id} AND type = 'Reference'}
     """)).toList()).map((r) => r.path);
     var source = key(packageSourceIds, row.source_type);
     if (packageInfo.isSdk) {

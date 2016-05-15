@@ -15,11 +15,11 @@ ConnectionPool dbPool(Config config) {
       var login = config.dbLogin != null ? config.dbLogin : "root";
       var password = config.dbPassword != null ? config.dbPassword : "";
       var host = config.dbHost != null ? config.dbHost : "localhost";
-      var port = config.dbPort != null ? config.dbPort : "3306";
+      var port = config.dbPort != null ? config.dbPort : 3306;
       var name = config.dbName != null ? config.dbName : "crossdart";
       _dbPool = new ConnectionPool(
           host: host,
-          port: int.parse(port),
+          port: port,
           user: login,
           password: (password == '' ? null : password),
           db: name,
