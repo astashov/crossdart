@@ -70,9 +70,6 @@ class Declaration extends Entity {
 class Import extends Declaration {
   Import(Location location, {String name, int id}) : super(location, name: name, id: id);
 }
-class Token extends Entity {
-  Token(Location location, {String name, int offset, int end, int id}) : super(location, name: name, offset: offset, end: end, id: id);
-}
-class Reference extends Token {
+class Reference extends Entity {
   Reference(Location location, {String name, int offset, int end, int id}) : super(location, name: name, offset: offset, end: end, id: id);
 }

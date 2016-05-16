@@ -310,6 +310,8 @@
         return a.index - b.index;
       });
   };
+}());
 
-
+(function () {
+  hljs.highlightBlock(document.querySelector(".code"));
 }());

@@ -53,7 +53,7 @@ class HtmlIndexGenerator {
     new File(join(_config.outputPath, "index.html")).writeAsStringSync(content);
 
     new File(join(_config.templatesPath, "style.css")).copySync(join(_config.outputPath, "style.css"));
-    ["index", "package", "code", "404"].forEach((name) {
+    ["index", "package", "code", "404", "highlight.pack"].forEach((name) {
       Process.runSync("cp", [join(_config.templatesPath, "$name.js"), join(_config.outputPath, "$name.js")]);
     });
   }

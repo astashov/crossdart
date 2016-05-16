@@ -7,7 +7,6 @@ import 'package:crossdart/src/util/map.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/environment.dart';
 import 'package:crossdart/src/version.dart';
-import 'package:crossdart/src/entity.dart';
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/util.dart';
 import 'package:crossdart/src/store.dart';

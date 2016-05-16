@@ -48,7 +48,7 @@ Future<Null> runMigrations(Config config) async {
     CREATE TABLE `entities` (
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `declaration_id` int(11) unsigned DEFAULT NULL,
-      `type` ENUM('Reference', 'Declaration', 'Import', 'Token') NOT NULL,
+      `type` ENUM('Reference', 'Declaration', 'Import') NOT NULL,
       `kind` ENUM('CLASS', 'METHOD', 'LOCAL_VARIABLE', 'FUNCTION', 'PROPERTY_ACCESSOR', 'CONSTRUCTOR', 'FIELD', 'FUNCTION_TYPE_ALIAS', 'TOP_LEVEL_VARIABLE') DEFAULT NULL,
       `context_name` varchar(200) DEFAULT NULL,
       `name` varchar(200) DEFAULT NULL,

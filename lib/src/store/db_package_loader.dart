@@ -8,8 +8,6 @@ import 'package:crossdart/src/util/iterable.dart';
 import 'package:crossdart/src/util/map.dart';
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/version.dart';
-import 'package:crossdart/src/store.dart';
-import 'package:crossdart/src/entity.dart';
 import 'package:sqljocky/sqljocky.dart';
 import 'package:logging/logging.dart';
 

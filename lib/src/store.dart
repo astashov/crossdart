@@ -81,17 +81,6 @@ Future store(Environment environment, ParsedData parsedData) async {
     await insertQuery.executeMulti(referencesValues);
   }
 
-  _logger.info("Storing tokens");
-  var tokensValues = files.map((tuple) {
-    var absolutePath = tuple[0];
-    var entities = tuple[1];
-    var filteredEntities = entities.where((e) => e.runtimeType == Token);
-    return _getTokensValues(environmentWithIds, parsedData, absolutePath, filteredEntities);
-  }).expand((i) => i).toList();
-  _logger.info("Executing query to store tokens - ${tokensValues.length}");
-  if (tokensValues.length > 0) {
-    await insertQuery.executeMulti(tokensValues);
-  }
   _logger.info("Committing transaction");
   await transaction.commit();
   _logger.info("Committed");
@@ -152,14 +141,6 @@ List<List> _getReferencesValues(Environment environment, ParsedData parsedData, 
     return _buildValue(environment.config, reference, location, declarationId);
   }).toList();
 }
-
-List<List> _getTokensValues(Environment environment, ParsedData parsedData, String absolutePath, Iterable<Token> tokens) {
-  var location = new Location.fromEnvironment(environment, absolutePath);
-  return tokens.map((token) {
-    return _buildValue(environment.config, token, location);
-  }).toList();
-}
-
 
 Future storeError(Config config, PackageInfo packageInfo, Object error, StackTrace stackTrace) async {
   return prepareExecute(config,

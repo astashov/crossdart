@@ -61,8 +61,6 @@ class HtmlPackageGenerator {
       return content;
     } else if (entity is Declaration) {
       return "<span id='declaration-${entity.id}' class='entity__declaration'>";
-    } else if (entity is Token) {
-      return "<span class='${entity.name}'>";
     } else {
       return "<span>";
     }
@@ -107,6 +105,7 @@ class HtmlPackageGenerator {
   String _footerContent() {
     return """
         </div>
+        <script src="/highlight.pack.js"></script>
         <script src="/code.js"></script>
         ${ga.script}
       </body>
@@ -117,14 +116,17 @@ class HtmlPackageGenerator {
   void _writeContent(String absolutePath, Set<Entity> entities, RandomAccessFile file, Package package) {
     _logger.info("Building content of ${absolutePath}");
     file.writeStringSync(_headerContent(absolutePath, package));
+    file.writeStringSync("<div class='wrapper'><pre class='lines'>");
+    for (var i = 0; i < cache.numberOfLines(absolutePath); i += 1) {
+      file.writeStringSync("<a id='line-${i}' class='line'>${i + 1}</a>");
+    }
+    file.writeStringSync("</pre>");
     file.writeStringSync("<pre class='code'>");
     String fileContent = cache.fileContents(absolutePath);
     List<Entity> entitiesList = entities.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
 
     var lastOffset = 0;
-    var currentLine = 0;
-    file.writeStringSync("<a id='line-${currentLine}' class='line'>${currentLine}</a>");
-    currentLine += 1;
+    var currentLine = 1;
     Map<int, List<Entity>> stack = {};
     String newlineChar = cache.getNewlineChar(fileContent);
 
@@ -162,7 +164,6 @@ class HtmlPackageGenerator {
         } else {
           if (nextNewlinePos == nextStop) {
             file.writeStringSync("\n");
-            file.writeStringSync("<a id='line-${currentLine}' class='line'>${currentLine}</a>");
             currentLine += 1;
             lastOffset = nextStop + newlineChar.length;
           } else {
@@ -174,7 +175,7 @@ class HtmlPackageGenerator {
       }
     }
 
-    file.writeStringSync("</pre>");
+    file.writeStringSync("</pre></div>");
     file.writeStringSync(_footerContent());
   }
 
@@ -240,5 +241,4 @@ class HtmlPackageGenerator {
       return memo;
     });
   }
-
 }

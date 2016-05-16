@@ -200,18 +200,36 @@ body {
   line-height: 24px;
 }
 
-.source-code .code {
+.source-code .wrapper {
+  overflow: auto;
   position: absolute;
   left: 250px;
   right: 0;
   top: 0;
   bottom: 0;
   margin: 0;
-  overflow: auto;
 }
 
-.source-code .code .line {
-  display: inline-block;
+.source-code .lines {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin: 0;
+}
+
+.source-code .code {
+  position: absolute;
+  left: 55px;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin: 0;
+}
+
+.source-code .lines .line {
+  display: block;
   width: 3em;
   max-width: 3em;
   border: none;
@@ -420,53 +438,125 @@ body {
 
 @media screen and (max-width: 750px) {
   .source-code .nav {
-    padding-left: 1em;
-    -webkit-text-size-adjust: 100%;
-    position: fixed;
-    left: 0;
-    top: 0;
-    right: 0;
-    background: white;
+      padding-left: 1em;
+      -webkit-text-size-adjust: 100%;
+      position: fixed;
+      left: 0;
+      top: 0;
+      right: 0;
+      background: white;
   }
 
   .source-code .nav--filetree-toggle {
-    display: block;
-    float: right;
-    padding-right: 1em;
-    color: #039BE5;
-    font-family: Roboto, sans-serif;
+      display: block;
+      float: right;
+      padding-right: 1em;
+      color: #039BE5;
+      font-family: Roboto, sans-serif;
   }
 
   .source-code .filetree {
-    display: none;
-    overflow: auto;
-    position: fixed;
+      display: none;
+      overflow: auto;
+      position: fixed;
   }
 
   .source-code .code {
-    position: static;
+      position: static;
   }
 
   .source-code .content {
-    padding-top: 26px;
-    position: static;
+      padding-top: 26px;
+      position: static;
   }
 
   .source-code .is-filetree-visible .filetree {
-    display: block;
+      display: block;
   }
 
   .source-code .code {
-    left: 0;
-    font-family: 'Open Sans Condensed', monospace;
-    font-size: 0.6em;
+      left: 0;
+      font-family: 'Open Sans Condensed', monospace;
+      font-size: 0.6em;
   }
 
   .source-code .is-filetree-visible .code {
-    left: 250px;
+      left: 250px;
   }
 
   .source-code .code .line {
-    width: 1em;
+      width: 1em;
   }
+}
+
+.hljs,
+.hljs-subst {
+  color: #444;
+}
+
+.hljs-comment {
+  color: #888888;
+}
+
+.hljs-keyword,
+.hljs-attribute,
+.hljs-selector-tag,
+.hljs-meta-keyword,
+.hljs-doctag,
+.hljs-name {
+  font-weight: bold;
+}
+
+.hljs-type,
+.hljs-string,
+.hljs-number,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-quote,
+.hljs-template-tag,
+.hljs-deletion {
+  color: #880000;
+}
+
+.hljs-title,
+.hljs-section {
+  color: #880000;
+  font-weight: bold;
+}
+
+.hljs-regexp,
+.hljs-symbol,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-link,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  color: #BC6060;
+}
+
+.hljs-literal {
+  color: #78A960;
+}
+
+.hljs-built_in,
+.hljs-bullet,
+.hljs-code,
+.hljs-addition {
+  color: #397300;
+}
+
+.hljs-meta {
+  color: #1f7199;
+}
+
+.hljs-meta-string {
+  color: #4d99bf;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
 }

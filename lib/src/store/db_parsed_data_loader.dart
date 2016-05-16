@@ -8,7 +8,6 @@ import 'package:crossdart/src/entity.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/util/iterable.dart';
-import 'package:crossdart/src/store.dart';
 import 'package:sqljocky/sqljocky.dart';
 import 'package:logging/logging.dart';
 
@@ -27,7 +26,6 @@ class DbParsedDataLoader {
       for (var package in packages) {
         _logger.info("Loading parsed data from the database for the package ${package.packageInfo}");
         await _loadReferences(package, parsedData, packagesById);
-        await _loadTokens(package, parsedData, packagesById);
       }
 
       return parsedData;
@@ -62,25 +60,6 @@ class DbParsedDataLoader {
     });
   }
 
-  Future _loadTokens(Package package, ParsedData parsedData, Map<int, Package> packagesById) async {
-    _logger.info("Loading previous tokens from the database");
-    var tokenResults = (await (await _queryTokens(package)).toList());
-    groupBy(tokenResults, (i) => i.e_path).forEach((String path, Iterable<Row> rows) {
-      rows.forEach((Row row) {
-        Package tokenPackage = packagesById[row.e_package_id];
-        if (tokenPackage != null) {
-          var token = new Token(new Location(tokenPackage, row.e_path), name: row.e_name, offset: row.e_offset, end: row.e_end, id: row.e_id);
-
-          parsedData.tokens.add(token);
-          if (parsedData.files[token.location.file] == null) {
-            parsedData.files[token.location.file] = new Set();
-          }
-          parsedData.files[token.location.file].add(token);
-        }
-      });
-    });
-  }
-
   void _fillInParsedData(ParsedData parsedData, Reference reference, Declaration declaration) {
     parsedData.references[reference] = declaration;
 
@@ -107,14 +86,6 @@ class DbParsedDataLoader {
       FROM entities AS r
       INNER JOIN entities AS d ON r.declaration_id = d.id
       WHERE r.type = 'Reference' AND r.package_id = ${package.id}
-    """);
-  }
-
-  Future<Results> _queryTokens(Package package) {
-    return dbPool(_config).query("""
-      SELECT e.id AS 'e_id', e.name AS 'e_name', e.offset AS 'e_offset', e.end AS 'e_end', e.path AS 'e_path', e.package_id AS 'e_package_id'
-      FROM entities AS e
-      WHERE e.type = 'Token' AND e.package_id = ${package.id}
     """);
   }
 }

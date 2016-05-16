@@ -3,7 +3,6 @@ library crossdart.parser.ast_visitor;
 import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/ast.dart';
 import 'package:analyzer/src/generated/element.dart';
-import 'package:analyzer/src/generated/scanner.dart';
 
 import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/environment.dart';
@@ -34,91 +33,8 @@ class ASTVisitor extends GeneralizingAstVisitor {
   }
 
   @override
-  visitDirective(Directive node) {
-    super.visitDirective(node);
-    _addToken(KEYWORD, node.keyword);
-  }
-
-  @override
-  visitComment(Comment node) {
-    super.visitComment(node);
-    _addToken(node.runtimeType.toString().toLowerCase(), node.beginToken, node.endToken);
-  }
-
-  @override
-  visitClassDeclaration(ClassDeclaration node) {
-    super.visitClassDeclaration(node);
-    if (node.abstractKeyword != null) {
-      _addToken(KEYWORD, node.abstractKeyword);
-    }
-    _addToken(KEYWORD, node.classKeyword);
-  }
-
-  @override
-  visitExtendsClause(ExtendsClause node) {
-    super.visitExtendsClause(node);
-    _addToken(KEYWORD, node.extendsKeyword);
-  }
-
-  @override
-  visitMethodDeclaration(MethodDeclaration node) {
-    super.visitMethodDeclaration(node);
-    [node.externalKeyword, node.modifierKeyword, node.operatorKeyword, node.propertyKeyword].forEach((keyword) {
-      if (keyword != null) {
-        _addToken(KEYWORD, keyword);
-      }
-    });
-
-    _addToken(DECLARATION, node.name.token);
-  }
-
-  @override
-  visitPartOfDirective(PartOfDirective node) {
-    super.visitPartOfDirective(node);
-    _addToken(KEYWORD, node.partKeyword, node.ofKeyword);
-  }
-
-  @override
-  visitConstructorDeclaration(ConstructorDeclaration node) {
-    super.visitConstructorDeclaration(node);
-    [node.externalKeyword, node.constKeyword, node.factoryKeyword].forEach((keyword) {
-      if (keyword != null) {
-        _addToken(KEYWORD, keyword);
-      }
-    });
-    if (node.name != null) {
-      _addToken(DECLARATION, node.name.token);
-    }
-  }
-
-  @override
-  visitSuperExpression(SuperExpression node) {
-    super.visitSuperExpression(node);
-    _addToken(KEYWORD, node.beginToken);
-  }
-
-  @override
-  visitReturnStatement(ReturnStatement node) {
-    super.visitReturnStatement(node);
-    _addToken(KEYWORD, node.returnKeyword);
-  }
-
-  @override
-  visitInstanceCreationExpression(InstanceCreationExpression node) {
-    super.visitInstanceCreationExpression(node);
-    _addToken(KEYWORD, node.keyword);
-  }
-
-  @override
-  visitAnnotation(Annotation node) {
-    super.visitAnnotation(node);
-    _addToken(ANNOTATION, node.beginToken, node.endToken);
-  }
-
-  @override
   visitSimpleStringLiteral(SimpleStringLiteral node) {
     super.visitSimpleStringLiteral(node);
-    _addToken(STRING, node.literal);
     try {
       var parent = node.parent;
       if (parent is PartDirective) {
@@ -255,17 +171,5 @@ class ASTVisitor extends GeneralizingAstVisitor {
     parsedData.declarations[declaration].add(reference);
 
     parsedData.references[reference] = declaration;
-  }
-
-  void _addToken(String name, Token beginToken, [Token endToken]) {
-    var offset = beginToken.offset;
-    var end = endToken == null ? beginToken.end : endToken.end;
-    var newToken = new e.Token(new Location.fromEnvironment(_environment, _absolutePath), name: name, offset: offset, end: end);
-
-    parsedData.tokens.add(newToken);
-    if (parsedData.files[newToken.location.file] == null) {
-      parsedData.files[newToken.location.file] = new Set();
-    }
-    parsedData.files[newToken.location.file].add(newToken);
   }
 }
