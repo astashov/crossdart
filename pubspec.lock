@@ -6,9 +6,11 @@ packages:
     source: hosted
     version: "0.1.3"
   analyzer:
-    description: analyzer
+    description:
+      name: analyzer
+      url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.27.1+1"
+    version: "0.27.3"
   args:
     description: args
     source: hosted

@@ -47,7 +47,7 @@ Future runParser(Config config) async {
       //new PackageInfo("dnd", new Version("0.2.0")),
       new PackageInfo("pool", new Version("1.0.1"))
       ];
-  //List<PackageInfo> packageInfos = (await getAllPackages(config)).take(1).toList();
+  //List<PackageInfo> packageInfos = (await getAllPackages(config)).toList();
   (await new DbPackageLoader(config).getErroredPackageInfos()).forEach((packageInfo) {
     packageInfos.remove(packageInfo);
   });

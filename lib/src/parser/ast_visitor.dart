@@ -1,8 +1,8 @@
 library crossdart.parser.ast_visitor;
 
 import 'package:analyzer/analyzer.dart';
-import 'package:analyzer/src/generated/ast.dart';
-import 'package:analyzer/src/generated/element.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/element/element.dart';
 
 import 'package:crossdart/src/location.dart';
 import 'package:crossdart/src/environment.dart';
@@ -39,11 +39,17 @@ class ASTVisitor extends GeneralizingAstVisitor {
       var parent = node.parent;
       if (parent is PartDirective) {
         var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.toString(), offset: node.offset, end: node.end);
-        var declaration = new e.Import(new Location.fromEnvironment(_environment, (parent as PartDirective).element.source.fullName));
+        var path;
+        if ((parent as PartDirective).element != null) {
+          path = (parent as PartDirective).element.source.uri.path;
+        } else {
+          path = (parent as PartDirective).source.uri.path;
+        }
+        var declaration = new e.Import(new Location.fromEnvironment(_environment, path));
         _addReferenceAndDeclaration(reference, declaration);
       } else if (parent is ImportDirective && (parent as ImportDirective).element != null) {
         var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.toString(), offset: node.offset, end: node.end);
-        var declaration = new e.Import(new Location.fromEnvironment(_environment, (parent as ImportDirective).element.importedLibrary.definingCompilationUnit.source.fullName));
+        var declaration = new e.Import(new Location.fromEnvironment(_environment, ((parent as ImportDirective).element as ImportElement).importedLibrary.definingCompilationUnit.source.fullName));
         _addReferenceAndDeclaration(reference, declaration);
       }
     } catch(error, stackTrace) {
@@ -145,6 +151,8 @@ class ASTVisitor extends GeneralizingAstVisitor {
         || node is FunctionTypeAlias
         || node is ClassTypeAlias) && node.name != null) {
       return node.name;
+    } else if (node is DeclaredIdentifier) {
+      return node.identifier;
     } else if (node is ConstructorDeclaration && node.returnType != null) {
       return node.returnType;
     } else {
