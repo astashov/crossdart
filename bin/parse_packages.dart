@@ -44,8 +44,8 @@ Future runParser(Config config) async {
   var packageInfos = [
       //new PackageInfo(config, "stagexl", new Version("0.9.2+1"))
       //new PackageInfo(config, "dagre", new Version("0.0.2"))
-      new PackageInfo("dnd", new Version("0.3.0")),
-      //new PackageInfo("pool", new Version("1.0.1"))
+      //new PackageInfo("dnd", new Version("0.2.0")),
+      new PackageInfo("pool", new Version("1.0.1"))
       ];
   //List<PackageInfo> packageInfos = (await getAllPackages(config)).take(1).toList();
   (await new DbPackageLoader(config).getErroredPackageInfos()).forEach((packageInfo) {

@@ -84,9 +84,9 @@ class Config {
 
   String get packagesPath {
     if (projectPath != null) {
-      return path.join(projectPath, "packages");
+      return path.join(projectPath, ".packages");
     } else if (installPath != null) {
-      return path.join(installPath, "packages");
+      return path.join(installPath, ".packages");
     } else {
       throw "Cannot generate packagesPath, neither projectPath nor installPath are provided";
     }

@@ -11,6 +11,7 @@ import 'package:crossdart/src/installer/installer.dart';
 import 'package:sqljocky/sqljocky.dart';
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
+import 'package:package_config/discovery.dart' as packages_discovery;
 
 Logger _logger = new Logger("environment");
 
@@ -54,11 +55,12 @@ Future<Environment> buildEnvironment(Config config, [PackageInfo mainPackageInfo
   var sdk = await buildSdkFromFileSystem(config, sdkPackageInfo);
 
   var customPackages = [];
-  for (var dir in (new Directory(config.packagesPath).listSync(recursive: false))) {
-    var resolvedDir = dir.resolveSymbolicLinksSync();
-    if (config.projectPath == null || !resolvedDir.contains(config.projectPath)) {
-      var name = path.basename(dir.path);
-      var version = path.basename(path.dirname(resolvedDir)).replaceFirst("${name}-", "");
+  var packagesDiscovery = (await packages_discovery.loadPackagesFile(new Uri.file(config.packagesPath))).asMap();
+
+  for (var name in packagesDiscovery.keys.where((n) => n != "crossdart_example")) {
+    var dir = new Directory.fromUri(packagesDiscovery[name]).parent.path;
+    if (config.projectPath == null || !dir.contains(config.projectPath)) {
+      var version = path.basename(dir).replaceFirst("${name}-", "");
       var packageInfo = new PackageInfo(name, new Version(version));
       try {
         var package = await buildCustomPackageFromFileSystem(config, packageInfo);

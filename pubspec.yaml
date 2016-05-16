@@ -21,6 +21,7 @@ dependencies:
   sqljocky: '>=0.11.0'
   quiver: any
   tasks: ^0.1.0
+  package_config: any
 
 dev_dependencies:
   unittest: any
