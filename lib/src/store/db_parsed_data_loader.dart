@@ -18,14 +18,31 @@ class DbParsedDataLoader {
 
   DbParsedDataLoader(this._config);
 
+  ParsedData __sdkParsedData;
+  Future<ParsedData> _sdkParsedData(Sdk package, Map<int, Package> packagesById) async {
+    if (__sdkParsedData == null) {
+      __sdkParsedData = new ParsedData();
+      _logger.info("Loading parsed data from the database for the package ${package.packageInfo}");
+      await _loadReferences(package, __sdkParsedData, packagesById);
+    }
+    return __sdkParsedData;
+  }
+
   Future<ParsedData> load(Iterable<Package> packages) async {
     Map<int, Package> packagesById = groupByOne(packages, (i) => i.id);
-
     try {
-      var parsedData = new ParsedData();
+      ParsedData parsedData;
+      Sdk sdkPackage = packages.firstWhere((p) => p is Sdk, orElse: () => null);
+      if (sdkPackage != null) {
+        parsedData = (await _sdkParsedData(sdkPackage, packagesById)).copy();
+      } else {
+        parsedData = new ParsedData();
+      }
       for (var package in packages) {
         _logger.info("Loading parsed data from the database for the package ${package.packageInfo}");
-        await _loadReferences(package, parsedData, packagesById);
+        if (package is! Sdk) {
+          await _loadReferences(package, parsedData, packagesById);
+        }
       }
 
       return parsedData;
@@ -45,8 +62,8 @@ class DbParsedDataLoader {
         Package declarationPackage = packagesById[row.d_package_id];
 
         if (referencePackage != null && declarationPackage != null) {
-          var reference = new Reference(new Location(referencePackage, row.r_path), name: row.r_name, offset: row.r_offset, end: row.r_end, id: row.r_id);
-          var location = new Location(declarationPackage, row.d_path);
+          var reference = new Reference(new Location(_config, referencePackage, row.r_path), name: row.r_name, offset: row.r_offset, end: row.r_end, id: row.r_id);
+          var location = new Location(_config, declarationPackage, row.d_path);
           Declaration declaration;
           if (row.d_type == "Declaration") {
             declaration = new Declaration(location, name: row.d_name, offset: row.d_offset, end: row.d_end, id: row.d_id);

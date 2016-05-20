@@ -5,7 +5,6 @@ import 'dart:convert';
 import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/util.dart';
-import 'package:crossdart/src/html/url.dart';
 import 'package:path/path.dart' as p;
 
 enum PackageSource { GIT, HOSTED, SDK }
@@ -25,9 +24,12 @@ class PackageInfo {
       && name == other.name
       && version == other.version;
 
+  String absolutePath(Config config) {
+    return p.join(config.outputPath, config.gcsPrefix, name, version.toPath());
+  }
+
   Iterable<String> generatedPaths(Config config) {
-    var absolutePath = p.join(config.outputPath, PATH_PREFIX, name, version.toPath());
-    return new Directory(absolutePath)
+    return new Directory(absolutePath(config))
         .listSync(recursive: true)
         .where((f) => f is File && f.path.endsWith(".html"))
         .map((s) => s.path.replaceAll(config.outputPath, "").replaceAll(new RegExp(r".html$"), ""));

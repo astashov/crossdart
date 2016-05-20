@@ -38,12 +38,12 @@ class HtmlPackageGenerator {
       if (entities == null) {
         entities = new Set();
       }
-      var location = new Location(package, package.relativePath(absolutePath));
+      var location = new Location(_config, package, package.relativePath(absolutePath));
       entities = entities.where((e) => e.offset != null && e.end != null).toSet();
-      if (!(new File(location.writePath(_config)).existsSync())) {
-        var directory = new Directory(p.dirname(location.writePath(_config)));
+      if (!(new File(location.writePath).existsSync())) {
+        var directory = new Directory(p.dirname(location.writePath));
         directory.createSync(recursive: true);
-        var file = new File(location.writePath(_config)).openSync(mode: FileMode.WRITE);
+        var file = new File(location.writePath).openSync(mode: FileMode.WRITE);
         _writeContent(absolutePath, entities, file, package);
         file.closeSync();
       }
@@ -75,7 +75,7 @@ class HtmlPackageGenerator {
   }
 
   String _headerContent(String absolutePath, Package package) {
-    var location = new Location(package, package.relativePath(absolutePath));
+    var location = new Location(_config, package, package.relativePath(absolutePath));
     return """
       <!doctype html>
       <html lang="en-us">
@@ -86,7 +86,7 @@ class HtmlPackageGenerator {
         </head>
         <body class='source-code'>
           <nav class='nav'>
-            <a href='${packageIndexUrl(package.packageInfo)}' class='nav-back'>${package.name} (${package.version})</a>
+            <a href='${packageIndexUrl(_config, package.packageInfo)}' class='nav-back'>${package.name} (${package.version})</a>
             <a class="link-to-pub" href="${package.pubUrl}">Link to Pub</a>
             <span class="nav--filetree-toggle">Filetree</span>
           </nav>
@@ -114,7 +114,7 @@ class HtmlPackageGenerator {
   }
 
   void _writeContent(String absolutePath, Set<Entity> entities, RandomAccessFile file, Package package) {
-    _logger.info("Building content of ${absolutePath}");
+    _logger.info("Building content of ${absolutePath} (${package.packageInfo.dirname})");
     file.writeStringSync(_headerContent(absolutePath, package));
     file.writeStringSync("<div class='wrapper'><pre class='lines'>");
     for (var i = 0; i < cache.numberOfLines(absolutePath); i += 1) {
@@ -126,7 +126,6 @@ class HtmlPackageGenerator {
     List<Entity> entitiesList = entities.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
 
     var lastOffset = 0;
-    var currentLine = 1;
     Map<int, List<Entity>> stack = {};
     String newlineChar = cache.getNewlineChar(fileContent);
 
@@ -164,7 +163,6 @@ class HtmlPackageGenerator {
         } else {
           if (nextNewlinePos == nextStop) {
             file.writeStringSync("\n");
-            currentLine += 1;
             lastOffset = nextStop + newlineChar.length;
           } else {
             lastOffset = nextStop;
@@ -210,7 +208,7 @@ class HtmlPackageGenerator {
         </li>""";
       } else {
         var isCurrent = currentPathParts.isNotEmpty && currentPathParts.first == p.basename(node);
-        var location = new Location(package, node);
+        var location = new Location(_config, package, node);
         var name = isCurrent
             ? p.basename(node)
             : "<a href='${location.htmlPath}'>${p.basename(node)}</a>";

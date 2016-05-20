@@ -48,7 +48,9 @@ Future runIsolate(Function isolateFunction, input, void callback(Isolate isolate
   var receivePort = new ReceivePort();
   var completer = new Completer();
 
+  print("About to spawn");
   Isolate.spawn(isolateFunction, receivePort.sendPort).then((isolate) {
+    print("Spawned!");
     receivePort.listen((msg) {
       if (msg is SendPort) {
         msg.send(input);
@@ -65,6 +67,7 @@ Future runIsolate(Function isolateFunction, input, void callback(Isolate isolate
 }
 
 void runInIsolate(SendPort sender, void callback(data)) {
+  print("Running");
   var receivePort = new ReceivePort();
   sender.send(receivePort.sendPort);
   receivePort.listen((data) {

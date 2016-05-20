@@ -17,6 +17,20 @@ var _logger = new Logger("store");
 
 // TODO: Refactor to a class
 
+Future<Iterable<int>> storeGeneratedPackage(Config config, int crossdartVersionId, Iterable<PackageInfo> packageInfos) async {
+  _logger.info("Storing generated packages:");
+  packageInfos.forEach((p) {
+    _logger.info(" - ${p}");
+  });
+  var datetime = new DateTime.now().toUtc();
+  return Future.wait(packageInfos.map((packageInfo) async {
+    var result = await dbPool(config).prepareExecute(
+        "INSERT IGNORE INTO generated_packages (package_id, crossdart_version_id, created_at) VALUES (?, ?, ?)",
+        [packageInfo.id, crossdartVersionId, datetime]);
+    return result.insertId;
+  }));
+}
+
 Future store(Environment environment, ParsedData parsedData) async {
   _logger.info("Starting transaction to store the package, dependencies, and all the entities...");
 

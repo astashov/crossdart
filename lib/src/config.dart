@@ -1,14 +1,15 @@
 library crossdart.config;
 
 import 'dart:io';
+import 'dart:convert';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart' as yaml;
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/version.dart';
-import 'package:crossdart/src/html/url.dart';
 import 'package:analyzer/src/generated/sdk.dart' show DartSdk;
 import 'package:analyzer/src/generated/java_io.dart';
 import 'package:analyzer/src/generated/sdk_io.dart' show DirectoryBasedDartSdk;
+import 'package:googleapis_auth/auth.dart';
 
 class Config {
   final String dirroot;
@@ -23,6 +24,12 @@ class Config {
   final String dbHost;
   final int dbPort;
   final String dbName;
+  final String gcProjectName;
+  final String gcZone;
+  final String gcGroupName;
+  final ServiceAccountCredentials credentials;
+  final String bucket;
+  final String gcsPrefix;
 
   final bool isDbUsed;
   final String part;
@@ -48,7 +55,13 @@ class Config {
     this.dbHost,
     this.dbPort,
     this.dbName,
-    this.part});
+    this.part,
+    this.bucket,
+    this.gcProjectName,
+    this.gcZone,
+    this.gcGroupName,
+    this.credentials,
+    this.gcsPrefix});
 
   factory Config.buildFromFiles({
       String dirroot,
@@ -61,7 +74,13 @@ class Config {
       String outputPath}) {
     dirroot ??= Directory.current.path;
     configFile ??= path.join(dirroot, "config.yaml");
+    var credentialsFile = path.join(dirroot, "credentials.yaml");
     var configValues = yaml.loadYaml(new File(path.join(dirroot, configFile)).readAsStringSync());
+    var credentialsValues = yaml.loadYaml(
+        new File(path.join(dirroot, credentialsFile)).readAsStringSync());
+    var cloudflareValues = credentialsValues["cloudflare"];
+    var serviceAccountCredentials = new ServiceAccountCredentials.fromJson(
+        JSON.encode(credentialsValues["google_cloud"]));
     return new Config._(
         dirroot: dirroot,
         sdkPath: configValues["sdk"],
@@ -76,7 +95,13 @@ class Config {
         dbHost: configValues["db_host"],
         dbPort: configValues["db_port"],
         dbName: configValues["db_name"],
-        part: part);
+        part: part,
+        bucket: configValues["bucket"],
+        gcsPrefix: configValues["gcs_prefix"],
+        gcProjectName: configValues["gc_project_name"],
+        gcZone: configValues["gc_zone"],
+        gcGroupName: configValues["gc_group_name"],
+        credentials: serviceAccountCredentials);
   }
 
   int get currentPart => int.parse(part.split("/")[0]);
@@ -110,20 +135,14 @@ class Config {
   }
 
   Iterable<Iterable<PackageInfo>> get generatedPackageInfos {
-    return new Directory(path.join(outputPath, PATH_PREFIX)).listSync().where((f) => f is Directory).map((Directory dir) {
+    return new Directory(path.join(outputPath, gcsPrefix)).listSync().where((f) => f is Directory).map((Directory dir) {
       var versions = dir.listSync().where((f) => f is Directory).map((d) => path.basename(d.path)).toList();
       versions.sort();
       return versions.map((version) => new PackageInfo(path.basename(dir.path), new Version(version)));
     });
   }
 
-  DateTime _currentDate;
-  DateTime get currentDate {
-    if (_currentDate == null) {
-      _currentDate = new DateTime.now().toUtc();
-    }
-    return _currentDate;
-  }
+  DateTime currentDate;
 
   String _currentDir;
   String get currentDir {

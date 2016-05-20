@@ -25,24 +25,50 @@ class DbPackageLoader {
     return results.isNotEmpty;
   }
 
+  Future<bool> doesGeneratedPackageExist(PackageInfo packageInfo) async {
+    var results = await (await query(_config, """
+        SELECT * FROM packages AS p
+        INNER JOIN generated_packages AS gp ON gp.package_id = p.id
+        WHERE p.name = '${packageInfo.name}' AND p.version = '${packageInfo.version}'
+    """)).toList();
+    return results.isNotEmpty;
+  }
+
   Future<Iterable<Package>> getAllPackages() async {
     var results = await (await query(_config, """
         SELECT DISTINCT p.id, p.name, p.version, p.source_type, p.description, e.path FROM packages AS p
         INNER JOIN entities AS e ON p.id = e.package_id 
     """)).toList();
     var resultsGroupedById = groupBy(results, (r) => r.id);
-    return fold([], resultsGroupedById, (List<Package> memo, int id, Iterable<Row> rows) {
-      var row = rows.first;
+    return fold([], resultsGroupedById, _packageBuilder);
+  }
 
-      var source = key(packageSourceIds, row.source_type);
-      var packageInfo = new PackageInfo(row.name, new Version(row.version), id: row.id, source: source);
-      if (packageInfo.name == "sdk") {
-        memo.add(new Sdk(_config, packageInfo, row.description.toString(), rows.map((r) => r.path)));
-      } else {
-        memo.add(new CustomPackage(_config, packageInfo, row.description.toString(), rows.map((r) => r.path)));
-      }
-      return memo;
-    });
+  Future<Iterable<Package>> getAllGeneratedPackages(DateTime since) async {
+    var query = """
+        SELECT DISTINCT p.id, p.name, p.version, p.source_type, p.description, e.path FROM packages AS p
+        INNER JOIN generated_packages AS gp ON p.id = gp.package_id
+        INNER JOIN entities AS e ON p.id = e.package_id
+    """;
+    var values = [];
+    if (since != null) {
+      query += " WHERE gp.created_at > ?";
+      values.add(since);
+    }
+    var results = await (await prepareExecute(_config, query, values)).toList();
+    var resultsGroupedById = groupBy(results, (r) => r.id);
+    return fold([], resultsGroupedById, _packageBuilder);
+  }
+
+  List<Package> _packageBuilder(List<Package> memo, int id, Iterable<Row> rows) {
+    var row = rows.first;
+    var source = key(packageSourceIds, row.source_type);
+    var packageInfo = new PackageInfo(row.name, new Version(row.version), id: row.id, source: source);
+    if (packageInfo.name == "sdk") {
+      memo.add(new Sdk(_config, packageInfo, row.description.toString(), rows.map((r) => r.path)));
+    } else {
+      memo.add(new CustomPackage(_config, packageInfo, row.description.toString(), rows.map((r) => r.path)));
+    }
+    return memo;
   }
 
   Future<Iterable<PackageInfo>> getAllPackageInfos([DateTime dateTime]) async {
@@ -62,6 +88,20 @@ class DbPackageLoader {
       SELECT package_name AS name, package_version AS version FROM errors
     """);
     return (await erroredPackageInfos.toList()).map((p) {
+      return new PackageInfo(p.name, new Version(p.version));
+    });
+  }
+
+  Future<Iterable<PackageInfo>> getGeneratedPackageInfos([int crossdartVersion = null]) async {
+    if (crossdartVersion == null) {
+      crossdartVersion = (await (await query(_config, "SELECT id FROM crossdart_versions ORDER BY id DESC LIMIT 1")).first)[0];
+    }
+    var generatedPackageInfos = await prepareExecute(_config, """
+      SELECT p.name, p.version FROM packages AS p
+      INNER JOIN generated_packages AS gp ON p.id = gp.package_id
+      WHERE gp.crossdart_version_id = ?
+    """, [crossdartVersion]);
+    return (await generatedPackageInfos.toList()).map((p) {
       return new PackageInfo(p.name, new Version(p.version));
     });
   }

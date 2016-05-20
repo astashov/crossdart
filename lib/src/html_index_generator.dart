@@ -99,7 +99,7 @@ class HtmlIndexGenerator {
           </html>
         """;
 
-        new File(join(_config.outputPath, PATH_PREFIX, packages.first.name, "index.html")).writeAsStringSync(content);
+        new File(join(_config.outputPath, _config.gcsPrefix, packages.first.name, "index.html")).writeAsStringSync(content);
       }
     });
   }
@@ -116,7 +116,7 @@ class HtmlIndexGenerator {
     return _generatedPackages.map((packages) {
       if (packages.isNotEmpty) {
         var package = packages.first;
-        return "<a class='package' href='${packageIndexUrl(package.packageInfo, shouldAddVersion: false)}'>${package.name}</a>";
+        return "<a class='package' href='${packageIndexUrl(_config, package.packageInfo, shouldAddVersion: false)}'>${package.name}</a>";
       } else {
         return "";
       }
@@ -128,7 +128,7 @@ class HtmlIndexGenerator {
       var content = "<div class='files-version' data-version='${package.version}'>";
       content += "<div class='files-version--description'>${package.description}</div>";
       content += "<ul class='files-version--files'>";
-      content += package.packageInfo.generatedPaths(_config).map((filePath) {
+      content += package.paths.map((filePath) {
         return "<li class='files-version-file'><a href='${filePath}.html'>${filePath}</a></li>";
       }).join("\n");
       content += "</ul>";

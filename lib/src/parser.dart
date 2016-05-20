@@ -16,14 +16,13 @@ class Parser {
 
   Parser(this.environment);
 
-  Future<ParsedData> parsePackages() {
-    return new DbParsedDataLoader(environment.config).load(environment.packages).then((parsedData) {
+  Future<ParsedData> parsePackages(DbParsedDataLoader dbParsedDataLoader) async {
+    return dbParsedDataLoader.load(environment.packages).then((parsedData) {
       var absolutePaths = environment.packages.map((p) => p.absolutePaths).expand((i) => i);
+      _logger.info("Building computation unit");
       var compilationUnit = new CompilationUnitResolver.build(environment.config, absolutePaths);
-      _sendIsolateEvent(IsolateEvent.START_PARSING);
+      _logger.info("Done with building computation unit");
       _parseAbsolutePathsOf(compilationUnit, absolutePaths, parsedData);
-      //_parseAbsolutePath(compilationUnit, "/Users/anton/.pub-cache/hosted/pub.dartlang.org/dnd-0.3.0/lib/src/draggable.dart", parsedData);
-      _sendIsolateEvent(IsolateEvent.FINISH_PARSING);
       return parsedData;
     });
   }

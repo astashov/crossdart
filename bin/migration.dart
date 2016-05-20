@@ -7,6 +7,7 @@ import 'package:logging/logging.dart';
 import 'package:crossdart/src/db_pool.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/args.dart';
+import 'package:intl/intl.dart';
 
 Logger _logger = new Logger("migration");
 
@@ -27,7 +28,9 @@ Future<Null> runMigrations(Config config) async {
   await dbPool(config).prepareExecute("DROP TABLE IF EXISTS `packages_dependencies`", []);
   await dbPool(config).prepareExecute("DROP TABLE IF EXISTS `errors`", []);
   await dbPool(config).prepareExecute("DROP TABLE IF EXISTS `entities`", []);
+  await dbPool(config).prepareExecute("DROP TABLE IF EXISTS `generated_packages`", []);
   await dbPool(config).prepareExecute("DROP TABLE IF EXISTS `packages`", []);
+  await dbPool(config).prepareExecute("DROP TABLE IF EXISTS `crossdart_versions`", []);
 
   await dbPool(config).prepareExecute("""
     CREATE TABLE `packages` (
@@ -59,7 +62,6 @@ Future<Null> runMigrations(Config config) async {
       `path` varchar(255) NOT NULL,
       `package_id` int(11) unsigned NOT NULL,
       `created_at` DATETIME NOT NULL,
-      FOREIGN KEY foreign_package_id (`package_id`) REFERENCES `packages` (`id`) ON DELETE CASCADE,
       PRIMARY KEY (`id`),
       UNIQUE KEY `uniq` (`package_id`,`type`,`path`,`offset`,`end`),
       KEY `created_at` (`created_at`),
@@ -89,6 +91,29 @@ Future<Null> runMigrations(Config config) async {
         UNIQUE KEY `uniq` (`package_id`,`dependency_id`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8
     """, []);
+
+  await dbPool(config).prepareExecute("""
+      CREATE TABLE `crossdart_versions` (
+        `id` bigint(14) unsigned NOT NULL,
+        PRIMARY KEY (`id`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+    """, []);
+
+  await dbPool(config).prepareExecute("""
+      CREATE TABLE `generated_packages` (
+        `package_id` int(11) unsigned NOT NULL,
+        `crossdart_version_id` bigint(14) unsigned NOT NULL,
+        `created_at` DATETIME NOT NULL,
+        FOREIGN KEY foreign_crossdart_version_id (`crossdart_version_id`) REFERENCES `crossdart_versions` (`id`) ON DELETE CASCADE,
+        FOREIGN KEY foreign_package_id (`package_id`) REFERENCES `packages` (`id`) ON DELETE CASCADE,
+        UNIQUE KEY `uniq` (`package_id`,`crossdart_version_id`),
+        KEY `created_at` (`created_at`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+    """, []);
+
+  await dbPool(config).prepareExecute("""
+      INSERT INTO `crossdart_versions` (`id`) VALUES (?)
+    """, [new DateFormat("yyyyMMddHHmmss").format(new DateTime.now().toUtc())]);
 
   deallocDbPool();
 }
