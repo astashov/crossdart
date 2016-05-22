@@ -99,7 +99,7 @@ class _ParsePackages {
 //      new PackageInfo("pool", new Version("1.0.1"))
 //      ];
     var packageInfos = await pubRetriever.update();
-    (await dbPackageLoader.getErroredPackageInfos()).forEach((packageInfo) {
+    (await dbPackageLoader.getErroredPackageInfos(null)).forEach((packageInfo) {
       packageInfos.remove(packageInfo);
     });
     var allPackageInfos = (await dbPackageLoader.getAllPackageInfos()).toSet();
@@ -117,6 +117,7 @@ class _ParsePackages {
   Future<Null> handlePackages(Iterable<PackageInfo> packageInfos) async {
     for (var packageInfo in packageInfos) {
       try {
+        logging.reset();
         config.currentDate = new DateTime.now().toUtc();
         ParsedData parsedData;
         Set<Package> packages;
@@ -151,60 +152,26 @@ class _ParsePackages {
           packages = (await Future.wait(packages.map((p) => p.updateId()))).toSet();
           new HtmlPackageGenerator(config, packages, parsedData).generate();
           await storeGeneratedPackage(config, docsVersion, packages.map((p) => p.packageInfo));
+          await _saveLogsToFile(config, packageInfo);
           await packageUploader.uploadSuccessfulPackages(packages.map((p) => p.packageInfo));
           packageCleaner.deleteSync();
         }
       } catch (exception, stackTrace) {
         _logger.severe("Exception while handling a package ${packageInfo.name} ${packageInfo.version}", exception, stackTrace);
         await storeError(config, packageInfo, exception, stackTrace);
+        await _saveLogsToFile(config, packageInfo);
+        await packageUploader.uploadErroredPackage(packageInfo);
       }
     }
   }
 }
 
-//Future _analyze(SendPort sender) async {
-//  runInIsolate(sender, await (List data) async {
-//    Config config = data[0];
-//    PackageInfo packageInfo = data[1];
-//    int index = data[2];
-//    logging.initialize(index);
-//    try {
-//      sender.send(IsolateEvent.START);
-//      ParsedData parsedData;
-//      Set<Package> packages;
-//      if (!(await (new DbPackageLoader(config).doesPackageExist(packageInfo)))) {
-//        new Installer(config, packageInfo).install();
-//        var environment = await buildEnvironment(config, packageInfo, sender);
-//        parsedData = await new Parser(environment).parsePackages();
-//        packages = environment.packages.toSet();
-//        await store(environment, parsedData);
-//      }
-//      if (!(await (new DbPackageLoader(config).doesGeneratedPackageExist(packageInfo)))) {
-//        if (parsedData == null || packages == null) {
-//          var packageInfos = await new DbPackageLoader(config).getPackageInfoDependencies(packageInfo);
-//          packages = new Set();
-//          for (var pi in packageInfos) {
-//            Package package;
-//            try {
-//              package = await buildFromFileSystem(config, pi);
-//            } on InstallerError catch (_, __) {
-//              package = null;
-//            }
-//            if (package != null) {
-//              packages.add(package);
-//            }
-//          }
-//          parsedData = await (new DbParsedDataLoader(config).load(packages));
-//        }
-//        new HtmlPackageGenerator(config, packages, parsedData).generate();
-//      }
-//      deallocDbPool();
-//      sender.send(IsolateEvent.FINISH);
-//    } catch(exception, stackTrace) {
-//      _logger.severe("Exception while handling a package ${packageInfo.name} ${packageInfo.version}", exception, stackTrace);
-//      await storeError(config, packageInfo, exception, stackTrace);
-//      deallocDbPool();
-//      sender.send(IsolateEvent.ERROR);
-//    }
-//  });
-//}
+Future<Null> _saveLogsToFile(Config config, PackageInfo packageInfo) async {
+  var directory = new Directory(packageInfo.absolutePath(config));
+  if (!await (directory.exists())) {
+    await directory.create(recursive: true);
+  }
+  var file = new File(packageInfo.logPath(config));
+  var contents = logging.logs.join("\n");
+  await file.writeAsString(contents);
+}

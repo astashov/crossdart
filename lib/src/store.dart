@@ -177,7 +177,7 @@ Future<int> storePackage(Config config, PackageInfo packageInfo, PackageSource s
   }
   var result = await conn.prepareExecute(
       "INSERT IGNORE INTO packages (name, version, source_type, description, created_at) VALUES (?, ?, ?, ?, ?)",
-      [packageInfo.name, packageInfo.version.toString(), packageSourceIds[source], description, config.currentDate]);
+      [packageInfo.name, packageInfo.version.toString(), source, description, config.currentDate]);
   return result.insertId;
 }
 

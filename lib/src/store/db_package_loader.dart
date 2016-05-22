@@ -7,9 +7,9 @@ import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/util/iterable.dart';
 import 'package:crossdart/src/util/map.dart';
 import 'package:crossdart/src/package_info.dart';
-import 'package:crossdart/src/version.dart';
 import 'package:sqljocky/sqljocky.dart';
 import 'package:logging/logging.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 var _logger = new Logger("store.load");
 
@@ -36,7 +36,7 @@ class DbPackageLoader {
 
   Future<Iterable<Package>> getAllPackages() async {
     var results = await (await query(_config, """
-        SELECT DISTINCT p.id, p.name, p.version, p.source_type, p.description, e.path FROM packages AS p
+        SELECT DISTINCT p.id, p.name, p.version, p.source_type, p.created_at, p.description, e.path FROM packages AS p
         INNER JOIN entities AS e ON p.id = e.package_id 
     """)).toList();
     var resultsGroupedById = groupBy(results, (r) => r.id);
@@ -45,7 +45,7 @@ class DbPackageLoader {
 
   Future<Iterable<Package>> getAllGeneratedPackages(DateTime since) async {
     var query = """
-        SELECT DISTINCT p.id, p.name, p.version, p.source_type, p.description, e.path FROM packages AS p
+        SELECT DISTINCT p.id, p.name, p.version, p.source_type, p.created_at, p.description, e.path FROM packages AS p
         INNER JOIN generated_packages AS gp ON p.id = gp.package_id
         INNER JOIN entities AS e ON p.id = e.package_id
     """;
@@ -61,8 +61,9 @@ class DbPackageLoader {
 
   List<Package> _packageBuilder(List<Package> memo, int id, Iterable<Row> rows) {
     var row = rows.first;
-    var source = key(packageSourceIds, row.source_type);
-    var packageInfo = new PackageInfo(row.name, new Version(row.version), id: row.id, source: source);
+    var source = packageSourceMapping[row.source_type];
+    var packageInfo = new PackageInfo(
+        row.name, new Version.parse(row.version), id: row.id, source: source, createdAt: row.created_at);
     if (packageInfo.name == "sdk") {
       memo.add(new Sdk(_config, packageInfo, row.description.toString(), rows.map((r) => r.path)));
     } else {
@@ -72,23 +73,34 @@ class DbPackageLoader {
   }
 
   Future<Iterable<PackageInfo>> getAllPackageInfos([DateTime dateTime]) async {
-    var query = "SELECT DISTINCT p.name, p.version, p.id, p.source_type FROM packages AS p";
+    var query = "SELECT DISTINCT p.name, p.version, p.id, p.source_type, p.created_at FROM packages AS p";
     if (dateTime != null) {
       query += " WHERE p.created_at > ?";
     }
     var values = dateTime != null ? [dateTime] : [];
     var results = await (await prepareExecute(_config, query, values)).toList();
     return results.map((Row r) {
-      return new PackageInfo(r.name, new Version(r.version), id: r.id, source: key(packageSourceIds, r.source_type));
+      return new PackageInfo(
+          r.name,
+          new Version.parse(r.version),
+          id: r.id,
+          source: packageSourceMapping[r.source_type],
+          createdAt: r.created_at);
     });
   }
 
-  Future<Iterable<PackageInfo>> getErroredPackageInfos() async {
-    var erroredPackageInfos = await query(_config, """
-      SELECT package_name AS name, package_version AS version FROM errors
-    """);
+  Future<Iterable<PackageInfo>> getErroredPackageInfos(DateTime since) async {
+    var q = """
+      SELECT package_name AS name, package_version AS version, created_at FROM errors
+    """;
+    var values = [];
+    if (since != null) {
+      q += " WHERE created_at > ?";
+      values.add(since);
+    }
+    var erroredPackageInfos = await prepareExecute(_config, q, values);
     return (await erroredPackageInfos.toList()).map((p) {
-      return new PackageInfo(p.name, new Version(p.version));
+      return new PackageInfo(p.name, new Version.parse(p.version), createdAt: p.created_at);
     });
   }
 
@@ -97,12 +109,12 @@ class DbPackageLoader {
       crossdartVersion = (await (await query(_config, "SELECT id FROM crossdart_versions ORDER BY id DESC LIMIT 1")).first)[0];
     }
     var generatedPackageInfos = await prepareExecute(_config, """
-      SELECT p.name, p.version FROM packages AS p
+      SELECT p.name, p.version, p.created_at FROM packages AS p
       INNER JOIN generated_packages AS gp ON p.id = gp.package_id
       WHERE gp.crossdart_version_id = ?
     """, [crossdartVersion]);
     return (await generatedPackageInfos.toList()).map((p) {
-      return new PackageInfo(p.name, new Version(p.version));
+      return new PackageInfo(p.name, new Version.parse(p.version), createdAt: p.created_at);
     });
   }
 
@@ -162,7 +174,7 @@ class DbPackageLoader {
             WHERE p1.name = '${packageInfo.name}' AND p1.version = '${packageInfo.version}'
     """)).toList();
 
-    return results.map((r) => new PackageInfo(r.name, new Version(r.version), id: r.id, source: key(packageSourceIds, r.source_type)));
+    return results.map((r) => new PackageInfo(r.name, new Version.parse(r.version), id: r.id, source: packageSourceMapping[r.source_type]));
   }
 
   Future<Iterable<Package>> _getDependencies(Package package) async {
@@ -176,7 +188,7 @@ class DbPackageLoader {
 
     return Future.wait(results.map((r) async {
       var packageInfo = new PackageInfo(
-          r.name, new Version(r.version), id: r.id, source: key(packageSourceIds, r.source_type));
+          r.name, new Version.parse(r.version), id: r.id, source: packageSourceMapping[r.source_type]);
       return await buildFromDatabase(_config, packageInfo);
     }));
   }

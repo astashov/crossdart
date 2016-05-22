@@ -5,11 +5,11 @@ import 'dart:convert';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart' as yaml;
 import 'package:crossdart/src/package_info.dart';
-import 'package:crossdart/src/version.dart';
 import 'package:analyzer/src/generated/sdk.dart' show DartSdk;
 import 'package:analyzer/src/generated/java_io.dart';
 import 'package:analyzer/src/generated/sdk_io.dart' show DirectoryBasedDartSdk;
 import 'package:googleapis_auth/auth.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 class Config {
   final String dirroot;
@@ -30,6 +30,7 @@ class Config {
   final ServiceAccountCredentials credentials;
   final String bucket;
   final String gcsPrefix;
+  final String hostedUrl;
 
   final bool isDbUsed;
   final String part;
@@ -49,6 +50,7 @@ class Config {
     this.templatesPath,
     this.projectPath,
     this.pubCachePath,
+    this.hostedUrl,
     this.isDbUsed,
     this.dbLogin,
     this.dbPassword,
@@ -95,6 +97,7 @@ class Config {
         dbHost: configValues["db_host"],
         dbPort: configValues["db_port"],
         dbName: configValues["db_name"],
+        hostedUrl: configValues["hosted_url"],
         part: part,
         bucket: configValues["bucket"],
         gcsPrefix: configValues["gcs_prefix"],
@@ -138,7 +141,7 @@ class Config {
     return new Directory(path.join(outputPath, gcsPrefix)).listSync().where((f) => f is Directory).map((Directory dir) {
       var versions = dir.listSync().where((f) => f is Directory).map((d) => path.basename(d.path)).toList();
       versions.sort();
-      return versions.map((version) => new PackageInfo(path.basename(dir.path), new Version(version)));
+      return versions.map((version) => new PackageInfo(path.basename(dir.path), new Version.parse(version)));
     });
   }
 

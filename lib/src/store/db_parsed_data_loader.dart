@@ -24,8 +24,11 @@ class DbParsedDataLoader {
       __sdkParsedData = new ParsedData();
       _logger.info("Loading parsed data from the database for the package ${package.packageInfo}");
       await _loadReferences(package, __sdkParsedData, packagesById);
+      if (__sdkParsedData.files.isEmpty) {
+        __sdkParsedData = null;
+      }
     }
-    return __sdkParsedData;
+    return __sdkParsedData == null ? new ParsedData() : __sdkParsedData;
   }
 
   Future<ParsedData> load(Iterable<Package> packages) async {

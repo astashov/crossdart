@@ -7,7 +7,7 @@ import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/util/retry.dart';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
-import 'package:crossdart/src/version.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 final _logger = new Logger("pub_retriever");
 
@@ -36,7 +36,7 @@ class PubRetriever {
       }));
       var packages = pageOfPackageInfos.map((packageMap) {
         return packageMap["versions"].map((version) {
-          return new PackageInfo(packageMap["name"], new Version(version));
+          return new PackageInfo(packageMap["name"], new Version.parse(version));
         });
       }).expand((i) => i);
       if (packages.every((p) => _currentList.contains(p))) {

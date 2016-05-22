@@ -16,14 +16,11 @@ class PackageUploader {
   final Storage storage;
   PackageUploader(this.config, this.storage);
 
-//  Future<Null> uploadErroredPackages(Iterable<Package> packages) async {
-//    await Future.wait(packages.map((package) async {
-//      _logger.info("Uploading error log file for $package to GCS");
-//      var logFile = new File(p.join(package.logFile(config)));
-//      var path = p.join(config.gcsPrefix, package.name, package.version.toString(), "log.txt");
-//      return storage.insertFile(path, logFile);
-//    }));
-//  }
+  Future<Null> uploadErroredPackage(PackageInfo packageInfo) async {
+    _logger.info("Uploading error log file for $packageInfo to GCS");
+    var logFile = new File(p.join(packageInfo.logPath(config)));
+    return storage.insertFile(packageInfo.logUrl(config), logFile);
+  }
 
   Future<Null> uploadSuccessfulPackages(Iterable<PackageInfo> packageInfos) async {
     for (var packageInfo in packageInfos) {

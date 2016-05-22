@@ -37,7 +37,7 @@ Future main(args) async {
 
 Future runInstaller(Config config) async {
   var dbPackageLoader = new DbPackageLoader(config);
-  var erroredPackageInfos = await dbPackageLoader.getErroredPackageInfos();
+  var erroredPackageInfos = await dbPackageLoader.getErroredPackageInfos(null);
   List<PackageInfo> packageInfos = (await dbPackageLoader.getAllPackageInfos()).where((p) {
     return !p.isSdk && p.getDirectoryInPubCache(config) == null && !erroredPackageInfos.contains(p);
   }).toList();

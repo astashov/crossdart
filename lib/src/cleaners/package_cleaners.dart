@@ -7,7 +7,7 @@ import 'package:crossdart/src/package_info.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart' as yaml;
-import 'package:crossdart/src/version.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 final _logger = new Logger("package_cleaner");
 
@@ -46,7 +46,7 @@ class PackageCleaner {
           new File(p.join(config.dirroot, "pubspec.lock")).readAsStringSync())["packages"];
       var packages = new Set();
       lockfile.forEach((String key, Map<String, String> values) {
-        packages.add(new PackageInfo(key, new Version(values["version"])));
+        packages.add(new PackageInfo(key, new Version.parse(values["version"])));
       });
       _usedByCrossdartGeneratorPackagesMemoizer = packages;
     }

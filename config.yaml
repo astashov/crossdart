@@ -3,6 +3,7 @@ install_path: /Users/anton/crossdart-install
 output_path: /Users/anton/crossdart-out
 templates_path: /Users/anton/projects/mixbook/crossdart/templates
 pub_cache_path: /Users/anton/.pub-cache
+hosted_url: http://www.crossdart.info
 db_login: root
 db_password:
 db_host: localhost

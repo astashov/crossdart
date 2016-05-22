@@ -2,21 +2,22 @@ library crossdart.package_info;
 
 import 'dart:io';
 import 'dart:convert';
-import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/util.dart';
 import 'package:path/path.dart' as p;
+import 'package:pub_semver/pub_semver.dart';
 
 enum PackageSource { GIT, HOSTED, SDK }
-final Map<PackageSource, int> packageSourceIds = {PackageSource.GIT: 1, PackageSource.HOSTED: 2, PackageSource.SDK: 3};
+final Map<String, PackageSource> packageSourceMapping = {"GIT": PackageSource.GIT, "HOSTED": PackageSource.HOSTED, "SDK": PackageSource.SDK};
 
-class PackageInfo {
+class PackageInfo implements Comparable<PackageInfo> {
   final String name;
   final Version version;
   final int id;
   final PackageSource source;
+  final DateTime createdAt;
 
-  PackageInfo(this.name, this.version, {this.id, this.source});
+  PackageInfo(this.name, this.version, {this.id, this.source, this.createdAt});
 
   int get hashCode => hash([name, version]);
 
@@ -24,8 +25,28 @@ class PackageInfo {
       && name == other.name
       && version == other.version;
 
+  int compareTo(PackageInfo other) {
+    if (name == other.name) {
+      return version.compareTo(other.version);
+    } else {
+      return name.compareTo(other.name);
+    }
+  }
+
   String absolutePath(Config config) {
-    return p.join(config.outputPath, config.gcsPrefix, name, version.toPath());
+    return p.join(config.outputPath, config.gcsPrefix, name, version.toString());
+  }
+
+  String logPath(Config config) {
+    return p.join(config.outputPath, config.gcsPrefix, name, version.toString(), "log.txt");
+  }
+
+  String logUrl(Config config) {
+    return p.join(config.gcsPrefix, name, version.toString(), "log.txt");
+  }
+
+  String urlRoot(Config config) {
+    return p.join(config.gcsPrefix, name, version.toString());
   }
 
   Iterable<String> generatedPaths(Config config) {
@@ -86,10 +107,10 @@ class PackageInfo {
 
   factory PackageInfo.fromJson(String json) {
     final map = JSON.decode(json);
-    return new PackageInfo(map["name"], new Version(map["version"]));
+    return new PackageInfo(map["name"], new Version.parse(map["version"]));
   }
 
   factory PackageInfo.buildSdk(Config config) {
-    return new PackageInfo("sdk", new Version(config.sdk.sdkVersion));
+    return new PackageInfo("sdk", new Version.parse(config.sdk.sdkVersion));
   }
 }

@@ -7,16 +7,14 @@ import 'package:path/path.dart' as p;
 import 'package:crossdart/src/store/db_package_loader.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/package_info.dart';
+import 'package:crossdart/src/package.dart';
 
 class Generator404 {
   final Config _config;
   Generator404(this._config);
 
-  Future<Null> generate() async {
-    var dbPackageLoader = new DbPackageLoader(_config);
-    var packageInfos = await dbPackageLoader.getAllPackageInfos();
-    var erroredPackageInfos = await dbPackageLoader.getErroredPackageInfos();
-    var packagesJson = JSON.encode(_packageInfosMap(packageInfos));
+  Future<Null> generate(Iterable<Package> successPackages, Iterable<PackageInfo> erroredPackageInfos) async {
+    var packagesJson = JSON.encode(_packageInfosMap(successPackages));
     var erroredPackagesJson = JSON.encode(_packageInfosMap(erroredPackageInfos));
     var html = """
 <!doctype html>
@@ -51,7 +49,7 @@ class Generator404 {
 
   }
 
-  Map<String, List<String>> _packageInfosMap(Iterable<PackageInfo> packageInfos) {
+  Map<String, List<String>> _packageInfosMap(Iterable packageInfos) {
     return packageInfos.fold({}, (memo, pi) {
       if (memo[pi.name] == null) {
         memo[pi.name] = [];

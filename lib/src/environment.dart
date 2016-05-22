@@ -6,12 +6,12 @@ import 'dart:async';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/config.dart';
-import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/installer/installer.dart';
 import 'package:sqljocky/sqljocky.dart';
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
 import 'package:package_config/discovery.dart' as packages_discovery;
+import 'package:pub_semver/pub_semver.dart';
 
 Logger _logger = new Logger("environment");
 
@@ -49,7 +49,7 @@ class Environment {
 
 Future<Environment> buildEnvironment(Config config, [PackageInfo mainPackageInfo, SendPort sender]) async {
   _logger.info("Building environment");
-  var sdkPackageInfo = new PackageInfo("sdk", new Version(config.sdk.sdkVersion));
+  var sdkPackageInfo = new PackageInfo("sdk", new Version.parse(config.sdk.sdkVersion));
   _copySdkToPackagesRoot(config);
 
   var sdk = await buildSdkFromFileSystem(config, sdkPackageInfo);
@@ -61,7 +61,7 @@ Future<Environment> buildEnvironment(Config config, [PackageInfo mainPackageInfo
     var dir = new Directory.fromUri(packagesDiscovery[name]).parent.path;
     if (config.projectPath == null || !dir.contains(config.projectPath)) {
       var version = path.basename(dir).replaceFirst("${name}-", "");
-      var packageInfo = new PackageInfo(name, new Version(version));
+      var packageInfo = new PackageInfo(name, new Version.parse(version));
       try {
         var package = await buildCustomPackageFromFileSystem(config, packageInfo);
         customPackages.add(package);

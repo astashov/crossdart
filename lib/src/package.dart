@@ -3,10 +3,8 @@ library crossdart.package;
 import 'dart:io';
 import 'dart:async';
 import 'package:crossdart/src/db_pool.dart';
-import 'package:crossdart/src/util/map.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/environment.dart';
-import 'package:crossdart/src/version.dart';
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/util.dart';
 import 'package:crossdart/src/store.dart';
@@ -15,13 +13,14 @@ import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 import 'package:crossdart/src/installer/installer.dart';
 import 'package:logging/logging.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 Logger _logger = new Logger("package");
 
 //TODO: Add package type
 //enum PackageType { IO, HTML }
 
-abstract class Package {
+abstract class Package implements Comparable<Package> {
   final PackageInfo packageInfo;
   //final PackageType type;
   final String description;
@@ -40,7 +39,9 @@ abstract class Package {
   String get name => packageInfo.name;
   Version get version => packageInfo.version;
   int get id => packageInfo.id;
+  DateTime get createdAt => packageInfo.createdAt;
   PackageSource get source => packageInfo.source;
+  String get dirname => packageInfo.dirname;
 
   String get lib;
   Iterable<Package> dependencies(Environment environment);
@@ -77,6 +78,10 @@ abstract class Package {
 
   int get hashCode => hash([packageInfo]);
   bool operator ==(other) => other is Package && packageInfo == other.packageInfo;
+
+  int compareTo(Package other) {
+    return packageInfo.compareTo(other.packageInfo);
+  }
 }
 
 
@@ -216,9 +221,9 @@ Future<Package> buildFromDatabase(Config config, PackageInfo packageInfo) async 
     var paths = (await (await dbPool(config).query("""
         SELECT DISTINCT path FROM entities WHERE package_id = ${row.id} AND type = 'Reference'
     """)).toList()).map((r) => r.path);
-    var source = key(packageSourceIds, row.source_type);
+    var source = packageSourceMapping[row.source_type];
     if (packageInfo.isSdk) {
-      return new Sdk(config, packageInfo.update(id: row.id, source: key(packageSourceIds, row.source_type)), null, paths);
+      return new Sdk(config, packageInfo.update(id: row.id, source: packageSourceMapping[row.source_type]), null, paths);
     } else {
       return new CustomPackage(config, packageInfo.update(id: row.id, source: source), null, paths);
     }
@@ -249,7 +254,7 @@ Project buildProjectFromFileSystem(Config config) {
     return file.path.replaceAll(lib, "").replaceFirst(new RegExp(r"^/"), "");
   });
 
-  return new Project(config, new PackageInfo("project", new Version("")), null, paths);
+  return new Project(config, new PackageInfo("project", new Version.parse("0.0.1")), null, paths);
 }
 
 bool _isDartFile(FileSystemEntity f) {

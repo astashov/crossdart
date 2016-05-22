@@ -43,7 +43,7 @@ class Location {
       }
       return result;
     } else if (package is Sdk || package.source == PackageSource.HOSTED) {
-      var result = p.join("http://crossdart.info", config.gcsPrefix, package.name, package.version.toPath(), "${path}.html");
+      var result = p.join("http://crossdart.info", config.gcsPrefix, package.name, package.version.toString(), "${path}.html");
       if (lineNumber != null) {
         result += "#line-${lineNumber}";
       }
@@ -78,7 +78,7 @@ class Location {
     return result;
   }
 
-  String get _versionPart => package.version != null ? package.version.toPath() : "unknown";
+  String get _versionPart => package.version != null ? package.version.toString() : "unknown";
 
   String toString() {
     return "<Location ${toMap()}>";
