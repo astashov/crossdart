@@ -85,6 +85,8 @@ class ParsePackagesArgs extends Args {
 
   ParsePackagesArgs(List<String> args) : super(args) {
     addSdkArgsOptions();
+    parser.addOption(Config.OUTPUT_PATH, help: "Output path");
+    parser.addOption(Config.INSTALL_PATH, help: "Install path");
     parser.addOption(Config.PART, help: "What part of total results will be handled. Format - n/m. E.g. 1/4 means it will handle the first quarter of all the packages. Default is 1/1.", defaultsTo: "1/1");
   }
 }

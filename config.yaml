@@ -13,4 +13,4 @@ bucket: www.crossdart.info
 gcs_prefix: p
 gc_project_name: manifest-craft-100803
 gc_zone: us-central1-f
-gc_group_name: crossdart-parsers
+gc_group_name: crossdart-package-generators

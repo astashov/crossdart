@@ -41,6 +41,7 @@ class Config {
   static const String PROJECT_PATH = "projectpath";
   static const String PUB_CACHE_PATH = "pubcachepath";
   static const String PART = "part";
+  static const String INSTALL_PATH = "installpath";
 
   Config._({
     this.dirroot,
@@ -73,6 +74,7 @@ class Config {
       String sdkPath,
       String projectPath,
       bool isDbUsed,
+      String installPath,
       String outputPath}) {
     dirroot ??= Directory.current.path;
     configFile ??= path.join(dirroot, "config.yaml");
@@ -86,7 +88,7 @@ class Config {
     return new Config._(
         dirroot: dirroot,
         sdkPath: configValues["sdk"],
-        installPath: configValues["install_path"],
+        installPath: installPath ?? configValues["install_path"],
         outputPath: outputPath ?? configValues["output_path"],
         templatesPath: configValues["templates_path"],
         projectPath: projectPath,
@@ -98,7 +100,7 @@ class Config {
         dbPort: configValues["db_port"],
         dbName: configValues["db_name"],
         hostedUrl: configValues["hosted_url"],
-        part: part,
+        part: part ?? "1/1",
         bucket: configValues["bucket"],
         gcsPrefix: configValues["gcs_prefix"],
         gcProjectName: configValues["gc_project_name"],

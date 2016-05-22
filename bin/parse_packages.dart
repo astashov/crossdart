@@ -75,7 +75,12 @@ class _ParsePackages {
     }
     var results = parsePackagesArgs.results;
 
-    var config = new Config.buildFromFiles(dirroot: results[Config.DIR_ROOT], isDbUsed: true, part: results[Config.PART]);
+    var config = new Config.buildFromFiles(
+        dirroot: results[Config.DIR_ROOT],
+        isDbUsed: true,
+        part: results[Config.PART],
+        installPath: results[Config.INSTALL_PATH],
+        outputPath: results[Config.OUTPUT_PATH]);
     var storage = new Storage(config);
     return new _ParsePackages(
         config,
@@ -108,7 +113,7 @@ class _ParsePackages {
       return allPackageInfos.contains(packageInfo) && generatedPackageInfos.contains(packageInfo);
     });
     _logger.info("The number of the new packages - ${packageInfos.length}");
-    var shard = await getShard(config);
+    var shard = (await getShard(config)).applyPart(config.currentPart, config.totalParts);
     _logger.info("Shard: $shard");
     var shardedPackages = shard.part(packageInfos);
     return shardedPackages.getRange(0, min(20, shardedPackages.length));

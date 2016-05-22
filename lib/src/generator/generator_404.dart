@@ -4,7 +4,6 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 import 'package:path/path.dart' as p;
-import 'package:crossdart/src/store/db_package_loader.dart';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/package.dart';

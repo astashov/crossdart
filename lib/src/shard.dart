@@ -25,7 +25,6 @@ import 'package:crossdart/src/util/iterable.dart';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:googleapis/compute/v1.dart';
 import 'package:logging/logging.dart';
-//import 'package:s/anton/.pub-cache/hosted/pub.dartlang.org/_discoveryapis_commons-0.1.3/lib/src/requests.dart:183
 
 final _logger = new Logger("shard");
 
@@ -39,19 +38,19 @@ Future<Shard> getShard(Config config) async {
       var hostname = Platform.localHostname;
       var index = list.indexOf(hostname);
       if (index >= 0) {
-        return new Shard(index, list.length);
+        return new Shard(index + 1, list.length);
       } else {
-        return new Shard(0, 1);
+        return new Shard(1, 1);
       }
     } on DetailedApiRequestError catch (e, __) {
       if (e.status == 404) {
-        return new Shard(0, 1);
+        return new Shard(1, 1);
       } else {
         rethrow;
       }
     }
   } else {
-    return new Shard(0, 1);
+    return new Shard(1, 1);
   }
 }
 
@@ -80,7 +79,11 @@ class Shard {
   final int total;
   Shard(this.index, this.total);
   List part(List list) {
-    return inGroups(list, total).toList()[index].toList();
+    return inGroups(list, total).toList()[index - 1].toList();
+  }
+
+  Shard applyPart(int currentIndex, int totalIndex) {
+    return new Shard(index * totalIndex - (totalIndex - currentIndex), total * totalIndex);
   }
 
   String toString() => "<Shard index: $index, total: $total>";
