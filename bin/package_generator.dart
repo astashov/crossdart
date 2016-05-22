@@ -1,6 +1,6 @@
 #!/usr/bin/env dart
 
-library parse_packages;
+library package_generator;
 
 import 'dart:io';
 import 'dart:async';

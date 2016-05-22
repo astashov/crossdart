@@ -157,6 +157,4 @@ class MenuItem {
   }
 }
 
-final Iterable<String> allIndexUrls = []
-  ..addAll(MenuItem.all.map((mi) => mi.url))
-  ..add("index.json");
+final Iterable<String> allIndexUrls = []..addAll(MenuItem.all.map((mi) => mi.url));

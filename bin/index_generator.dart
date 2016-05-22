@@ -1,6 +1,6 @@
 #!/usr/bin/env dart
 
-library generate_packages_html;
+library index_generator;
 
 import 'dart:io';
 import 'dart:async';
@@ -15,6 +15,8 @@ import 'package:path/path.dart' as p;
 import 'package:crossdart/src/generator/generator_404.dart';
 import 'package:crossdart/src/index_generator.dart';
 import 'package:crossdart/src/package_info.dart';
+import 'package:crossdart/src/storage.dart';
+import 'package:crossdart/src/uploaders/index_uploader.dart';
 
 Logger _logger = new Logger("generate_html");
 
@@ -40,10 +42,14 @@ class _IndexGenerator {
   Set<PackageInfo> erroredPackages = new Set();
   final DbPackageLoader dbPackageLoader;
   final Config config;
+  final Storage storage;
+  final IndexUploader indexUploader;
 
   _IndexGenerator._(
     this.config,
-    this.dbPackageLoader);
+    this.dbPackageLoader,
+    this.storage,
+    this.indexUploader);
 
   factory _IndexGenerator.build(List<String> args) {
     var generatePackagesHtml = new GeneratePackagesHtmlArgs(args);
@@ -56,8 +62,10 @@ class _IndexGenerator {
     new Directory(p.join(config.outputPath, config.gcsPrefix)).createSync(recursive: true);
 
     var dbPackageLoader = new DbPackageLoader(config);
+    var storage = new Storage(config);
+    var indexUploader = new IndexUploader(config, storage);
 
-    return new _IndexGenerator._(config, dbPackageLoader);
+    return new _IndexGenerator._(config, dbPackageLoader, storage, indexUploader);
   }
 
   Future run() async {
@@ -81,6 +89,9 @@ class _IndexGenerator {
       if (newErroredPackages.isNotEmpty) {
         await indexGenerator.generateErrors(erroredPackages);
       }
+
+      await indexUploader.uploadIndexFiles();
+
       lastDate = new DateTime.now().toUtc();
     }
   }

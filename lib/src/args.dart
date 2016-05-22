@@ -79,7 +79,7 @@ class MigrationArgs extends Args {
 class ParsePackagesArgs extends Args {
   List<String> get requiredKeys => [];
   String get description {
-    return "parse_packages.dart analyzes all the packages from the pub " +
+    return "package_generator.dart analyzes all the packages from the pub " +
         "and stores the analyze information in the database.";
   }
 
@@ -131,7 +131,7 @@ class CrossdartArgs extends Args {
 class GeneratePackagesHtmlArgs extends Args {
   List<String> get requiredKeys => [];
   String get description {
-    return "generate_packages_html.dart reads the analysis data from the database, " +
+    return "index_generator.dart reads the analysis data from the database, " +
         "and generates HTML files with the hyperlinked source code.";
   }
 
