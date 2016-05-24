@@ -7,6 +7,8 @@ description:
   the Chrome Extension (also included) to add links to the declarations
   on Github
 homepage: https://www.crossdart.info
+environment:
+  sdk: ">=1.16.0 <2.0.0"
 dependencies:
   args: '>=0.12.2'
   analyzer: '>=0.25.0'
