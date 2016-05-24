@@ -13,11 +13,9 @@ final Map<String, PackageSource> packageSourceMapping = {"GIT": PackageSource.GI
 class PackageInfo implements Comparable<PackageInfo> {
   final String name;
   final Version version;
-  final int id;
   final PackageSource source;
-  final DateTime createdAt;
 
-  PackageInfo(this.name, this.version, {this.id, this.source, this.createdAt});
+  PackageInfo(this.name, this.version, {this.source});
 
   int get hashCode => hash([name, version]);
 
@@ -34,26 +32,19 @@ class PackageInfo implements Comparable<PackageInfo> {
   }
 
   String absolutePath(Config config) {
-    return p.join(config.outputPath, config.gcsPrefix, name, version.toString());
+    return p.join(config.output, config.urlPathPrefix, name, version.toString());
   }
 
   String logPath(Config config) {
-    return p.join(config.outputPath, config.gcsPrefix, name, version.toString(), "log.txt");
+    return p.join(config.output, config.urlPathPrefix, name, version.toString(), "log.txt");
   }
 
   String logUrl(Config config) {
-    return p.join(config.gcsPrefix, name, version.toString(), "log.txt");
+    return p.join(config.urlPathPrefix, name, version.toString(), "log.txt");
   }
 
   String urlRoot(Config config) {
-    return p.join(config.gcsPrefix, name, version.toString());
-  }
-
-  Iterable<String> generatedPaths(Config config) {
-    return new Directory(absolutePath(config))
-        .listSync(recursive: true)
-        .where((f) => f is File && f.path.endsWith(".html"))
-        .map((s) => s.path.replaceAll(config.outputPath, "").replaceAll(new RegExp(r".html$"), ""));
+    return "${config.hostedUrl}/${p.join(config.urlPathPrefix, name, version.toString())}";
   }
 
   String get dirname => "${name}-${version}";
@@ -66,18 +57,17 @@ class PackageInfo implements Comparable<PackageInfo> {
     return name == "sdk";
   }
 
-  PackageInfo update({String name, Version version, int id, PackageSource source}) {
+  PackageInfo update({String name, Version version, PackageSource source}) {
     return new PackageInfo(
         name == null ? this.name : name,
         version == null ? this.version : version,
-        id: id == null ? this.id : id,
         source: source == null ? this.source : source);
   }
 
   String getDirectoryInPubCache(Config config) {
     if (isSdk) {
       if (version == config.sdk.sdkVersion) {
-        return config.sdkPath;
+        return config.dartSdk;
       } else {
         return p.join(config.sdkPackagesRoot, dirname);
       }
@@ -98,7 +88,7 @@ class PackageInfo implements Comparable<PackageInfo> {
 
 
   Map<String, String> toMap() {
-    return {"name": name, "version": version.toString(), "id": id};
+    return {"name": name, "version": version.toString()};
   }
 
   String toJson() {

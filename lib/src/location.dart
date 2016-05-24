@@ -32,7 +32,7 @@ class Location {
   }
 
   String get htmlPath {
-    return "/" + p.join("p", package.name, _versionPart, "${path}.html");
+    return "${config.urlPrefix}/" + p.join(package.name, _versionPart, "${path}.html");
   }
 
   String remotePath(int lineNumber, [String pubspecLockPath]) {
@@ -43,7 +43,7 @@ class Location {
       }
       return result;
     } else if (package is Sdk || package.source == PackageSource.HOSTED) {
-      var result = p.join("http://crossdart.info", config.gcsPrefix, package.name, package.version.toString(), "${path}.html");
+      var result = p.join("http://crossdart.info", config.urlPathPrefix, package.name, package.version.toString(), "${path}.html");
       if (lineNumber != null) {
         result += "#line-${lineNumber}";
       }
@@ -70,7 +70,7 @@ class Location {
   }
 
   String get writePath {
-    var result = p.join(config.outputPath, config.gcsPrefix, package.name, _versionPart);
+    var result = config.output;
     if (p.dirname(path) != ".") {
       result = p.join(result, p.dirname(path));
     }

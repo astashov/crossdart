@@ -38,7 +38,15 @@ body {
   text-decoration: underline;
 }
 
+.source-code .nav .link-to-home {
+  margin-right: 0.5em;
+}
+
 .source-code .nav .link-to-pub {
+  margin-left: 0.5em;
+}
+
+.source-code .nav .link-to-docs {
   margin-left: 0.5em;
 }
 
@@ -275,217 +283,65 @@ body {
   border-bottom: 1px solid #e4e4e4;
 }
 
-.index-page {
-  font-family: Roboto, sans-serif;
-  font-size: 100%;
-  margin: 0 2em;
-}
-
-.index-page a:hover {
-  text-decoration: underline;
-}
-
-.index-page .header {
-  margin-top: 0.5em;
-  text-align: center;
-  font-size: 3em;
-  margin-bottom: 0;
-  line-height: 1em;
-}
-
-.index-page .subheader {
-  font-size: 1.5em;
-  color: silver;
-  font-weight: normal;
-  text-align: center;
-  margin-top: 0;
-  line-height: 1.5em;
-}
-
-.index-page .info {
-  position: absolute;
-  right: 2em;
-  top: 1em;
-  font-size: 14px;
-  text-align: right;
-}
-
-.index-page .search {
-  width: 50%;
-  margin: 0 auto;
-}
-
-.index-page .packages {
-  float: left;
-  width: 100%;
-}
-
-.index-page .package {
-  float: left;
-  margin-right: 1em;
-}
-
-.index-page .packages.is-hidden .package {
-  display: none;
-}
-
-.index-page .packages.is-hidden .package.is-visible {
-  display: block;
-}
-
-.package-page a:hover {
-  text-decoration: underline;
-}
-
-.package-page .header {
-  text-align: center;
-  font-size: 3em;
-  margin-top: 0.5em;
-  line-height: 1em;
-  margin-bottom: 0;
-}
-
-.package-page .top {
-  text-align: center;
-  margin-top: 1em;
-}
-
-.package-page .link-to-pub {
-  margin-right: 0.5em;
-}
-
-
-.package-page .version {
-  color: #039be5;
-}
-
-.package-page .version.is-selected {
-  font-weight: bold;
-  cursor: default;
-}
-
-.package-page .version:hover {
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.package-page .version.is-selected:hover {
-  text-decoration: none;
-  cursor: default;
-}
-
-.package-page .files {
-  float: left;
-  position: relative;
-  left: 50%;
-}
-
-.package-page .files-version {
-  position: relative;
-  left: -50%;
-  display: none;
-}
-
-.package-page .files-version--description {
-  margin: 1em;
-  font-size: 18px;
-  max-width: 600px;
-}
-
-.package-page .files-version--files {
-  margin: 1em;
-}
-
-.package-page .files-version.is-visible {
-  display: block;
-}
-
-.package-page .package-name {
-  color: #7D0F54;
-}
-
-.page-404 {
-  padding: 3em;
-}
-
-.page-404 .content {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.page-404 #packages,
-.page-404 #errored-packages {
-  display: none;
-}
-
-.page-404 .header {
-  color: silver;
-  text-align: center;
-  margin: 0;
-  padding: 0 0 0.3em;
-}
-
-.page-404 .text {
-  font-size: 3em;
-  text-align: center;
-}
-
-.page-404 .tips {
-  padding-top: 1em;
-  font-size: 1.2em;
-  line-height: 1.8em;
-}
-
 @media screen and (max-width: 750px) {
   .source-code .nav {
-      padding-left: 1em;
-      -webkit-text-size-adjust: 100%;
-      position: fixed;
-      left: 0;
-      top: 0;
-      right: 0;
-      background: white;
+    padding-left: 1em;
+    -webkit-text-size-adjust: 100%;
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    background: white;
+    font-size: 0.6em;
   }
 
   .source-code .nav--filetree-toggle {
-      display: block;
-      float: right;
-      padding-right: 1em;
-      color: #039BE5;
-      font-family: Roboto, sans-serif;
+    display: block;
+    float: right;
+    padding-right: 1em;
+    color: #039BE5;
+    font-family: Roboto, sans-serif;
   }
 
   .source-code .filetree {
-      display: none;
-      overflow: auto;
-      position: fixed;
+    display: none;
+    overflow: auto;
+    position: fixed;
   }
 
   .source-code .code {
-      position: static;
+    left: 40px;
+    font-family: 'Roboto Condensed', monospace;
+    font-size: 0.6em;
+  }
+
+  .source-code .lines {
+    font-family: 'Roboto Condensed', monospace;
+    font-size: 0.6em;
   }
 
   .source-code .content {
-      padding-top: 26px;
-      position: static;
+    padding-top: 26px;
+    position: static;
   }
 
   .source-code .is-filetree-visible .filetree {
-      display: block;
+    display: block;
   }
 
-  .source-code .code {
-      left: 0;
-      font-family: 'Open Sans Condensed', monospace;
-      font-size: 0.6em;
+  .source-code .wrapper {
+    top: 26px;
+    left: 0;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .source-code .is-filetree-visible .code {
-      left: 250px;
+  .source-code .is-filetree-visible .wrapper {
+    left: 250px;
   }
 
   .source-code .code .line {
-      width: 1em;
+    width: 1em;
   }
 }
 

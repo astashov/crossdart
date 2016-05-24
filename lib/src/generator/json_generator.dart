@@ -14,8 +14,8 @@ class JsonGenerator {
   JsonGenerator(this._environment, this._parsedData);
 
   void generate() {
-    var file = new File(p.join(_environment.config.outputPath, "crossdart.json")).openSync(mode: FileMode.WRITE);
-    var pubspecLockPath = p.join(_environment.config.projectPath, "pubspec.lock");
+    var file = new File(p.join(_environment.config.output, "crossdart.json")).openSync(mode: FileMode.WRITE);
+    var pubspecLockPath = p.join(_environment.config.input, "pubspec.lock");
     var result = {};
     _parsedData.files.forEach((String absolutePath, Set<Entity> entities) {
       var relativePath = p.join("lib", entities.first.location.package.relativePath(absolutePath));

@@ -1,5 +1,0 @@
-library crossdart.isolate_events;
-
-enum IsolateEvent {
-  START, START_PARSING, START_FILE_PARSING, FINISH_FILE_PARSING, FINISH_PARSING, FINISH, ERROR
-}
