@@ -1,12 +1,12 @@
 name: crossdart
-version: 0.1.4
+version: 0.2.0
 author: Anton Astashov <anton.astashov@gmail.com>
 description:
   Generates crossdart.info content.
   Also, allows to generate metadata for the project, and then use
   the Chrome Extension (also included) to add links to the declarations
   on Github
-homepage: http://crossdart.info
+homepage: https://www.crossdart.info
 dependencies:
   args: '>=0.12.2'
   analyzer: '>=0.25.0'
