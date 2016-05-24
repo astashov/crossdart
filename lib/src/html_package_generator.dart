@@ -49,7 +49,12 @@ class HtmlPackageGenerator {
       file.closeSync();
     });
 
-    var redirectUrl = this._parsedData.references.keys.first.location.htmlPath;
+    String redirectUrl;
+    if (_packages.length == 1 && _packages.first is Sdk) {
+      redirectUrl = this._parsedData.files[_packages.first.absolutePath("lib/core/list.dart")].first.location.htmlPath;
+    } else {
+      redirectUrl = this._parsedData.references.keys.first.location.htmlPath;
+    }
     new File(p.join(_config.output, "index.html")).writeAsStringSync("""
       <html>
         <head>

@@ -29,12 +29,20 @@ class Environment {
 Future<Environment> buildEnvironment(Config config) async {
   _logger.info("Building environment");
   var sdkPackageInfo = new PackageInfo("sdk", new Version.parse(config.sdk.sdkVersion));
-  //_copySdkToPackagesRoot(config);
 
   var sdk = await buildSdkFromFileSystem(config, sdkPackageInfo);
 
   var customPackages = [];
-  var packagesDiscovery = (await packages_discovery.loadPackagesFile(new Uri.file(config.packagesPath))).asMap();
+  Map<String, Uri> packagesDiscovery;
+
+  Package package;
+  if (config.input == config.dartSdk) {
+    package = sdk;
+    packagesDiscovery = {};
+  } else {
+    package = buildProjectFromFileSystem(config);
+    packagesDiscovery = (await packages_discovery.loadPackagesFile(new Uri.file(config.packagesPath))).asMap();
+  }
 
   for (var name in packagesDiscovery.keys) {
     var dir = new Directory.fromUri(packagesDiscovery[name]).parent.path;
@@ -48,8 +56,9 @@ Future<Environment> buildEnvironment(Config config) async {
 
   List<Package> packages = []..add(sdk)..addAll(customPackages);
 
-  var package = buildProjectFromFileSystem(config);
-  packages.add(package);
+  if (package is! Sdk) {
+    packages.add(package);
+  }
 
   var packagesByFiles = packages.fold({}, (Map<String, Package> memo, Package package) {
     package.absolutePaths.forEach((file) {
@@ -60,9 +69,4 @@ Future<Environment> buildEnvironment(Config config) async {
 
   _logger.info("Finished loading environment");
   return new Environment(config, package, customPackages, sdk, packagesByFiles);
-}
-
-void _copySdkToPackagesRoot(Config config) {
-  new Directory(config.sdkPackagesRoot).createSync(recursive: true);
-  Process.runSync("cp", ["-r", config.dartSdk, path.join(config.sdkPackagesRoot, "sdk-${config.sdk.sdkVersion}")]);
 }

@@ -34,7 +34,6 @@ abstract class Package implements Comparable<Package> {
   String get dirname => packageInfo.dirname;
 
   String get lib;
-  Iterable<Package> dependencies(Environment environment);
 
   Iterable<String> get absolutePaths {
     return paths.map(absolutePath);
@@ -84,18 +83,9 @@ class Sdk extends Package {
       Iterable<String> paths) :
       super(config, packageInfo, paths);
 
-  Iterable<Package> _dependencies;
-  Iterable<Package> dependencies(Environment environment) {
-    if (_dependencies == null) {
-      var names = ["barback", "stack_trace"];
-      _dependencies = environment.customPackages.where((cp) => names.contains(cp.packageInfo.name));
-    }
-    return _dependencies;
-  }
-
   String get lib {
     if (packageInfo.version.toString() == config.sdk.sdkVersion) {
-      return p.join(config.dartSdk, "lib");
+      return p.join(config.dartSdk);
     } else {
       return p.join(config.sdkPackagesRoot, packageInfo.dirname, "lib");
     }
@@ -115,10 +105,6 @@ class Project extends Package {
       PackageInfo packageInfo,
       Iterable<String> paths) :
       super(config, packageInfo, paths);
-
-  Iterable<Package> dependencies(Environment environment) {
-    return environment.customPackages.where((cp) => ["barback", "stack_trace"].contains(cp.packageInfo.name));
-  }
 
   String get _root => config.input;
   String get lib => p.join(_root, "lib");
@@ -151,28 +137,6 @@ class CustomPackage extends Package {
 
   String get lib => p.join(_root, "lib");
 
-  List<Package> _dependencies;
-  Iterable<Package> dependencies(Environment environment) {
-    if (_dependencies == null) {
-      _dependencies = [environment.sdk];
-      var pubspecPath = p.join(_root, "pubspec.yaml");
-      var file = new File(pubspecPath);
-      if (file.existsSync()) {
-        var yaml = loadYaml(file.readAsStringSync());
-        var dependencies = yaml["dependencies"];
-        if (dependencies != null) {
-          dependencies.forEach((name, version) {
-            var package = environment.customPackages.firstWhere((cp) => cp.packageInfo.name == name, orElse: () => null);
-            if (package != null) {
-              _dependencies.add(package);
-            }
-          });
-        }
-      }
-    }
-    return _dependencies;
-  }
-
   CustomPackage update({Config config, PackageInfo packageInfo, Iterable<String> paths}) {
     return new CustomPackage(
         config != null ? config : this.config,
@@ -190,7 +154,7 @@ Future<Package> buildFromFileSystem(Config config, PackageInfo packageInfo) {
 }
 
 Future<Sdk> buildSdkFromFileSystem(Config config, PackageInfo packageInfo) async {
-  String lib = p.join(packageInfo.getDirectoryInPubCache(config), "lib");
+  String lib = packageInfo.getDirectoryInPubCache(config);
   var source = PackageSource.SDK;
 
   var paths = new Directory(lib).listSync(recursive: true).where(_isDartFile).map((file) {

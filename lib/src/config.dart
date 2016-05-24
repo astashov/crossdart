@@ -44,8 +44,11 @@ class Config {
       OutputFormat outputFormat}) async {
     input ??= Directory.current.path;
     outputFormat ??= OutputFormat.HTML;
-    var packagesDiscovery = (await packages_discovery.loadPackagesFile(new Uri.file(path.join(input, ".packages")))).asMap();
-    var pubCachePath = new File.fromUri(packagesDiscovery.values.first).parent.parent.parent.parent.path;
+    String pubCachePath;
+    if (input != dartSdk) {
+      var packagesDiscovery = (await packages_discovery.loadPackagesFile(new Uri.file(path.join(input, ".packages")))).asMap();
+      pubCachePath = new File.fromUri(packagesDiscovery.values.first).parent.parent.parent.parent.path;
+    }
     return new Config._(
         dartSdk: dartSdk,
         input: input,

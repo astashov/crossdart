@@ -66,7 +66,7 @@ class PackageInfo implements Comparable<PackageInfo> {
 
   String getDirectoryInPubCache(Config config) {
     if (isSdk) {
-      if (version == config.sdk.sdkVersion) {
+      if (version == new Version.parse(config.sdk.sdkVersion)) {
         return config.dartSdk;
       } else {
         return p.join(config.sdkPackagesRoot, dirname);
