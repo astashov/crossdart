@@ -34,7 +34,7 @@ Future main(args) async {
   var environment = await buildEnvironment(config);
   var parsedData = await new Parser(environment).parseProject();
   if (config.outputFormat == OutputFormat.JSON) {
-    new JsonGenerator(environment, parsedData).generate();
+    new JsonGenerator(environment, parsedData).generate(isForGithub: false);
   } else {
     await new HtmlPackageGenerator(config, [environment.package], parsedData).generateProject();
   }

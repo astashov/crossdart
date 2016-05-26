@@ -35,15 +35,9 @@ class Location {
     return "${config.urlPrefix}/" + p.join(package.name, _versionPart, "${path}.html");
   }
 
-  String remotePath(int lineNumber, [String pubspecLockPath]) {
-    if (package is Project) {
-      var result = p.join("lib", path);
-      if (lineNumber != null) {
-        result += "#L${lineNumber + 1}";
-      }
-      return result;
-    } else if (package is Sdk || package.source == PackageSource.HOSTED) {
-      var result = p.join("http://crossdart.info", config.urlPathPrefix, package.name, package.version.toString(), "${path}.html");
+  String _remotePath(int lineNumber, String pubspecLockPath, bool isSdk) {
+    if (package is Project || package is Sdk || package.source == PackageSource.HOSTED) {
+      var result = p.join(config.urlPrefix, package.name, package.version.toString(), "${path}.html");
       if (lineNumber != null) {
         result += "#line-${lineNumber}";
       }
@@ -66,6 +60,22 @@ class Location {
       }
     } else {
       return null;
+    }
+  }
+
+  String crossdartRemotePath(int lineNumber, String pubspecLockPath, bool isSdk) {
+    return _remotePath(lineNumber, pubspecLockPath, isSdk);
+  }
+
+  String githubRemotePath(int lineNumber, String pubspecLockPath, bool isSdk) {
+    if (package is Project || (isSdk && package is Sdk)) {
+      var result = isSdk ? path : p.join("lib", path);
+      if (lineNumber != null) {
+        result += "#L${lineNumber + 1}";
+      }
+      return result;
+    } else {
+      return _remotePath(lineNumber, pubspecLockPath, isSdk);
     }
   }
 
