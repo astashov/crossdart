@@ -159,4 +159,4 @@ packages:
     description: yaml
     source: hosted
     version: "2.1.7"
-sdk: ">=1.14.0-any <2.0.0"
+sdk: ">=1.16.0 <2.0.0"
