@@ -31,12 +31,6 @@ packages:
     description: csslib
     source: hosted
     version: "0.12.2"
-  frappe:
-    description:
-      name: frappe
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.4.0+6"
   glob:
     description: glob
     source: hosted
@@ -69,14 +63,6 @@ packages:
     description: logging
     source: hosted
     version: "0.11.2"
-  matcher:
-    description: matcher
-    source: hosted
-    version: "0.12.0+1"
-  options_file:
-    description: options_file
-    source: hosted
-    version: "0.11.0"
   package_config:
     description: package_config
     source: hosted
@@ -99,10 +85,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.2.4"
-  quiver:
-    description: quiver
-    source: hosted
-    version: "0.21.4"
   resource:
     description:
       name: resource
@@ -113,30 +95,14 @@ packages:
     description: source_span
     source: hosted
     version: "1.2.1"
-  sqljocky:
-    description: sqljocky
-    source: hosted
-    version: "0.14.1"
   stack_trace:
     description: stack_trace
     source: hosted
     version: "1.5.0"
-  stream_transformers:
-    description:
-      name: stream_transformers
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.3.0+3"
   string_scanner:
     description: string_scanner
     source: hosted
     version: "0.1.4"
-  tasks:
-    description:
-      name: tasks
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.1.0"
   typed_data:
     description:
       name: typed_data
