@@ -75,6 +75,6 @@ class CrossdartArgs extends Args {
     parser.addOption(Config.HOSTED_URL, help: "Output format");
     parser.addOption(Config.DART_SDK, help: "Output format");
     parser.addOption(Config.OUTPUT_FORMAT, help: "Output format");
-    parser.addOption(Config.URL_PREFIX_PATH);
+    parser.addOption(Config.URL_PATH_PREFIX);
   }
 }

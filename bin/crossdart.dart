@@ -22,21 +22,28 @@ Future main(args) async {
   }
   var results = crossdartArgs.results;
 
+  OutputFormat outputFormat;
+  switch (results[Config.OUTPUT_FORMAT]) {
+    case "json": outputFormat = OutputFormat.JSON; break;
+    case "github": outputFormat = OutputFormat.GITHUB; break;
+    default: outputFormat = OutputFormat.HTML; break;
+  }
+
   var config = await Config.build(
       dartSdk: results[Config.DART_SDK],
       input: results[Config.INPUT],
       output: results[Config.OUTPUT],
       hostedUrl: results[Config.HOSTED_URL],
-      urlPathPrefix: results[Config.URL_PREFIX_PATH],
-      outputFormat: results[Config.OUTPUT_FORMAT] == "json" ? OutputFormat.JSON : OutputFormat.HTML);
+      urlPathPrefix: results[Config.URL_PATH_PREFIX],
+      outputFormat: outputFormat);
   logging.initialize();
 
   var environment = await buildEnvironment(config);
   var parsedData = await new Parser(environment).parseProject();
-  if (config.outputFormat == OutputFormat.JSON) {
-    new JsonGenerator(environment, parsedData).generate(isForGithub: false);
-  } else {
+  if (config.outputFormat == OutputFormat.HTML) {
     await new HtmlPackageGenerator(config, [environment.package], parsedData).generateProject();
+  } else {
+    new JsonGenerator(environment, parsedData).generate(isForGithub: config.outputFormat == OutputFormat.GITHUB);
   }
 
   exit(0);

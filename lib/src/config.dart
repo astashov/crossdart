@@ -8,7 +8,7 @@ import 'package:analyzer/src/generated/sdk_io.dart' show DirectoryBasedDartSdk;
 import 'package:package_config/discovery.dart' as packages_discovery;
 import 'dart:async';
 
-enum OutputFormat { JSON, HTML }
+enum OutputFormat { JSON, HTML, GITHUB }
 
 class Config {
   final String dartSdk;
@@ -23,7 +23,7 @@ class Config {
   static const String INPUT = "input";
   static const String OUTPUT = "output";
   static const String HOSTED_URL = "hosted-url";
-  static const String URL_PREFIX_PATH = "url-prefix-path";
+  static const String URL_PATH_PREFIX = "url-path-prefix";
   static const String OUTPUT_FORMAT = "output-format";
 
   Config._({
