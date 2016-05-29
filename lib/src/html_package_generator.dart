@@ -75,7 +75,7 @@ class HtmlPackageGenerator {
     new Directory(p.join(_config.output, "assets")).createSync(recursive: true);
     for (var filename in ["code.js", "highlight.pack.js", "style.css", "favicon.png"]) {
       var resource = new r.Resource("package:crossdart/resources/${filename}");
-      new File(p.join(_config.output, "assets", filename)).writeAsStringSync(await resource.readAsString());
+      new File(p.join(_config.output, "assets", filename)).writeAsBytesSync(await resource.readAsBytes());
     }
   }
 
