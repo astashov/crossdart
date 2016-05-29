@@ -7,6 +7,7 @@ import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/java_io.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/source_io.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:crossdart/src/config.dart';
 import 'package:logging/logging.dart' as logging;
@@ -23,7 +24,7 @@ class CompilationUnitResolver {
   factory CompilationUnitResolver.build(Config config, Iterable<String> absolutePaths) {
     var resolvers = [
         new DartUriResolver(config.sdk),
-        new PackageUriResolver([new JavaFile(config.packagesPath)]),
+        new PackageUriResolver([new JavaFile(p.join(config.input, "packages"))]),
         new FileUriResolver()];
 
     var analysisContext = AnalysisEngine.instance.createAnalysisContext();
