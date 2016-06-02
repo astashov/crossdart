@@ -7,10 +7,15 @@ import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/java_io.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/source_io.dart';
+import 'package:analyzer/source/package_map_resolver.dart';
 import 'package:path/path.dart' as p;
 
 import 'package:crossdart/src/config.dart';
 import 'package:logging/logging.dart' as logging;
+import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:analyzer/file_system/file_system.dart' as fs;
+import 'package:analyzer/source/package_map_provider.dart';
+import 'package:analyzer/source/pub_package_map_provider.dart';
 
 var _logger = new logging.Logger("parser.compilation_unit_resolver");
 
@@ -22,9 +27,14 @@ class CompilationUnitResolver {
   CompilationUnitResolver._(this._analysisContext, this._librariesByParts, this.absolutePaths);
 
   factory CompilationUnitResolver.build(Config config, Iterable<String> absolutePaths) {
+    fs.Resource cwd = PhysicalResourceProvider.INSTANCE.getResource(config.input);
+    PubPackageMapProvider pubPackageMapProvider = new PubPackageMapProvider(PhysicalResourceProvider.INSTANCE, config.sdk);
+    PackageMapInfo packageMapInfo = pubPackageMapProvider.computePackageMap(cwd);
+    Map<String, List<fs.Folder>> packageMap = packageMapInfo.packageMap;
+
     var resolvers = [
         new DartUriResolver(config.sdk),
-        new PackageUriResolver([new JavaFile(p.join(config.input, "packages"))]),
+        new PackageMapUriResolver(PhysicalResourceProvider.INSTANCE, packageMap),
         new FileUriResolver()];
 
     var analysisContext = AnalysisEngine.instance.createAnalysisContext();
