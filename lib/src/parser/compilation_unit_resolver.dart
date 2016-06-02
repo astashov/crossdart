@@ -8,7 +8,6 @@ import 'package:analyzer/src/generated/java_io.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/source_io.dart';
 import 'package:analyzer/source/package_map_resolver.dart';
-import 'package:path/path.dart' as p;
 
 import 'package:crossdart/src/config.dart';
 import 'package:logging/logging.dart' as logging;
@@ -27,15 +26,16 @@ class CompilationUnitResolver {
   CompilationUnitResolver._(this._analysisContext, this._librariesByParts, this.absolutePaths);
 
   factory CompilationUnitResolver.build(Config config, Iterable<String> absolutePaths) {
+    var resolvers = [new DartUriResolver(config.sdk), new FileUriResolver()];
+
     fs.Resource cwd = PhysicalResourceProvider.INSTANCE.getResource(config.input);
     PubPackageMapProvider pubPackageMapProvider = new PubPackageMapProvider(PhysicalResourceProvider.INSTANCE, config.sdk);
     PackageMapInfo packageMapInfo = pubPackageMapProvider.computePackageMap(cwd);
     Map<String, List<fs.Folder>> packageMap = packageMapInfo.packageMap;
 
-    var resolvers = [
-        new DartUriResolver(config.sdk),
-        new PackageMapUriResolver(PhysicalResourceProvider.INSTANCE, packageMap),
-        new FileUriResolver()];
+    if (packageMap != null) {
+      resolvers.add(new PackageMapUriResolver(PhysicalResourceProvider.INSTANCE, packageMap));
+    }
 
     var analysisContext = AnalysisEngine.instance.createAnalysisContext();
     analysisContext.sourceFactory = new SourceFactory(resolvers);
