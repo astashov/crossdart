@@ -58,3 +58,65 @@
   margin: 0;
   padding: 0;
 }
+
+.crossdart-loader {
+  position: absolute;
+  width: 1.2em;
+  height: 1.2em;
+  right: 10px;
+  bottom: 10px;
+  font-size: 10px;
+  text-indent: -9999em;
+  border-radius: 50%;
+  background: #ffffff;
+  background: linear-gradient(to right, #000 10%, rgba(255, 255, 255, 0) 42%);
+  animation: crossdart-loader 1s infinite linear;
+  transform: translateZ(0);
+}
+
+.crossdart-loader:before {
+  width: 50%;
+  height: 50%;
+  background: #000;
+  border-radius: 100% 0 0 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  content: '';
+}
+
+.crossdart-loader:after {
+  background: white;
+  width: 75%;
+  height: 75%;
+  border-radius: 50%;
+  content: '';
+  margin: auto;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+
+@-webkit-keyframes crossdart-loader {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+@keyframes crossdart-loader {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+

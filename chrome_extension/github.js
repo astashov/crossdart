@@ -11,6 +11,8 @@
     } else if (Path.isPull(pathname)) {
       this.type = Github.PULL_REQUEST;
       this.path = new PullPath(this);
+    } else {
+      throw "Unknown type for the pathname - " + pathname;
     }
   };
 
@@ -44,6 +46,6 @@
       url += (url.match(/\?/) ? "&" : "?");
       url += "access_token=" + Github.token;
     }
-    Request.get(url, callback, errorCallback);
+    Request.getJson(url, callback, errorCallback);
   };
 }());

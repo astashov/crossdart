@@ -2,7 +2,7 @@
   function applyTreeCrossdart(github, crossdartBaseUrl, crossdart) {
     github.path.getRealRef(function (ref) {
       var crossdartUrl = Path.join([crossdartBaseUrl, ref, "crossdart.json"]);
-      Request.get(crossdartUrl, function (json) {
+      Request.getJson(crossdartUrl, function (json) {
         crossdart.applyJson(json);
       }, Errors.showUrlError);
     }, Errors.showTokenError);
@@ -13,12 +13,12 @@
       var oldRef = refs[0];
       var newRef = refs[1];
       var crossdartUrlOld = Path.join([crossdartBaseUrl, oldRef, "crossdart.json"]);
-      Request.get(crossdartUrlOld, function (oldJson) {
-        var crossdartUrlNew = Path.join([crossdartBaseUrl, newRef, "crossdart.json"]);
-        Request.get(crossdartUrlNew, function (newJson) {
-          crossdart.applyJson(CROSSDART_PULL_OLD, oldJson, oldRef);
-          crossdart.applyJson(CROSSDART_PULL_NEW, newJson, newRef);
-        }, Errors.showUrlError);
+      Request.getJson(crossdartUrlOld, function (oldJson) {
+        crossdart.applyJson(CROSSDART_PULL_OLD, oldJson, oldRef);
+      }, Errors.showUrlError);
+      var crossdartUrlNew = Path.join([crossdartBaseUrl, newRef, "crossdart.json"]);
+      Request.getJson(crossdartUrlNew, function (newJson) {
+        crossdart.applyJson(CROSSDART_PULL_NEW, newJson, newRef);
       }, Errors.showUrlError);
     }, Errors.showTokenError);
   }
@@ -28,21 +28,76 @@
       var oldRef = refs[0];
       var newRef = refs[1];
       var crossdartUrlOld = Path.join([crossdartBaseUrl, oldRef, "crossdart.json"]);
-      Request.get(crossdartUrlOld, function (oldJson) {
-        var crossdartUrlNew = Path.join([crossdartBaseUrl, newRef, "crossdart.json"]);
-        Request.get(crossdartUrlNew, function (newJson) {
-          crossdart.applyJson(CROSSDART_PULL_OLD, oldJson, oldRef);
-          crossdart.applyJson(CROSSDART_PULL_NEW, newJson, newRef);
-        }, Errors.showUrlError);
+      Request.getJson(crossdartUrlOld, function (oldJson) {
+        crossdart.applyJson(CROSSDART_PULL_OLD, oldJson, oldRef);
+      }, Errors.showUrlError);
+      var crossdartUrlNew = Path.join([crossdartBaseUrl, newRef, "crossdart.json"]);
+      Request.getJson(crossdartUrlNew, function (newJson) {
+        crossdart.applyJson(CROSSDART_PULL_NEW, newJson, newRef);
       }, Errors.showUrlError);
     }, Errors.showTokenError);
+  }
+
+  function checkRef(index, github, baseUrl, ref, callback) {
+    var url = baseUrl + "/" + ref + "/crossdart.json";
+    Request.head(url, function () {
+      Status.show(index, ref, "done");
+      callback();
+    },
+    function () {
+      Request.get(baseUrl + "/" + ref + "/status.txt", function (status) {
+        Status.show(index, ref, status);
+        if (status !== "error") {
+          setTimeout(function () {
+            checkRef(index, github, baseUrl, ref, callback);
+          }, 1000);
+        }
+      }, function () {
+        Request.post("https://metadata.crossdart.info/analyze", {
+          url: "https://github.com/" + github.basePath,
+          sha: ref
+        }, function () {
+          setTimeout(function () {
+            checkRef(index, github, baseUrl, ref, callback);
+          }, 1000);
+        });
+      });
+    });
+  }
+
+  function fetchMetadataUrl(shouldReuseCrossdart) {
+    var github = new Github();
+    var baseUrl = "https://www.crossdart.info/metadata/" + github.basePath;
+    if (github.type === Github.PULL_REQUEST) {
+      github.path.getRealRefs(function (refs) {
+        var isOneDone = false;
+        checkRef(0, github, baseUrl, refs[0], function () {
+          if (isOneDone) {
+            applyCrossdart(baseUrl, shouldReuseCrossdart);
+          }
+          isOneDone = true;
+        });
+        checkRef(1, github, baseUrl, refs[1], function () {
+          if (isOneDone) {
+            applyCrossdart(baseUrl, shouldReuseCrossdart);
+          }
+          isOneDone = true;
+        });
+      });
+    } else {
+      github.path.getRealRef(function (ref) {
+        checkRef(0, github, baseUrl, ref, function () {
+          applyCrossdart(baseUrl, shouldReuseCrossdart);
+        });
+      });
+    }
   }
 
   var crossdart;
   function applyCrossdart(crossdartBaseUrl, shouldReuseCrossdart) {
     if (enabled) {
       if (!crossdartBaseUrl || crossdartBaseUrl.toString().trim() === "") {
-        Errors.showMissingJsonUrlError();
+        fetchMetadataUrl();
       } else {
         var github = new Github();
         if (Github.isTree()) {

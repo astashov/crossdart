@@ -10,7 +10,7 @@
       pathname = Path.current();
       hash = location.hash;
     }
-    setTimeout(detectLocationChange, 200);
+    setTimeout(detectLocationChange, 1000);
   }
 
   detectLocationChange();

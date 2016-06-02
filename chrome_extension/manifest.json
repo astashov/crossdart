@@ -27,6 +27,7 @@
         "utils.js",
         "path.js",
         "errors.js",
+        "status.js",
         "request.js",
         "tooltip.js",
         "github.js",
