@@ -55,7 +55,8 @@
       }, function () {
         Request.post("https://metadata.crossdart.info/analyze", {
           url: "https://github.com/" + github.basePath,
-          sha: ref
+          sha: ref,
+          token: Github.token
         }, function () {
           setTimeout(function () {
             checkRef(index, github, baseUrl, ref, callback);
