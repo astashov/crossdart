@@ -26,6 +26,7 @@ Future main(args) async {
   switch (results[Config.OUTPUT_FORMAT]) {
     case "json": outputFormat = OutputFormat.JSON; break;
     case "github": outputFormat = OutputFormat.GITHUB; break;
+    case "html": outputFormat = OutputFormat.HTML; break;
     default: outputFormat = OutputFormat.GITHUB; break;
   }
 
