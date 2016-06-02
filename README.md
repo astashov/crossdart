@@ -13,6 +13,13 @@ Let's review the second case, since you can get some benefits from it for your p
 
 ## Installation
 
+We have servers, which will clone your repo, analyze the source code, and upload the metadata for adding hyperlinks on Github pages to Google Cloud Storage.
+It works transparently for you, if you didn't change the URL where to get the metadata in the Chrome extension settings.
+
+We don't do anything with your source code except analyzing it, and try to get rid of the cloned version on our servers as soon as possible, but in
+some cases you still may not want to share your source code with us. In that case, you can run Crossdart and upload the metadata file on your servers,
+e.g. on Travis CI. 
+
 Unfortunately, for now this is not just one-click installation, you have to do plenty of steps to make it work.
 I'll try to document them here in details, to simplify the ramp up process.
 
@@ -25,29 +32,22 @@ $ pub global activate crossdart
 and then run as
 
 ```bash
-$ pub global run crossdart:crossdart --sdkpath /path/to/dart-sdk --projectpath /path/to/your/project
+$ pub global run crossdart --input=/path/to/your/project --dart-sdk=/path/to/dart-sdk
 ```
 
-It will generate the crossdart.json file, which you will need to put somewhere, for example, to S3 (see below).
+for example:
+
+```bash
+$ pub global run crossdart --input=/home/john/my_dart_project --dart-sdk=/usr/lib/dart
+```
+
+It will generate the crossdart.json file in the `--input` directory, which you will need to put somewhere, for example, to S3 (see below).
 
 Then, install [Crossdart Chrome Extension](https://chrome.google.com/webstore/detail/crossdart-chrome-extensio/jmdjoliiaibifkklhipgmnciiealomhd) from Chrome Web Store, and you are good to go.
 
-Alternatively, you can add `crossdart` package as a dev dependency to your project:
-
-```yaml
-dev_dependencies:
-  crossdart: any
-```
-
-and then run it as:
-
-```bash
-$ pub run crossdart:crossdart --sdkpath /path/to/dart-sdk --projectpath /path/to/your/project
-```
-
 ## Uploading metadata
 
-You need some publicly available place to store metadatas for every single commit for your project. I use S3 for that. It's cheap and relatively easy to configure.
+You need some publicly available place to store metadatas for every single commit for your project. You can use S3 for that. It's cheap and relatively easy to configure.
 
 You probably may want to create a separate bucket on S3 for crossdart metadata files, and then set correct CORS configuration for it. For that, click to the bucket in AWS S3 console, and in the "Properties" tab find "Add CORS Configuration". You can add something like this there:
 
@@ -73,14 +73,14 @@ use_https = True
 and then run `s3cmd` to put newly created file. Something like:
 
 ```bash
-$ s3cmd -P -c ./.s3cfg put ./crossdart.json s3://my-bucket/my-project/32c139a7775736e96e476b1e0c89dd20e6588155/crossdart.json
+$ s3cmd -P -c /path/to/.s3cfg put /path/to/crossdart.json s3://my-bucket/my-project/32c139a7775736e96e476b1e0c89dd20e6588155/crossdart.json
 ```
 
 The structure of the URL on S3 is important. It should always end with git sha and `crossdart.json`. Like above, the URL ends with `32c139a7775736e96e476b1e0c89dd20e6588155/crossdart.json`
 
 ## Integrating with Travis CI
 
-Doing all the uploads to S3 manually is very cumbersome, so better to use some machinery, like CI or build server, to do that stuff for you. I personally use Travis CI for that. Here's how my configuration looks like:
+Doing all the uploads to S3 manually is very cumbersome, so better to use some machinery, like CI or build server, to do that stuff for you, for example Travis CI. Here's how the configuration could look like:
 
 `.travis.yml` file:
 
@@ -113,7 +113,7 @@ fi
 echo "Installing crossdart"
 pub global activate crossdart
 echo "Generating metadata for crossdart"
-pub global run crossdart:crossdart --sdkpath $DART_SDK --projectpath .
+pub global run crossdart --input=. --dart-sdk=$DART_SDK
 echo "Copying the crossdart json file to S3 ($CROSSDART_HASH)"
 s3cmd -P -c ./.s3cfg put ./crossdart.json s3://my-bucket/my-project/$CROSSDART_HASH/crossdart.json
 ```
@@ -127,8 +127,8 @@ How cool is that! :)
 
 After installing [Crossdart Chrome Extension](https://chrome.google.com/webstore/detail/crossdart-chrome-extensio/jmdjoliiaibifkklhipgmnciiealomhd), you'll see a little "XD" icon in Chrome's URL bar on Github pages.
 If you click to it, you'll see a little popup, where you can turn Crossdart on for the current project, and also
-specify the URL where it should get the metadata files from. You only should provide a base for this URL, the extension
-will later append git sha and 'crossdart.json' to it. I.e. if you specify URL in this field like:
+specify the URL where it should get the metadata files from (in case you don't want to use the defaults. If you do - just leave it empty).
+You only should provide a base for this URL, the extension will later append git sha and 'crossdart.json' to it. I.e. if you specify URL in this field like:
 
 ```
 https://my-bucket.s3.amazonaws.com/crossdart/my-project

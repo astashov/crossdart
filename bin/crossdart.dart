@@ -26,15 +26,15 @@ Future main(args) async {
   switch (results[Config.OUTPUT_FORMAT]) {
     case "json": outputFormat = OutputFormat.JSON; break;
     case "github": outputFormat = OutputFormat.GITHUB; break;
-    default: outputFormat = OutputFormat.HTML; break;
+    default: outputFormat = OutputFormat.GITHUB; break;
   }
 
   var config = await Config.build(
       dartSdk: results[Config.DART_SDK],
       input: results[Config.INPUT],
-      output: results[Config.OUTPUT],
-      hostedUrl: results[Config.HOSTED_URL],
-      urlPathPrefix: results[Config.URL_PATH_PREFIX],
+      output: results[Config.OUTPUT] ?? results[Config.INPUT],
+      hostedUrl: results[Config.HOSTED_URL] ?? "https://www.crossdart.info",
+      urlPathPrefix: results[Config.URL_PATH_PREFIX] ?? "p",
       outputFormat: outputFormat);
   logging.initialize();
 
