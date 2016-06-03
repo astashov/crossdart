@@ -1,5 +1,8 @@
 # Crossdart
 
+**Note**: If you're looking the source code for [Crossdart Chrome Extension](https://chrome.google.com/webstore/detail/crossdart-chrome-extensio/jmdjoliiaibifkklhipgmnciiealomhd), it's there:
+https://github.com/astashov/crossdart-chrome-extension
+
 Analyzes source code of a given project, and emits one of the following:
 
 * HTML pages with hyperlinked source code of the project.
