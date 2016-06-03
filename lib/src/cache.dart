@@ -27,6 +27,13 @@ class Cache {
     }
   }
 
+  int numberOfLines(String file) {
+    if (_lineNumbers[file] == null) {
+      _lineNumbers[file] = _createLineNumbersMap(fileContents(file));
+    }
+    return _lineNumbers[file][_lineNumbers[file].lastKey()];
+  }
+
   int lineOffset(String file, int offset) {
     if (offset == 0) {
       return 0;

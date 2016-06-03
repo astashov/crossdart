@@ -6,6 +6,7 @@ dist/
 
 # Dart files and folders
 packages
+.packages
 *.dart.js
 *.js.deps
 *.js.map
@@ -44,3 +45,6 @@ s3_deployer_config.rb
 # Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
 # should NOT be excluded as they contain compiler settings and other important
 # information for Eclipse / Flash Builder.
+
+config.yaml
+credentials.yaml

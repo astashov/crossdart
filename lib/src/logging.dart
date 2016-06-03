@@ -20,7 +20,8 @@ void initialize([int index]) {
 
   Logger.root.onRecord.listen((record) {
     if (record.loggerName != "ConnectionPool") {
-      print(logFormatter(record));
+      var message = logFormatter(record);
+      print(message);
     }
   });
 

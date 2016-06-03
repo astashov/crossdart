@@ -11,6 +11,7 @@ import 'package:crossdart/src/generator/json_generator.dart';
 import 'package:crossdart/src/logging.dart' as logging;
 import 'package:crossdart/src/parser.dart';
 import 'package:logging/logging.dart';
+import 'package:crossdart/src/html_package_generator.dart';
 
 Logger _logger = new Logger("parse");
 
@@ -21,17 +22,32 @@ Future main(args) async {
   }
   var results = crossdartArgs.results;
 
-  var config = new Config(
-      sdkPath: new File(results[Config.SDK_PATH]).resolveSymbolicLinksSync(),
-      pubCachePath: new File(results[Config.PUB_CACHE_PATH]).resolveSymbolicLinksSync(),
-      outputPath: new File(results[Config.OUTPUT_PATH]).resolveSymbolicLinksSync(),
-      projectPath: new File(results[Config.PROJECT_PATH]).resolveSymbolicLinksSync(),
-      isDbUsed: false);
+  OutputFormat outputFormat;
+  switch (results[Config.OUTPUT_FORMAT]) {
+    case "json": outputFormat = OutputFormat.JSON; break;
+    case "github": outputFormat = OutputFormat.GITHUB; break;
+    case "html": outputFormat = OutputFormat.HTML; break;
+    default: outputFormat = OutputFormat.GITHUB; break;
+  }
+
+  var input = new File(results[Config.INPUT]).resolveSymbolicLinksSync();
+
+  var config = await Config.build(
+      dartSdk: results[Config.DART_SDK],
+      input: input,
+      output: results[Config.OUTPUT] ?? input,
+      hostedUrl: results[Config.HOSTED_URL] ?? "https://www.crossdart.info",
+      urlPathPrefix: results[Config.URL_PATH_PREFIX] ?? "p",
+      outputFormat: outputFormat);
   logging.initialize();
 
   var environment = await buildEnvironment(config);
   var parsedData = await new Parser(environment).parseProject();
-  new JsonGenerator(environment, parsedData).generate();
+  if (config.outputFormat == OutputFormat.HTML) {
+    await new HtmlPackageGenerator(config, [environment.package], parsedData).generateProject();
+  } else {
+    new JsonGenerator(environment, parsedData).generate(isForGithub: config.outputFormat == OutputFormat.GITHUB);
+  }
 
   exit(0);
 }

@@ -3,7 +3,6 @@ library crossdart.location;
 import 'dart:io';
 import 'package:yaml/yaml.dart';
 import 'package:crossdart/src/util.dart';
-import 'package:crossdart/src/html/url.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/package_info.dart';
 import 'package:crossdart/src/config.dart';
@@ -13,12 +12,13 @@ import 'package:path/path.dart' as p;
 class Location {
   final String path;
   final Package package;
+  final Config config;
 
-  Location(this.package, this.path);
+  Location(this.config, this.package, this.path);
 
   factory Location.fromEnvironment(Environment environment, String absolutePath) {
     var package = Package.fromAbsolutePath(environment, absolutePath);
-    return new Location(package, package.relativePath(absolutePath));
+    return new Location(environment.config, package, package.relativePath(absolutePath));
   }
 
   int get hashCode => hash([path, package]);
@@ -32,18 +32,12 @@ class Location {
   }
 
   String get htmlPath {
-    return "/" + p.join(PATH_PREFIX, package.name, _versionPart, "${path}.html");
+    return "${config.urlPrefix}/" + p.join(package.name, _versionPart, "${path}.html");
   }
 
-  String remotePath(int lineNumber, [String pubspecLockPath]) {
-    if (package is Project) {
-      var result = p.join("lib", path);
-      if (lineNumber != null) {
-        result += "#L${lineNumber + 1}";
-      }
-      return result;
-    } else if (package is Sdk || package.source == PackageSource.HOSTED) {
-      var result = p.join("http://crossdart.info", PATH_PREFIX, package.name, package.version.toPath(), "${path}.html");
+  String _remotePath(int lineNumber, String pubspecLockPath, bool isSdk) {
+    if (package is Project || package is Sdk || package.source == PackageSource.HOSTED) {
+      var result = p.join(config.urlPrefix, package.name, package.version.toString(), "${path}.html");
       if (lineNumber != null) {
         result += "#line-${lineNumber}";
       }
@@ -69,8 +63,24 @@ class Location {
     }
   }
 
-  String writePath(Config config) {
-    var result = p.join(config.outputPath, PATH_PREFIX, package.name, _versionPart);
+  String crossdartRemotePath(int lineNumber, String pubspecLockPath, bool isSdk) {
+    return _remotePath(lineNumber, pubspecLockPath, isSdk);
+  }
+
+  String githubRemotePath(int lineNumber, String pubspecLockPath, bool isSdk) {
+    if (package is Project || (isSdk && package is Sdk)) {
+      var result = isSdk ? path : p.join("lib", path);
+      if (lineNumber != null) {
+        result += "#L${lineNumber + 1}";
+      }
+      return result;
+    } else {
+      return _remotePath(lineNumber, pubspecLockPath, isSdk);
+    }
+  }
+
+  String get writePath {
+    var result = config.output;
     if (p.dirname(path) != ".") {
       result = p.join(result, p.dirname(path));
     }
@@ -78,7 +88,7 @@ class Location {
     return result;
   }
 
-  String get _versionPart => package.version != null ? package.version.toPath() : "unknown";
+  String get _versionPart => package.version != null ? package.version.toString() : "unknown";
 
   String toString() {
     return "<Location ${toMap()}>";

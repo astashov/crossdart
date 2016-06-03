@@ -9,10 +9,11 @@ import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/package.dart';
 import 'package:crossdart/src/entity.dart';
 import 'package:crossdart/src/cache.dart';
-import 'package:crossdart/src/html/url.dart';
 import 'package:crossdart/src/google_analytics.dart' as ga;
 import 'package:path/path.dart' as p;
 import 'package:logging/logging.dart';
+import 'package:resource/resource.dart' as r;
+import 'dart:async';
 
 var _logger = new Logger("html_package_generator");
 
@@ -32,22 +33,50 @@ class HtmlPackageGenerator {
       return memo;
     });
 
-  void generate() {
+  Future<Null> generateProject() async {
     _packagesByFiles.forEach((absolutePath, package) {
       Set<Entity> entities = this._parsedData.files[absolutePath];
       if (entities == null) {
         entities = new Set();
       }
-      var location = new Location(package, package.relativePath(absolutePath));
+      var location = new Location(_config, package, package.relativePath(absolutePath));
       entities = entities.where((e) => e.offset != null && e.end != null).toSet();
-      if (!(new File(location.writePath(_config)).existsSync())) {
-        var directory = new Directory(p.dirname(location.writePath(_config)));
-        directory.createSync(recursive: true);
-        var file = new File(location.writePath(_config)).openSync(mode: FileMode.WRITE);
-        _writeContent(absolutePath, entities, file, package);
-        file.closeSync();
-      }
+      var path = p.join(_config.output, location.writePath);
+      var directory = new Directory(p.dirname(path));
+      directory.createSync(recursive: true);
+      var file = new File(path).openSync(mode: FileMode.WRITE);
+      _writeContent(absolutePath, entities, file, package);
+      file.closeSync();
     });
+
+    String redirectUrl;
+    if (_packages.length == 1 && _packages.first is Sdk) {
+      redirectUrl = this._parsedData.files[_packages.first.absolutePath("lib/core/list.dart")].first.location.htmlPath;
+    } else {
+      redirectUrl = this._parsedData.references.keys.first.location.htmlPath;
+    }
+    new File(p.join(_config.output, "index.html")).writeAsStringSync("""
+      <html>
+        <head>
+          <title>www.dartdocs.org</title>
+          <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+          <meta http-equiv="Pragma" content="no-cache" />
+          <meta http-equiv="Expires" content="0" />
+          <meta http-equiv="refresh" content="0; url='${redirectUrl}'" />
+          <script>
+            var latestUrl = '${redirectUrl}';
+            document.location = latestUrl;
+          </script>
+          </head>
+        <body></body>
+      </html>
+    """);
+
+    new Directory(p.join(_config.output, "assets")).createSync(recursive: true);
+    for (var filename in ["code.js", "highlight.pack.js", "style.css", "favicon.png"]) {
+      var resource = new r.Resource("package:crossdart/resources/${filename}");
+      new File(p.join(_config.output, "assets", filename)).writeAsBytesSync(await resource.readAsBytes());
+    }
   }
 
   String _addEntityStart(Entity entity) {
@@ -61,8 +90,6 @@ class HtmlPackageGenerator {
       return content;
     } else if (entity is Declaration) {
       return "<span id='declaration-${entity.id}' class='entity__declaration'>";
-    } else if (entity is Token) {
-      return "<span class='${entity.name}'>";
     } else {
       return "<span>";
     }
@@ -77,19 +104,24 @@ class HtmlPackageGenerator {
   }
 
   String _headerContent(String absolutePath, Package package) {
-    var location = new Location(package, package.relativePath(absolutePath));
+    var location = new Location(_config, package, package.relativePath(absolutePath));
+    var baseList = new List.filled(location.path.split("/").length - 1, "..");
     return """
       <!doctype html>
       <html lang="en-us">
         <head>
           <title>'${package.name}' - ${location.path} | CrossDart - cross-referenced Dart's pub packages</title>
-          <link rel="stylesheet" href="/style.css" type="text/css">
+          <base href="${baseList.isNotEmpty ? baseList.join("/") : "."}">
+          <link rel="stylesheet" href="assets/style.css" type="text/css">
+          <link rel='icon' href='assets/favicon.png' />
           <meta name="viewport" content="width=device-width, initial-scale=1">
         </head>
         <body class='source-code'>
           <nav class='nav'>
-            <a href='${packageIndexUrl(package.packageInfo)}' class='nav-back'>${package.name} (${package.version})</a>
+            <a href='${_config.hostedUrl}' class='link-to-home'>Crossdart</a>
+            <span class='nav-back'>${package.name} (${package.version})</span>
             <a class="link-to-pub" href="${package.pubUrl}">Link to Pub</a>
+            <a class="link-to-docs" href="${package.docsUrl}">Link to Docs</a>
             <span class="nav--filetree-toggle">Filetree</span>
           </nav>
           <div class="content">
@@ -107,7 +139,8 @@ class HtmlPackageGenerator {
   String _footerContent() {
     return """
         </div>
-        <script src="/code.js"></script>
+        <script src="assets/highlight.pack.js"></script>
+        <script src="assets/code.js"></script>
         ${ga.script}
       </body>
       </html>
@@ -115,16 +148,18 @@ class HtmlPackageGenerator {
   }
 
   void _writeContent(String absolutePath, Set<Entity> entities, RandomAccessFile file, Package package) {
-    _logger.info("Building content of ${absolutePath}");
+    _logger.info("Building content of ${absolutePath} (${package.packageInfo.dirname})");
     file.writeStringSync(_headerContent(absolutePath, package));
+    file.writeStringSync("<div class='wrapper'><pre class='lines'>");
+    for (var i = 0; i < cache.numberOfLines(absolutePath); i += 1) {
+      file.writeStringSync("<a id='line-${i}' class='line'>${i + 1}</a>");
+    }
+    file.writeStringSync("</pre>");
     file.writeStringSync("<pre class='code'>");
     String fileContent = cache.fileContents(absolutePath);
     List<Entity> entitiesList = entities.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
 
     var lastOffset = 0;
-    var currentLine = 0;
-    file.writeStringSync("<a id='line-${currentLine}' class='line'>${currentLine}</a>");
-    currentLine += 1;
     Map<int, List<Entity>> stack = {};
     String newlineChar = cache.getNewlineChar(fileContent);
 
@@ -162,8 +197,6 @@ class HtmlPackageGenerator {
         } else {
           if (nextNewlinePos == nextStop) {
             file.writeStringSync("\n");
-            file.writeStringSync("<a id='line-${currentLine}' class='line'>${currentLine}</a>");
-            currentLine += 1;
             lastOffset = nextStop + newlineChar.length;
           } else {
             lastOffset = nextStop;
@@ -174,7 +207,7 @@ class HtmlPackageGenerator {
       }
     }
 
-    file.writeStringSync("</pre>");
+    file.writeStringSync("</pre></div>");
     file.writeStringSync(_footerContent());
   }
 
@@ -209,10 +242,10 @@ class HtmlPackageGenerator {
         </li>""";
       } else {
         var isCurrent = currentPathParts.isNotEmpty && currentPathParts.first == p.basename(node);
-        var location = new Location(package, node);
+        var location = new Location(_config, package, node);
         var name = isCurrent
             ? p.basename(node)
-            : "<a href='${location.htmlPath}'>${p.basename(node)}</a>";
+            : "<a href='${location.path}.html'>${p.basename(node)}</a>";
         return """<li class="filetree--item filetree--item__file${isCurrent ? ' is-current' : ''}">
           <span class="filetree--item--info"><span class="filetree--item--title">${name}</span></span>
         </li>""";
@@ -240,5 +273,4 @@ class HtmlPackageGenerator {
       return memo;
     });
   }
-
 }
