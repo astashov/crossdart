@@ -30,10 +30,12 @@ Future main(args) async {
     default: outputFormat = OutputFormat.GITHUB; break;
   }
 
+  var input = new File(results[Config.INPUT]).resolveSymbolicLinksSync();
+
   var config = await Config.build(
       dartSdk: results[Config.DART_SDK],
-      input: results[Config.INPUT],
-      output: results[Config.OUTPUT] ?? results[Config.INPUT],
+      input: input,
+      output: results[Config.OUTPUT] ?? input,
       hostedUrl: results[Config.HOSTED_URL] ?? "https://www.crossdart.info",
       urlPathPrefix: results[Config.URL_PATH_PREFIX] ?? "p",
       outputFormat: outputFormat);
