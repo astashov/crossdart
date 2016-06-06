@@ -39,7 +39,7 @@ class Location {
     if (package is Project || package is Sdk || package.source == PackageSource.HOSTED) {
       var result = p.join(config.urlPrefix, package.name, package.version.toString(), "${path}.html");
       if (lineNumber != null) {
-        result += "#line-${lineNumber}";
+        result += "#line-${lineNumber + 1}";
       }
       return result;
     } else if (package is CustomPackage && package.source == PackageSource.GIT && pubspecLockPath != null) {
