@@ -1,5 +1,5 @@
 name: crossdart
-version: 0.3.1
+version: 0.4.0
 author: Anton Astashov <anton.astashov@gmail.com>
 description:
   Generates crossdart.info content.
