@@ -84,7 +84,7 @@ class HtmlPackageGenerator {
       var declaration = _parsedData.references[entity];
       var content = "<a href='${declaration.location.htmlPath}";
       if (declaration.lineNumber != null) {
-        content += "#line-${declaration.lineNumber}";
+        content += "#line-${declaration.lineNumber + 1}";
       }
       content += "' class='entity__reference'>";
       return content;
@@ -151,8 +151,8 @@ class HtmlPackageGenerator {
     _logger.info("Building content of ${absolutePath} (${package.packageInfo.dirname})");
     file.writeStringSync(_headerContent(absolutePath, package));
     file.writeStringSync("<div class='wrapper'><pre class='lines'>");
-    for (var i = 0; i < cache.numberOfLines(absolutePath); i += 1) {
-      file.writeStringSync("<a id='line-${i}' class='line'>${i + 1}</a>");
+    for (var i = 1; i <= cache.numberOfLines(absolutePath); i += 1) {
+      file.writeStringSync("<a id='line-${i}' class='line'>${i}</a>");
     }
     file.writeStringSync("</pre>");
     file.writeStringSync("<pre class='code'>");
@@ -160,7 +160,10 @@ class HtmlPackageGenerator {
     List<Entity> entitiesList = entities.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
 
     var lastOffset = 0;
+    var currentLine = 1;
     Map<int, List<Entity>> stack = {};
+    file.writeStringSync("<span id='code-line-${currentLine}' class='code-line'>");
+    currentLine += 1;
     String newlineChar = cache.getNewlineChar(fileContent);
 
     Entity entity = entitiesList.isNotEmpty ? entitiesList.removeAt(0) : null;
@@ -196,7 +199,10 @@ class HtmlPackageGenerator {
           lastOffset = nextStop;
         } else {
           if (nextNewlinePos == nextStop) {
+            file.writeStringSync("</span>");
             file.writeStringSync("\n");
+            file.writeStringSync("<span id='code-line-${currentLine}' class='code-line'>");
+            currentLine += 1;
             lastOffset = nextStop + newlineChar.length;
           } else {
             lastOffset = nextStop;
@@ -207,7 +213,7 @@ class HtmlPackageGenerator {
       }
     }
 
-    file.writeStringSync("</pre></div>");
+    file.writeStringSync("</span></pre></div>");
     file.writeStringSync(_footerContent());
   }
 

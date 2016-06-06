@@ -247,6 +247,7 @@ body {
   padding-right: 0.5em;
   color: #d0d0d0;
   user-select: none;
+  cursor: pointer;
   -webkit-user-select: none;
   -ms-user-select: none;
   -moz-user-select: none;
@@ -415,4 +416,10 @@ body {
 
 .hljs-strong {
   font-weight: bold;
+}
+
+.code-line.is-highlighted {
+  display: inline-block;
+  width: 100%;
+  background: #F8EEC7;
 }
