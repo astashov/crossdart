@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:crossdart/src/config.dart';
 import 'package:crossdart/src/util.dart';
 import 'package:path/path.dart' as p;
-import 'package:pub_semver/pub_semver.dart';
+import 'package:crossdart/src/version.dart';
 
 enum PackageSource { GIT, HOSTED, SDK }
 final Map<String, PackageSource> packageSourceMapping = {"GIT": PackageSource.GIT, "HOSTED": PackageSource.HOSTED, "SDK": PackageSource.SDK};

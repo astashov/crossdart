@@ -150,70 +150,72 @@ class HtmlPackageGenerator {
   void _writeContent(String absolutePath, Set<Entity> entities, RandomAccessFile file, Package package) {
     _logger.info("Building content of ${absolutePath} (${package.packageInfo.dirname})");
     file.writeStringSync(_headerContent(absolutePath, package));
-    file.writeStringSync("<div class='wrapper'><pre class='lines'>");
-    for (var i = 1; i <= cache.numberOfLines(absolutePath); i += 1) {
-      file.writeStringSync("<a id='line-${i}' class='line'>${i}</a>");
-    }
-    file.writeStringSync("</pre>");
-    file.writeStringSync("<pre class='code'>");
-    String fileContent = cache.fileContents(absolutePath);
-    List<Entity> entitiesList = entities.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
-
-    var lastOffset = 0;
-    var currentLine = 1;
-    Map<int, List<Entity>> stack = {};
-    file.writeStringSync("<span id='code-line-${currentLine}' class='code-line'>");
-    currentLine += 1;
-    String newlineChar = cache.getNewlineChar(fileContent);
-
-    Entity entity = entitiesList.isNotEmpty ? entitiesList.removeAt(0) : null;
-    int nextNewlinePos = fileContent.indexOf(newlineChar, lastOffset);
-
-    while(entity != null || stack.isNotEmpty || nextNewlinePos != null) {
-      int entityStartPos = entity != null ? entity.offset : null;
-      nextNewlinePos = fileContent.indexOf(newlineChar, lastOffset);
-      nextNewlinePos = nextNewlinePos == -1 ? null : nextNewlinePos;
-      int entityEndPos = stack.isNotEmpty ? stack.keys.reduce(math.min) : null;
-
-      var positions = [entityStartPos, nextNewlinePos, entityEndPos].where((i) => i != null);
-      if (positions.isNotEmpty) {
-        int nextStop = positions.reduce(math.min);
-        var string = fileContent.substring(lastOffset, nextStop);
-        file.writeStringSync(sanitizer.convert(string));
-        if (entityEndPos == nextStop || entityStartPos == nextStop) {
-          if (entityEndPos == nextStop) {
-            Entity referenceFromStack = stack[entityEndPos].removeLast();
-            if (stack[entityEndPos].isEmpty) {
-              stack.remove(entityEndPos);
-            }
-            file.writeStringSync(_addEntityEnd(referenceFromStack));
-          }
-          if (entityStartPos == nextStop) {
-            if (stack[entity.end] == null) {
-              stack[entity.end] = [];
-            }
-            stack[entity.end].add(entity);
-            file.writeStringSync(_addEntityStart(entity));
-            entity = entitiesList.isNotEmpty ? entitiesList.removeAt(0) : null;
-          }
-          lastOffset = nextStop;
-        } else {
-          if (nextNewlinePos == nextStop) {
-            file.writeStringSync("</span>");
-            file.writeStringSync("\n");
-            file.writeStringSync("<span id='code-line-${currentLine}' class='code-line'>");
-            currentLine += 1;
-            lastOffset = nextStop + newlineChar.length;
-          } else {
-            lastOffset = nextStop;
-          }
-        }
-      } else {
-        file.writeStringSync(sanitizer.convert(fileContent.substring(lastOffset)));
+    if (cache.numberOfLines(absolutePath) > 0) {
+      file.writeStringSync("<div class='wrapper'><pre class='lines'>");
+      for (var i = 1; i <= cache.numberOfLines(absolutePath); i += 1) {
+        file.writeStringSync("<a id='line-${i}' class='line'>${i}</a>");
       }
+      file.writeStringSync("</pre>");
+      file.writeStringSync("<pre class='code'>");
+      String fileContent = cache.fileContents(absolutePath);
+      List<Entity> entitiesList = entities.toList()..sort((a, b) => Comparable.compare(a.offset, b.offset));
+
+      var lastOffset = 0;
+      var currentLine = 1;
+      Map<int, List<Entity>> stack = {};
+      file.writeStringSync("<span id='code-line-${currentLine}' class='code-line'>");
+      currentLine += 1;
+      String newlineChar = cache.getNewlineChar(fileContent);
+
+      Entity entity = entitiesList.isNotEmpty ? entitiesList.removeAt(0) : null;
+      int nextNewlinePos = fileContent.indexOf(newlineChar, lastOffset);
+
+      while(entity != null || stack.isNotEmpty || nextNewlinePos != null) {
+        int entityStartPos = entity != null ? entity.offset : null;
+        nextNewlinePos = fileContent.indexOf(newlineChar, lastOffset);
+        nextNewlinePos = nextNewlinePos == -1 ? null : nextNewlinePos;
+        int entityEndPos = stack.isNotEmpty ? stack.keys.reduce(math.min) : null;
+
+        var positions = [entityStartPos, nextNewlinePos, entityEndPos].where((i) => i != null);
+        if (positions.isNotEmpty) {
+          int nextStop = positions.reduce(math.min);
+          var string = fileContent.substring(lastOffset, nextStop);
+          file.writeStringSync(sanitizer.convert(string));
+          if (entityEndPos == nextStop || entityStartPos == nextStop) {
+            if (entityEndPos == nextStop) {
+              Entity referenceFromStack = stack[entityEndPos].removeLast();
+              if (stack[entityEndPos].isEmpty) {
+                stack.remove(entityEndPos);
+              }
+              file.writeStringSync(_addEntityEnd(referenceFromStack));
+            }
+            if (entityStartPos == nextStop) {
+              if (stack[entity.end] == null) {
+                stack[entity.end] = [];
+              }
+              stack[entity.end].add(entity);
+              file.writeStringSync(_addEntityStart(entity));
+              entity = entitiesList.isNotEmpty ? entitiesList.removeAt(0) : null;
+            }
+            lastOffset = nextStop;
+          } else {
+            if (nextNewlinePos == nextStop) {
+              file.writeStringSync("</span>");
+              file.writeStringSync("\n");
+              file.writeStringSync("<span id='code-line-${currentLine}' class='code-line'>");
+              currentLine += 1;
+              lastOffset = nextStop + newlineChar.length;
+            } else {
+              lastOffset = nextStop;
+            }
+          }
+        } else {
+          file.writeStringSync(sanitizer.convert(fileContent.substring(lastOffset)));
+        }
+      }
+      file.writeStringSync("</span></pre></div>");
     }
 
-    file.writeStringSync("</span></pre></div>");
     file.writeStringSync(_footerContent());
   }
 

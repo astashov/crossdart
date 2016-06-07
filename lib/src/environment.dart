@@ -8,7 +8,7 @@ import 'package:crossdart/src/config.dart';
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
 import 'package:package_config/discovery.dart' as packages_discovery;
-import 'package:pub_semver/pub_semver.dart';
+import 'package:crossdart/src/version.dart';
 
 Logger _logger = new Logger("environment");
 

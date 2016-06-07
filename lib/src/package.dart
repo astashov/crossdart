@@ -9,7 +9,7 @@ import 'package:crossdart/src/util.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 import 'package:logging/logging.dart';
-import 'package:pub_semver/pub_semver.dart';
+import 'package:crossdart/src/version.dart';
 
 Logger _logger = new Logger("package");
 

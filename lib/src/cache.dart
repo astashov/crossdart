@@ -56,11 +56,15 @@ class Cache {
     var lineNumber = 0;
     var result = new SplayTreeMap();
 
-    do {
+    if (contents.length > 0) {
+      do {
+        result[offset] = lineNumber;
+        offset = contents.indexOf(newlineChar, offset + 1);
+        lineNumber += 1;
+      } while (offset != -1);
+    } else {
       result[offset] = lineNumber;
-      offset = contents.indexOf(newlineChar, offset + 1);
-      lineNumber += 1;
-    } while (offset != -1);
+    }
 
     return result;
   }
