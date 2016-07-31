@@ -51,6 +51,10 @@ class ASTVisitor extends GeneralizingAstVisitor {
         var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.toString(), offset: node.offset, end: node.end);
         var declaration = new e.Import(new Location.fromEnvironment(_environment, ((parent as ImportDirective).element as ImportElement).importedLibrary.definingCompilationUnit.source.fullName));
         _addReferenceAndDeclaration(reference, declaration);
+      } else if (parent is ExportDirective && (parent as ExportDirective).element != null) {
+        var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.toString(), offset: node.offset, end: node.end);
+        var declaration = new e.Import(new Location.fromEnvironment(_environment, ((parent as ExportDirective).element as ExportElement).exportedLibrary.definingCompilationUnit.source.fullName));
+        _addReferenceAndDeclaration(reference, declaration);
       }
     } catch(error, stackTrace) {
       _logger.severe("Error parsing simple string literal $node", error, stackTrace);
