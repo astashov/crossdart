@@ -180,9 +180,11 @@ bool _isDartFile(FileSystemEntity f) {
   return f is File && !p.basename(f.path).startsWith("._") && f.path.endsWith(".dart");
 }
 
-Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInfo packageInfo) async {
-  var root = packageInfo.getDirectoryInPubCache(config);
-  var lib = p.join(root, "lib");
+Future<CustomPackage> buildCustomPackageFromFileSystem(Config config, PackageInfo packageInfo, [String lib]) async {
+  if (lib == null) {
+    var root = packageInfo.getDirectoryInPubCache(config);
+    lib = p.join(root, "lib");
+  }
 
   var source;
   if (lib.contains("/git/")) {

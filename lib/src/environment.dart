@@ -49,7 +49,7 @@ Future<Environment> buildEnvironment(Config config) async {
     if (config.input == null || !dir.contains(config.input)) {
       var version = path.basename(dir).replaceFirst("${name}-", "");
       var packageInfo = new PackageInfo(name, new Version.parse(version));
-      var package = await buildCustomPackageFromFileSystem(config, packageInfo);
+      var package = await buildCustomPackageFromFileSystem(config, packageInfo, dir);
       customPackages.add(package);
     }
   }
