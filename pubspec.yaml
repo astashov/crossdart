@@ -4,7 +4,7 @@ author: Anton Astashov <anton.astashov@gmail.com>
 description:
   Generates crossdart.info content.
   Also, allows to generate metadata for the project, and then use
-  the Chrome Extension (also included) to add links to the declarations
+  the Chrome Extension to add links to the declarations
   on Github
 homepage: https://www.crossdart.info
 environment:
@@ -19,9 +19,7 @@ dependencies:
   logging: ^0.11.3
   yaml: ^2.1.9
   http: ^0.11.3+7
-  googleapis_auth: ^0.2.3+3
-  googleapis: ^0.27.0
-  analyzer: ^0.27.3
+  analyzer: ^0.28.1
 
 dev_dependencies:
   unittest: any

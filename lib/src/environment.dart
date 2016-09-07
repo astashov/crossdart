@@ -28,7 +28,7 @@ class Environment {
 
 Future<Environment> buildEnvironment(Config config) async {
   _logger.info("Building environment");
-  var sdkPackageInfo = new PackageInfo("sdk", new Version.parse(config.sdk.sdkVersion));
+  var sdkPackageInfo = new PackageInfo("sdk", Version.parse(config.sdk.sdkVersion));
 
   var sdk = await buildSdkFromFileSystem(config, sdkPackageInfo);
 
@@ -45,10 +45,10 @@ Future<Environment> buildEnvironment(Config config) async {
   }
 
   for (var name in packagesDiscovery.keys) {
-    var dir = new Directory.fromUri(packagesDiscovery[name]).parent.path;
+    var dir = new Directory.fromUri(packagesDiscovery[name]).path;
     if (config.input == null || !dir.contains(config.input)) {
-      var version = path.basename(dir).replaceFirst("${name}-", "");
-      var packageInfo = new PackageInfo(name, new Version.parse(version));
+      var version = path.basename(path.dirname(dir)).replaceFirst("${name}-", "");
+      var packageInfo = new PackageInfo(name, Version.parse(version));
       var package = await buildCustomPackageFromFileSystem(config, packageInfo, dir);
       customPackages.add(package);
     }

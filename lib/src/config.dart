@@ -1,10 +1,10 @@
 library crossdart.config;
 
 import 'dart:io';
+import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:analyzer/src/dart/sdk/sdk.dart';
 import 'package:path/path.dart' as path;
 import 'package:analyzer/src/generated/sdk.dart' show DartSdk;
-import 'package:analyzer/src/generated/java_io.dart';
-import 'package:analyzer/src/generated/sdk_io.dart' show DirectoryBasedDartSdk;
 import 'package:package_config/discovery.dart' as packages_discovery;
 import 'dart:async';
 
@@ -78,8 +78,7 @@ class Config {
   }
 
   DartSdk get sdk {
-    JavaSystemIO.setProperty("com.google.dart.sdk", dartSdk);
-    return DirectoryBasedDartSdk.defaultSdk;
+    return new FolderBasedDartSdk(PhysicalResourceProvider.INSTANCE, PhysicalResourceProvider.INSTANCE.getResource(dartSdk));
   }
 
   Config copy({

@@ -173,7 +173,7 @@ Project buildProjectFromFileSystem(Config config) {
 
   var pubspec = loadYaml(new File(p.join(config.input, "pubspec.yaml")).readAsStringSync());
 
-  return new Project(config, new PackageInfo(pubspec["name"], new Version.parse(pubspec["version"] ?? "0.0.1")), paths);
+  return new Project(config, new PackageInfo(pubspec["name"], Version.parse(pubspec["version"] ?? "0.0.1")), paths);
 }
 
 bool _isDartFile(FileSystemEntity f) {

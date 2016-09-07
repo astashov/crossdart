@@ -49,7 +49,8 @@ class ASTVisitor extends GeneralizingAstVisitor {
         _addReferenceAndDeclaration(reference, declaration);
       } else if (parent is ImportDirective && (parent as ImportDirective).element != null) {
         var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.toString(), offset: node.offset, end: node.end);
-        var declaration = new e.Import(new Location.fromEnvironment(_environment, ((parent as ImportDirective).element as ImportElement).importedLibrary.definingCompilationUnit.source.fullName));
+        var fullName = ((parent as ImportDirective).element as ImportElement).importedLibrary.definingCompilationUnit.source.fullName;
+        var declaration = new e.Import(new Location.fromEnvironment(_environment, fullName));
         _addReferenceAndDeclaration(reference, declaration);
       } else if (parent is ExportDirective && (parent as ExportDirective).element != null) {
         var reference = new e.Reference(new Location.fromEnvironment(_environment, _absolutePath), name: node.toString(), offset: node.offset, end: node.end);

@@ -66,7 +66,7 @@ class PackageInfo implements Comparable<PackageInfo> {
 
   String getDirectoryInPubCache(Config config) {
     if (isSdk) {
-      if (version == new Version.parse(config.sdk.sdkVersion)) {
+      if (version == Version.parse(config.sdk.sdkVersion)) {
         return config.dartSdk;
       } else {
         return p.join(config.sdkPackagesRoot, dirname);
@@ -97,10 +97,10 @@ class PackageInfo implements Comparable<PackageInfo> {
 
   factory PackageInfo.fromJson(String json) {
     final map = JSON.decode(json);
-    return new PackageInfo(map["name"], new Version.parse(map["version"]));
+    return new PackageInfo(map["name"], Version.parse(map["version"]));
   }
 
   factory PackageInfo.buildSdk(Config config) {
-    return new PackageInfo("sdk", new Version.parse(config.sdk.sdkVersion));
+    return new PackageInfo("sdk", Version.parse(config.sdk.sdkVersion));
   }
 }

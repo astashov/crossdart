@@ -6,7 +6,7 @@ class Version implements ps.Version {
 
   Version._(this.string);
 
-  factory Version.parse(String string) {
+  static Version parse(String string) {
     try {
       return new ps.Version.parse(string);
     } on FormatException catch (_, __) {
